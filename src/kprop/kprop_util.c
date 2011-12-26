@@ -32,6 +32,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
 /*
  * Convert an IPv4 or IPv6 socket address to a newly allocated krb5_address.
  * There is similar code elsewhere in the tree, so this should possibly become
