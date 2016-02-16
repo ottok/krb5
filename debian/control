@@ -159,7 +159,7 @@ Description: Debugging files for MIT Kerberos
 Package: krb5-pkinit
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version})
-Suggests: opensc
+Breaks: krb5-kdc (<< 1.14+dfsg)Suggests: opensc
 Priority: extra
 Multi-Arch: same
 Description: PKINIT plugin for MIT Kerberos
