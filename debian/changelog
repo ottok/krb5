@@ -35,6 +35,12 @@ krb5 (1.14+dfsg-1) experimental; urgency=medium
     available memory. (Closes: #813126)
 
   * Remove all references to libkrb53, Closes: #708175
+  * Merge patch for kpropd service, introducing a new stub package for now
+    that will contain the binaries in stretch+1.  We don't want to move
+    the binaries now because we'd either break existing installations or
+    we'd need krb5-kdc to depend on the new package, which would cause
+    kpropd to start in cases where we don't want it, thanks  Mark Proehl
+    and Michael Weiser, Closes: #775277
 
  -- Sam Hartman <hartmans@debian.org>  Mon, 15 Feb 2016 15:49:06 -0500
 
