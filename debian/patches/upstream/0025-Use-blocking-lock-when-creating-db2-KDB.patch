@@ -1,0 +1,37 @@
+From e551d52727bc130ef46c45899e27b145c8be5aca Mon Sep 17 00:00:00 2001
+From: Greg Hudson <ghudson@mit.edu>
+Date: Tue, 23 Feb 2016 17:15:18 -0500
+Subject: Use blocking lock when creating db2 KDB
+
+In 1.11 we switched from non-blocking to blocking locks in the DB2
+module, but we missed one call to krb5_lock_file() in ctx_create_db().
+This non-blocking lock can cause krb5_db_promote() to fail if the
+database is locked when we try to promote the DB, in turn causing
+kdb5_util load to fail.  Correct this call to make krb5_db_promote()
+more robust.
+
+ticket: 8367 (new)
+target_version: 1.14-next
+target_version: 1.13-next
+tags: pullup
+
+(cherry picked from commit 1868916dbb60a64b92da217257b4ed021262afd3)
+Patch-Category: upstream
+---
+ src/plugins/kdb/db2/kdb_db2.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/plugins/kdb/db2/kdb_db2.c b/src/plugins/kdb/db2/kdb_db2.c
+index 7bc760a..1b7bc16 100644
+--- a/src/plugins/kdb/db2/kdb_db2.c
++++ b/src/plugins/kdb/db2/kdb_db2.c
+@@ -701,8 +701,7 @@ ctx_create_db(krb5_context context, krb5_db2_context *dbc)
+         retval = errno;
+         goto cleanup;
+     }
+-    retval = krb5_lock_file(context, dbc->db_lf_file,
+-                            KRB5_LOCKMODE_EXCLUSIVE | KRB5_LOCKMODE_DONTBLOCK);
++    retval = krb5_lock_file(context, dbc->db_lf_file, KRB5_LOCKMODE_EXCLUSIVE);
+     if (retval != 0)
+         goto cleanup;
+     set_cloexec_fd(dbc->db_lf_file);

@@ -22,3 +22,4 @@ upstream/0021-Fix-iprop-server-stub-error-management.patch
 upstream/0022-Verify-decoded-kadmin-C-strings-CVE-2015-8629.patch
 upstream/0023-Check-for-null-kadm5-policy-name-CVE-2015-8630.patch
 upstream/0024-Fix-leaks-in-kadmin-server-stubs-CVE-2015-8631.patch
+upstream/0025-Use-blocking-lock-when-creating-db2-KDB.patch
