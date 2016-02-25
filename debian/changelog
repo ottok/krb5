@@ -17,6 +17,7 @@ krb5 (1.14+dfsg-1) experimental; urgency=medium
   - upstream/0022-Verify-decoded-kadmin-C-strings-CVE-2015-8629.patch
     - upstream/0023-Check-for-null-kadm5-policy-name-CVE-2015-8630.patch
     -upstream/0024-Fix-leaks-in-kadmin-server-stubs-CVE-2015-8631.patch
+        - Use blocking lock for db promote, Closes: #815677
   * Verify decoded kadmin C strings [CVE-2015-8629]
     CVE-2015-8629: An authenticated attacker can cause kadmind to read
     beyond the end of allocated memory by sending a string without a
