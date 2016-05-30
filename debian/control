@@ -20,7 +20,7 @@ Priority: optional
 Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version}),
   krb5-config
 Conflicts: heimdal-clients
-Description: Basic programs to authenticate using MIT Kerberos
+Description: basic programs to authenticate using MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
@@ -122,7 +122,7 @@ Depends: ${misc:Depends}, libkrb5-3 (= ${binary:Version}),
  comerr-dev, 
 Priority: optional
 Suggests: krb5-doc
-Description: Development files for MIT Kerberos without Heimdal conflict
+Description: development files for MIT Kerberos without Heimdal conflict
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
@@ -144,7 +144,7 @@ Replaces: krb5-multidev (<< 1.8+dfsg~alpha1-3)
 Conflicts: heimdal-dev
 Priority: extra
 Suggests: krb5-doc
-Description: Headers and development libraries for MIT Kerberos
+Description: headers and development libraries for MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
@@ -163,7 +163,7 @@ Depends: ${misc:Depends}, libkrb5-3 (= ${binary:Version})
 Priority: extra
 Section: debug
 Multi-Arch: same
-Description: Debugging files for MIT Kerberos
+Description: debugging files for MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
@@ -238,7 +238,7 @@ Priority: optional
 Conflicts: heimdal-docs
 Section: doc
 Depends: ${misc:Depends}
-Description: Documentation for MIT Kerberos
+Description: documentation for MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
@@ -442,7 +442,7 @@ Architecture: all
 Depends: ${misc:Depends}, ${shlibs:Depends}, 
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: foreign
-Description: Internationalization support for MIT Kerberos
+Description: internationalization support for MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
  third party (the Kerberos server) that is trusted by all the entities on
