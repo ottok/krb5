@@ -7,7 +7,7 @@ krb5 (1.14.2+dfsg-1) UNRELEASED; urgency=medium
     Closes: #821021
   * New German translation, Thanks Chris Leick, Closes: #816548
   
-  -- Sam Hartman <hartmans@debian.org>  Mon, 30 May 2016 13:12:02 -0400
+ -- Sam Hartman <hartmans@debian.org>  Mon, 30 May 2016 13:12:02 -0400
 
 krb5 (1.14+dfsg-1) experimental; urgency=medium
 
