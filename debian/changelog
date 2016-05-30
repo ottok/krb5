@@ -1,4 +1,4 @@
-krb5 (1.14.2+dfsg-1) UNRELEASED; urgency=medium
+krb5 (1.14.2+dfsg-1) unstable; urgency=low
 
   * New upstream version
       - Includes fix for CVE-2016-3119: remote DOS with ldap for
@@ -6,7 +6,8 @@ krb5 (1.14.2+dfsg-1) UNRELEASED; urgency=medium
   * Fix short descriptions capitalization, Thanks Laura Arjona Reina,
     Closes: #821021
   * New German translation, Thanks Chris Leick, Closes: #816548
-  
+
+
  -- Sam Hartman <hartmans@debian.org>  Mon, 30 May 2016 13:12:02 -0400
 
 krb5 (1.14+dfsg-1) experimental; urgency=medium
