@@ -1,4 +1,4 @@
-From 38acd9ab89ed54208bd66bdd3ddfbb635ba42290 Mon Sep 17 00:00:00 2001
+From 6803daea2611ce98313c94282d315fdd71c5c36a Mon Sep 17 00:00:00 2001
 From: Jelmer Vernooij <jelmer@debian.org>
 Date: Sun, 20 Apr 2014 15:59:08 +0200
 Subject: Fix krb5-config paths

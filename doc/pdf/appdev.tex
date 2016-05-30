@@ -15,7 +15,7 @@
 
 \title{Kerberos Application Developer Guide}
 \date{ }
-\release{1.14}
+\release{1.14.2}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -10759,7 +10759,7 @@ This function is similar to {\hyperref[appdev/refs/api/krb5_k_verify_checksum_io
 
 \begin{quote}\begin{description}
 \item[{param}] \leavevmode
-\textbf{{[}in{]}} \textbf{code} - ASN.1-formattedticket
+\textbf{{[}in{]}} \textbf{code} - ASN.1-formatted ticket
 
 \textbf{{[}out{]}} \textbf{rep} - Decoded ticket information
 
@@ -13497,6 +13497,10 @@ Additional error-describing data.
 \phantomsection\label{appdev/refs/types/krb5_error_code:c.krb5_error_code}\pysigline{\bfcode{krb5\_error\_code}}
 \end{fulllineitems}
 
+
+Used to convey an operation status.
+
+The value 0 indicates success; any other values are com\_err codes. Use {\hyperref[appdev/refs/api/krb5_get_error_message:c.krb5_get_error_message]{\code{krb5\_get\_error\_message()}}} to obtain a string describing the error.
 
 
 \paragraph{Declaration}

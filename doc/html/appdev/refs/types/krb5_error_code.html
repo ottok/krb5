@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.14',
+        VERSION:     '1.14.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -70,6 +70,8 @@
 <tt class="descname">krb5_error_code</tt><a class="headerlink" href="#c.krb5_error_code" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<p>Used to convey an operation status.</p>
+<p>The value 0 indicates success; any other values are com_err codes. Use <a class="reference internal" href="../api/krb5_get_error_message.html#c.krb5_get_error_message" title="krb5_get_error_message"><tt class="xref c c-func docutils literal"><span class="pre">krb5_get_error_message()</span></tt></a> to obtain a string describing the error.</p>
 <div class="section" id="declaration">
 <h2>Declaration<a class="headerlink" href="#declaration" title="Permalink to this headline">¶</a></h2>
 <p>typedef krb5_int32 krb5_error_code</p>
@@ -134,8 +136,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2015, MIT.
+            <div class="right" ><i>Release: 1.14.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">
                 
