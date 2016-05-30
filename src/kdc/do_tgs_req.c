@@ -869,6 +869,7 @@ cleanup:
     if (state)
         kdc_free_rstate(state);
     krb5_db_free_principal(kdc_context, server);
+    krb5_db_free_principal(kdc_context, stkt_server);
     krb5_db_free_principal(kdc_context, header_server);
     krb5_db_free_principal(kdc_context, client);
     krb5_db_free_principal(kdc_context, local_tgt_storage);
@@ -975,7 +976,7 @@ decrypt_2ndtkt(kdc_realm_t *kdc_active_realm, krb5_kdc_req *req,
                const char **status)
 {
     krb5_error_code retval;
-    krb5_db_entry *server;
+    krb5_db_entry *server = NULL;
     krb5_keyblock *key;
     krb5_kvno kvno;
     krb5_ticket *stkt;
@@ -1002,7 +1003,9 @@ decrypt_2ndtkt(kdc_realm_t *kdc_active_realm, krb5_kdc_req *req,
         goto cleanup;
     }
     *server_out = server;
+    server = NULL;
 cleanup:
+    krb5_db_free_principal(kdc_context, server);
     return retval;
 }
 

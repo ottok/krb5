@@ -267,6 +267,7 @@ process_db_args(krb5_context context, char **db_args, xargs_t *xargs,
     if (db_args) {
         for (i=0; db_args[i]; ++i) {
             arg = strtok_r(db_args[i], "=", &arg_val);
+            arg = (arg != NULL) ? arg : "";
             if (strcmp(arg, TKTPOLICY_ARG) == 0) {
                 dptr = &xargs->tktpolicydn;
             } else {
@@ -684,8 +685,8 @@ krb5_ldap_put_principal(krb5_context context, krb5_db_entry *entry,
                 if (st == KRB5_KDB_NOENTRY || st == KRB5_KDB_CONSTRAINT_VIOLATION) {
                     int ost = st;
                     st = EINVAL;
-                    k5_prependmsg(context, ost, st, _("'%s' not found"),
-                                  xargs.containerdn);
+                    k5_wrapmsg(context, ost, st, _("'%s' not found"),
+                               xargs.containerdn);
                 }
                 goto cleanup;
             }

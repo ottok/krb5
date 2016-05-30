@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14',
+        VERSION:     '1.14.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -86,12 +86,12 @@ the key entry.  Key entries use the following informal grammar:</p>
     timestamp (32 bits)
     key version (8 bits)
     enctype (16 bits)
-    key length (32 bits)
+    key length (16 bits)
     key contents
     key version (32 bits) [in release 1.14 and later]
 
 principal ::=
-    count of components (32 bits) [includes realm in version 1]
+    count of components (16 bits) [includes realm in version 1]
     realm (data)
     component1 (data)
     component2 (data)
@@ -163,8 +163,8 @@ value of the 32-bit integer contained in those bytes is non-zero.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2015, MIT.
+            <div class="right" ><i>Release: 1.14.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">
                 
