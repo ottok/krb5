@@ -15,7 +15,7 @@
 
 \title{Kerberos Administration Guide}
 \date{ }
-\release{1.14.2}
+\release{1.14.3}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -5791,6 +5791,15 @@ impossible to observe the last successful authentication time with
 kadmin.
 
 
+\section{KDC setup and account lockout}
+\label{admin/lockout:kdc-setup-and-account-lockout}
+To update the account lockout state on principals, the KDC must be
+able to write to the principal database.  For the DB2 module, no
+special setup is required.  For the LDAP module, the KDC DN must be
+granted write access to the principal objects.  If the KDC DN has only
+read access, account lockout will not function.
+
+
 \chapter{Configuring Kerberos with OpenLDAP back-end}
 \label{admin/conf_ldap::doc}\label{admin/conf_ldap:configuring-kerberos-with-openldap-back-end}\begin{enumerate}
 \item {} 
@@ -5862,7 +5871,10 @@ container.
 
 \item {} 
 Configure the LDAP server ACLs to enable the KDC and kadmin server
-DNs to read and write the Kerberos data.
+DNs to read and write the Kerberos data.  If
+\textbf{disable\_last\_success} and \textbf{disable\_lockout} are both set to
+true in the {\hyperref[admin/conf_files/kdc_conf:dbmodules]{\emph{{[}dbmodules{]}}}} subsection for the realm, then the
+KDC DN only requires read access to the Kerberos data.
 
 Sample access control information:
 
@@ -5883,13 +5895,13 @@ access to attrs=shadowLastChange
 
 \PYGZsh{} Providing access to realm container
 access to dn.subtree= \PYGZdq{}cn=EXAMPLE.COM,cn=krbcontainer,dc=example,dc=com\PYGZdq{}
-    by dn.exact=\PYGZdq{}cn=kdc\PYGZhy{}service,dc=example,dc=com\PYGZdq{} read
+    by dn.exact=\PYGZdq{}cn=kdc\PYGZhy{}service,dc=example,dc=com\PYGZdq{} write
     by dn.exact=\PYGZdq{}cn=adm\PYGZhy{}service,dc=example,dc=com\PYGZdq{} write
     by * none
 
 \PYGZsh{} Providing access to principals, if not underneath realm container
 access to dn.subtree= \PYGZdq{}ou=users,dc=example,dc=com\PYGZdq{}
-    by dn.exact=\PYGZdq{}cn=kdc\PYGZhy{}service,dc=example,dc=com\PYGZdq{} read
+    by dn.exact=\PYGZdq{}cn=kdc\PYGZhy{}service,dc=example,dc=com\PYGZdq{} write
     by dn.exact=\PYGZdq{}cn=adm\PYGZhy{}service,dc=example,dc=com\PYGZdq{} write
     by * none
 
