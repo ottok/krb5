@@ -1,4 +1,4 @@
-krb5 (1.14.3+dfsg-1) UNRELEASED; urgency=medium
+krb5 (1.14.3+dfsg-1) unstable; urgency=medium
 
   * New upstream version
     - includes fix for CVE-2016-3120, Closes: #832572
@@ -8,7 +8,7 @@ krb5 (1.14.3+dfsg-1) UNRELEASED; urgency=medium
     single-DES enctypes, Closes: #806928
   * Spell Build-Depends-Indep properly, Closes: #829196
 
- -- Benjamin Kaduk <kaduk@mit.edu>  Sat, 30 Jul 2016 22:06:43 -0400
+ -- Benjamin Kaduk <kaduk@mit.edu>  Sat, 30 Jul 2016 22:42:39 -0400
 
 krb5 (1.14.2+dfsg-1) unstable; urgency=low
 
