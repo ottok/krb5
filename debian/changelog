@@ -6,6 +6,7 @@ krb5 (1.14.3+dfsg-1) UNRELEASED; urgency=medium
     a reshuffle, Closes: #828946
   * Comment out supported_enctypes in kdc.conf to avoid including
     single-DES enctypes, Closes: #806928
+  * Spell Build-Depends-Indep properly, Closes: #829196
 
  -- Benjamin Kaduk <kaduk@mit.edu>  Sat, 30 Jul 2016 22:06:43 -0400
 
