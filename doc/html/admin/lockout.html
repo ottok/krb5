@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.2',
+        VERSION:     '1.14.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -190,6 +190,14 @@ account lockout policies to operate.  However, it will make it
 impossible to observe the last successful authentication time with
 kadmin.</p>
 </div>
+<div class="section" id="kdc-setup-and-account-lockout">
+<h2>KDC setup and account lockout<a class="headerlink" href="#kdc-setup-and-account-lockout" title="Permalink to this headline">¶</a></h2>
+<p>To update the account lockout state on principals, the KDC must be
+able to write to the principal database.  For the DB2 module, no
+special setup is required.  For the LDAP module, the KDC DN must be
+granted write access to the principal objects.  If the KDC DN has only
+read access, account lockout will not function.</p>
+</div>
 </div>
 
 
@@ -206,6 +214,7 @@ kadmin.</p>
 <li><a class="reference internal" href="#account-lockout-principal-state">Account lockout principal state</a></li>
 <li><a class="reference internal" href="#kdc-replication-and-account-lockout">KDC replication and account lockout</a></li>
 <li><a class="reference internal" href="#kdc-performance-and-account-lockout">KDC performance and account lockout</a></li>
+<li><a class="reference internal" href="#kdc-setup-and-account-lockout">KDC setup and account lockout</a></li>
 </ul>
 </li>
 </ul>
@@ -267,7 +276,7 @@ kadmin.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.2</i><br />
+            <div class="right" ><i>Release: 1.14.3</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

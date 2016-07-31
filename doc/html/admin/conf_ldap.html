@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.2',
+        VERSION:     '1.14.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -122,7 +122,10 @@ Principal entries may exist either underneath the realm container
 container.</p>
 </li>
 <li><p class="first">Configure the LDAP server ACLs to enable the KDC and kadmin server
-DNs to read and write the Kerberos data.</p>
+DNs to read and write the Kerberos data.  If
+<strong>disable_last_success</strong> and <strong>disable_lockout</strong> are both set to
+true in the <a class="reference internal" href="conf_files/kdc_conf.html#dbmodules"><em>[dbmodules]</em></a> subsection for the realm, then the
+KDC DN only requires read access to the Kerberos data.</p>
 <p>Sample access control information:</p>
 <div class="highlight-python"><div class="highlight"><pre>access to dn.base=&quot;&quot;
     by * read
@@ -140,13 +143,13 @@ access to attrs=shadowLastChange
 
 # Providing access to realm container
 access to dn.subtree= &quot;cn=EXAMPLE.COM,cn=krbcontainer,dc=example,dc=com&quot;
-    by dn.exact=&quot;cn=kdc-service,dc=example,dc=com&quot; read
+    by dn.exact=&quot;cn=kdc-service,dc=example,dc=com&quot; write
     by dn.exact=&quot;cn=adm-service,dc=example,dc=com&quot; write
     by * none
 
 # Providing access to principals, if not underneath realm container
 access to dn.subtree= &quot;ou=users,dc=example,dc=com&quot;
-    by dn.exact=&quot;cn=kdc-service,dc=example,dc=com&quot; read
+    by dn.exact=&quot;cn=kdc-service,dc=example,dc=com&quot; write
     by dn.exact=&quot;cn=adm-service,dc=example,dc=com&quot; write
     by * none
 
@@ -301,7 +304,7 @@ for initial ticket requests.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.2</i><br />
+            <div class="right" ><i>Release: 1.14.3</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">
