@@ -1,0 +1,72 @@
+From af5e5b02d5980887b39df4863102b77b57e381bc Mon Sep 17 00:00:00 2001
+From: Greg Hudson <ghudson@mit.edu>
+Date: Sun, 14 Aug 2016 12:08:16 -0400
+Subject: Work around glibc OFD lock bug on 32-bit Linux
+
+A bug in Gnu libc causes OFD locking to fail unpredictably on 32-bit
+Linux, typically leading to deadlocks.  Work around this bug by using
+the fcntl64 system call and struct flock64.
+
+See also: https://sourceware.org/bugzilla/show_bug.cgi?id=20251
+
+ticket: 8474
+target_version: 1.14-next
+tags: pullup
+
+Patch-Category: upstream
+---
+ src/lib/krb5/os/lock_file.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/src/lib/krb5/os/lock_file.c b/src/lib/krb5/os/lock_file.c
+index a2f247c..2360c96 100644
+--- a/src/lib/krb5/os/lock_file.c
++++ b/src/lib/krb5/os/lock_file.c
+@@ -43,7 +43,29 @@
+ 
+ #if defined(HAVE_FCNTL_H) && defined(F_SETLKW) && defined(F_RDLCK)
+ #define POSIX_FILE_LOCKS
++
++/*
++ * Gnu libc bug 20251, currently unfixed, breaks OFD lock support on
++ * 32-bit platforms.  Work around this bug by explicitly using the
++ * fcntl64 system call and struct flock64.
++ */
++#if defined(__linux__) && __WORDSIZE == 32
++#include <sys/syscall.h>
++#ifdef SYS_fcntl64
++#define USE_FCNTL64
++#endif
+ #endif
++#ifdef USE_FCNTL64
++/* Use the fcntl64 system call and struct flock64.  (Gnu libc does not
++ * define a fcntl64() function, so we must use syscall().) */
++#define fcntl(fd, cmd, arg) syscall(SYS_fcntl64, fd, cmd, arg)
++typedef struct flock64 fcntl_lock_st;
++#else
++/* Use regular fcntl() and struct flock. */
++typedef struct flock fcntl_lock_st;
++#endif
++
++#endif /* defined(HAVE_FCNTL_H) && defined(F_SETLKW) && defined(F_RDLCK) */
+ 
+ #ifdef HAVE_FLOCK
+ #ifndef sysvimp
+@@ -66,7 +88,7 @@
+  * older kernel than we were built with.
+  */
+ static int
+-ofdlock(int fd, int cmd, struct flock *lock_arg)
++ofdlock(int fd, int cmd, fcntl_lock_st *lock_arg)
+ {
+ #ifdef F_OFD_SETLKW
+     int st, ofdcmd;
+@@ -89,7 +111,7 @@ krb5_lock_file(krb5_context context, int fd, int mode)
+     krb5_error_code     retval = 0;
+ #ifdef POSIX_FILE_LOCKS
+     int lock_cmd = F_SETLKW;
+-    struct flock lock_arg = { 0 };
++    fcntl_lock_st lock_arg = { 0 };
+ #endif
+ 
+     switch (mode & ~KRB5_LOCKMODE_DONTBLOCK) {
