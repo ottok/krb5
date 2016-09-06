@@ -1,4 +1,4 @@
-krb5 (1.14.3+dfsg-2) UNRELEASED; urgency=medium
+krb5 (1.14.3+dfsg-2) unstable; urgency=medium
 
   * Fix gcc -O3, thanks Ben Kaduk/Steve Langasek, Closes: #833798
   * Fix kdb5_util create on 32-bit platforms, thanks Greg Hudson, Closes:
