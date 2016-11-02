@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -297,6 +297,10 @@ first use.</dd>
 <dd>Disable PKINIT plugin support.</dd>
 <dt><strong>-</strong><strong>-disable-aesni</strong></dt>
 <dd>Disable support for using AES instructions on x86 platforms.</dd>
+<dt><strong>-</strong><strong>-enable-asan</strong>[=<em>ARG</em>]</dt>
+<dd>Enable building with asan memory error checking.  If <em>ARG</em> is
+given, it controls the -fsanitize compilation flag value (the
+default is &#8220;address&#8221;).</dd>
 </dl>
 </div>
 <div class="section" id="optional-packages">
@@ -341,15 +345,12 @@ should return only vague error codes to clients.</dd>
 <dt><strong>-</strong><strong>-with-crypto-impl=</strong><em>IMPL</em></dt>
 <dd>Use specified crypto implementation (e.g., <strong>-</strong><strong>-with-crypto-impl=</strong><em>openssl</em>).  The default is the native MIT
 Kerberos implementation <tt class="docutils literal"><span class="pre">builtin</span></tt>.  The other currently
-implemented crypto backends are <tt class="docutils literal"><span class="pre">openssl</span></tt> and <tt class="docutils literal"><span class="pre">nss</span></tt>.  (See
+implemented crypto backend is <tt class="docutils literal"><span class="pre">openssl</span></tt>.  (See
 <a class="reference internal" href="../mitK5features.html#mitk5features"><em>MIT Kerberos features</em></a>)</dd>
 <dt><strong>-</strong><strong>-with-prng-alg=</strong><em>ALG</em></dt>
-<dd><p class="first">Use specified PRNG algorithm.  For example, to use the OS native
-prng specify <tt class="docutils literal"><span class="pre">--with-prng-alg=os</span></tt>.</p>
-<p class="last">Default is the <tt class="docutils literal"><span class="pre">fortuna</span></tt> PRNG algorithm.  For the <tt class="docutils literal"><span class="pre">nss</span></tt> crypto
-backend use one must explicitly specify <tt class="docutils literal"><span class="pre">--with-prng-alg=nss</span></tt>.
-(See <a class="reference internal" href="../mitK5features.html#mitk5features"><em>MIT Kerberos features</em></a>)</p>
-</dd>
+<dd>Use specified PRNG algorithm.  For example, to use the OS native
+prng specify <tt class="docutils literal"><span class="pre">--with-prng-alg=os</span></tt>.  The default is <tt class="docutils literal"><span class="pre">fortuna</span></tt>.
+(See <a class="reference internal" href="../mitK5features.html#mitk5features"><em>MIT Kerberos features</em></a>)</dd>
 <dt><strong>-</strong><strong>-with-pkinit-crypto-impl=</strong><em>IMPL</em></dt>
 <dd>Use the specified pkinit crypto implementation <em>IMPL</em>.
 Defaults to using OpenSSL.</dd>
@@ -466,7 +467,7 @@ SS_LIB=&#39;-lss -lcurses&#39;  DB_HEADER=db3/db_185.h DB_LIB=-ldb-3.3
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

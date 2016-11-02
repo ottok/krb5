@@ -15,7 +15,7 @@
 
 \title{Kerberos Application Developer Guide}
 \date{ }
-\release{1.14.3}
+\release{1.15-beta1}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -298,6 +298,26 @@ string returned by gethostname().
 If the \emph{desired\_name} is a krb5 principal name or a local system name
 type which is mapped to a krb5 principal name, clients will only be
 allowed to authenticate to that principal in the default keytab.
+
+
+\section{Name Attributes}
+\label{appdev/gssapi:name-attributes}
+In release 1.8 or later, the \href{http://tools.ietf.org/html/rfc6680.txt\#section-7.4}{gss\_inquire\_name} and
+\href{http://tools.ietf.org/html/6680.html\#section-7.5}{gss\_get\_name\_attribute} functions, specified in \index{RFC!RFC 6680}\href{http://tools.ietf.org/html/rfc6680.html}{\textbf{RFC 6680}}, can be
+used to retrieve name attributes from the \emph{src\_name} returned by
+\href{http://tools.ietf.org/html/rfc2744.html\#section-5.1}{gss\_accept\_sec\_context}.  The following attributes are defined when
+the krb5 mechanism is used:
+\phantomsection\label{appdev/gssapi:gssapi-authind-attr}\begin{itemize}
+\item {} 
+``auth-indicator'' attribute:
+
+\end{itemize}
+
+This attribute will be included in the \href{http://tools.ietf.org/html/rfc6680.txt\#section-7.4}{gss\_inquire\_name} output if the
+ticket contains \emph{authentication indicators}.
+One indicator is returned per invocation of \href{http://tools.ietf.org/html/6680.html\#section-7.5}{gss\_get\_name\_attribute},
+so multiple invocations may be necessary to retrieve all of the
+indicators from the ticket.  (New in release 1.15.)
 
 
 \section{Importing and exporting credentials}
@@ -1661,6 +1681,30 @@ New in 1.11
 \end{notice}
 
 
+\subsubsection{krb5\_expand\_hostname -  Canonicalize a hostname, possibly using name service.}
+\label{appdev/refs/api/krb5_expand_hostname:krb5-expand-hostname-canonicalize-a-hostname-possibly-using-name-service}\label{appdev/refs/api/krb5_expand_hostname::doc}\index{krb5\_expand\_hostname (C function)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/api/krb5_expand_hostname:c.krb5_expand_hostname}\pysiglinewithargsret{{\hyperref[appdev/refs/types/krb5_error_code:c.krb5_error_code]{krb5\_error\_code}} \bfcode{krb5\_expand\_hostname}}{{\hyperref[appdev/refs/types/krb5_context:c.krb5_context]{krb5\_context}}\emph{ context}, const char *\emph{ host}, char **\emph{ canonhost\_out}}{}
+\end{fulllineitems}
+
+\begin{quote}\begin{description}
+\item[{param}] \leavevmode
+\textbf{{[}in{]}} \textbf{context} - Library context
+
+\textbf{{[}in{]}} \textbf{host} - Input hostname
+
+\textbf{{[}out{]}} \textbf{canonhost\_out} - Canonicalized hostname
+
+\end{description}\end{quote}
+
+This function canonicalizes orig\_hostname, possibly using name service lookups if configuration permits. Use {\hyperref[appdev/refs/api/krb5_free_string:c.krb5_free_string]{\code{krb5\_free\_string()}}} to free \emph{canonhost\_out} when it is no longer needed.
+
+\begin{notice}{note}{Note:}
+New in 1.15
+\end{notice}
+
+
 \subsubsection{krb5\_free\_context -  Free a krb5 library context.}
 \label{appdev/refs/api/krb5_free_context:krb5-free-context-free-a-krb5-library-context}\label{appdev/refs/api/krb5_free_context::doc}\index{krb5\_free\_context (C function)}
 
@@ -2349,6 +2393,30 @@ If an output credential cache is set, then the krb5\_get\_init\_creds family of 
 \end{description}\end{quote}
 
 This function allows the caller to supply options for preauthentication. The values of \emph{attr} and \emph{value} are supplied to each preauthentication module available within \emph{context} .
+
+
+\subsubsection{krb5\_get\_init\_creds\_opt\_set\_pac\_request -  Ask the KDC to include or not include a PAC in the ticket.}
+\label{appdev/refs/api/krb5_get_init_creds_opt_set_pac_request:krb5-get-init-creds-opt-set-pac-request-ask-the-kdc-to-include-or-not-include-a-pac-in-the-ticket}\label{appdev/refs/api/krb5_get_init_creds_opt_set_pac_request::doc}\index{krb5\_get\_init\_creds\_opt\_set\_pac\_request (C function)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/api/krb5_get_init_creds_opt_set_pac_request:c.krb5_get_init_creds_opt_set_pac_request}\pysiglinewithargsret{{\hyperref[appdev/refs/types/krb5_error_code:c.krb5_error_code]{krb5\_error\_code}} \bfcode{krb5\_get\_init\_creds\_opt\_set\_pac\_request}}{{\hyperref[appdev/refs/types/krb5_context:c.krb5_context]{krb5\_context}}\emph{ context}, {\hyperref[appdev/refs/types/krb5_get_init_creds_opt:c.krb5_get_init_creds_opt]{krb5\_get\_init\_creds\_opt}} *\emph{ opt}, {\hyperref[appdev/refs/types/krb5_boolean:c.krb5_boolean]{krb5\_boolean}}\emph{ req\_pac}}{}
+\end{fulllineitems}
+
+\begin{quote}\begin{description}
+\item[{param}] \leavevmode
+\textbf{{[}in{]}} \textbf{context} - Library context
+
+\textbf{{[}in{]}} \textbf{opt} - Options structure
+
+\textbf{{[}in{]}} \textbf{req\_pac} - Whether to request a PAC or not
+
+\end{description}\end{quote}
+
+If this option is set, the AS request will include a PAC-REQUEST pa-data item explicitly asking the KDC to either include or not include a privilege attribute certificate in the ticket authorization data. By default, no request is made; typically the KDC will default to including a PAC if it supports them.
+
+\begin{notice}{note}{Note:}
+New in 1.15
+\end{notice}
 
 
 \subsubsection{krb5\_get\_init\_creds\_opt\_set\_preauth\_list -  Set preauthentication types in initial credential options.}
@@ -7635,7 +7703,7 @@ Kerberos error codes
 
 \end{description}\end{quote}
 
-Return the next sequential entry in \emph{keytab} and advance \emph{cursor} .
+Return the next sequential entry in \emph{keytab} and advance \emph{cursor} . Callers must release the returned entry with {\hyperref[appdev/refs/api/krb5_kt_free_entry:c.krb5_kt_free_entry]{\code{krb5\_kt\_free\_entry()}}} .
 
 
 \subsubsection{krb5\_kt\_read\_service\_key -  Retrieve a service key from a key table.}
@@ -8973,6 +9041,58 @@ This overrides the default list (from config file or built-in).
 \textbf{{[}in{]}} \textbf{fmt} - Error string for the error code
 
 \end{description}\end{quote}
+
+
+\subsubsection{krb5\_set\_kdc\_recv\_hook -  Set a KDC post-receive hook function.}
+\label{appdev/refs/api/krb5_set_kdc_recv_hook::doc}\label{appdev/refs/api/krb5_set_kdc_recv_hook:krb5-set-kdc-recv-hook-set-a-kdc-post-receive-hook-function}\index{krb5\_set\_kdc\_recv\_hook (C function)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/api/krb5_set_kdc_recv_hook:c.krb5_set_kdc_recv_hook}\pysiglinewithargsret{void \bfcode{krb5\_set\_kdc\_recv\_hook}}{{\hyperref[appdev/refs/types/krb5_context:c.krb5_context]{krb5\_context}}\emph{ context}, {\hyperref[appdev/refs/types/krb5_post_recv_fn:c.krb5_post_recv_fn]{krb5\_post\_recv\_fn}}\emph{ recv\_hook}, void *\emph{ data}}{}
+\end{fulllineitems}
+
+\begin{quote}\begin{description}
+\item[{param}] \leavevmode
+\textbf{{[}in{]}} \textbf{context} - The library context.
+
+\textbf{{[}in{]}} \textbf{recv\_hook} - Hook function (or NULL to disable the hook)
+
+\textbf{{[}in{]}} \textbf{data} - Callback data to be passed to \emph{recv\_hook}
+
+\end{description}\end{quote}
+\begin{quote}
+
+\emph{recv\_hook} will be called after a reply is received from a KDC during a call to a library function such as {\hyperref[appdev/refs/api/krb5_get_credentials:c.krb5_get_credentials]{\code{krb5\_get\_credentials()}}} . The hook function may inspect or override the reply. This hook will not be executed if the pre-send hook returns a synthetic reply.
+\end{quote}
+
+\begin{notice}{note}{Note:}
+New in 1.15
+\end{notice}
+
+
+\subsubsection{krb5\_set\_kdc\_send\_hook -  Set a KDC pre-send hook function.}
+\label{appdev/refs/api/krb5_set_kdc_send_hook:krb5-set-kdc-send-hook-set-a-kdc-pre-send-hook-function}\label{appdev/refs/api/krb5_set_kdc_send_hook::doc}\index{krb5\_set\_kdc\_send\_hook (C function)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/api/krb5_set_kdc_send_hook:c.krb5_set_kdc_send_hook}\pysiglinewithargsret{void \bfcode{krb5\_set\_kdc\_send\_hook}}{{\hyperref[appdev/refs/types/krb5_context:c.krb5_context]{krb5\_context}}\emph{ context}, {\hyperref[appdev/refs/types/krb5_pre_send_fn:c.krb5_pre_send_fn]{krb5\_pre\_send\_fn}}\emph{ send\_hook}, void *\emph{ data}}{}
+\end{fulllineitems}
+
+\begin{quote}\begin{description}
+\item[{param}] \leavevmode
+\textbf{{[}in{]}} \textbf{context} - Library context
+
+\textbf{{[}in{]}} \textbf{send\_hook} - Hook function (or NULL to disable the hook)
+
+\textbf{{[}in{]}} \textbf{data} - Callback data to be passed to \emph{send\_hook}
+
+\end{description}\end{quote}
+\begin{quote}
+
+\emph{send\_hook} will be called before messages are sent to KDCs by library functions such as {\hyperref[appdev/refs/api/krb5_get_credentials:c.krb5_get_credentials]{\code{krb5\_get\_credentials()}}} . The hook function may inspect, override, or synthesize its own reply to the message.
+\end{quote}
+
+\begin{notice}{note}{Note:}
+New in 1.15
+\end{notice}
 
 
 \subsubsection{krb5\_set\_real\_time -  Set time offset field in a krb5\_context structure.}
@@ -10633,7 +10753,7 @@ TRUE if ktype is valid, FALSE if not
 
 \end{description}\end{quote}
 
-This function verifies that \emph{cksum} is a valid checksum for \emph{data} . If the checksum type of \emph{cksum} is a keyed checksum, \emph{key} is used to verify the checksum. The actual checksum key will be derived from \emph{key} and \emph{usage} if key derivation is specified for the checksum type.
+This function verifies that \emph{cksum} is a valid checksum for \emph{data} . If the checksum type of \emph{cksum} is a keyed checksum, \emph{key} is used to verify the checksum. If the checksum type in \emph{cksum} is 0 and \emph{key} is not NULL, the mandatory checksum type for \emph{key} will be used. The actual checksum key will be derived from \emph{key} and \emph{usage} if key derivation is specified for the checksum type.
 
 \begin{notice}{note}{Note:}
 This function is similar to {\hyperref[appdev/refs/api/krb5_k_verify_checksum:c.krb5_k_verify_checksum]{\code{krb5\_k\_verify\_checksum()}}} , but operates on keyblock \emph{key} .
@@ -11393,7 +11513,7 @@ This function is similar to {\hyperref[appdev/refs/api/krb5_c_prf:c.krb5_c_prf]{
 
 \end{description}\end{quote}
 
-This function verifies that \emph{cksum} is a valid checksum for \emph{data} . If the checksum type of \emph{cksum} is a keyed checksum, \emph{key} is used to verify the checksum. The actual checksum key will be derived from \emph{key} and \emph{usage} if key derivation is specified for the checksum type.
+This function verifies that \emph{cksum} is a valid checksum for \emph{data} . If the checksum type of \emph{cksum} is a keyed checksum, \emph{key} is used to verify the checksum. If the checksum type in \emph{cksum} is 0 and \emph{key} is not NULL, the mandatory checksum type for \emph{key} will be used. The actual checksum key will be derived from \emph{key} and \emph{usage} if key derivation is specified for the checksum type.
 
 \begin{notice}{note}{Note:}
 This function is similar to {\hyperref[appdev/refs/api/krb5_c_verify_checksum:c.krb5_c_verify_checksum]{\code{krb5\_c\_verify\_checksum()}}} , but operates on opaque \emph{key} .
@@ -14299,6 +14419,46 @@ Data.
 typedef void* krb5\_pointer
 
 
+\subsubsection{krb5\_post\_recv\_fn}
+\label{appdev/refs/types/krb5_post_recv_fn:krb5-post-recv-fn}\label{appdev/refs/types/krb5_post_recv_fn:krb5-post-recv-fn-struct}\label{appdev/refs/types/krb5_post_recv_fn::doc}\index{krb5\_post\_recv\_fn (C type)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/types/krb5_post_recv_fn:c.krb5_post_recv_fn}\pysigline{\bfcode{krb5\_post\_recv\_fn}}
+\end{fulllineitems}
+
+
+Hook function for inspecting or overriding KDC replies.
+
+If \emph{code} is non-zero, KDC communication failed and \emph{reply} should be ignored. The hook function may return \emph{code} or a different error code, or may synthesize a reply by setting \emph{new\_reply\_out} and return successfully.
+The hook function should use {\hyperref[appdev/refs/api/krb5_copy_data:c.krb5_copy_data]{\code{krb5\_copy\_data()}}} to construct the value for \emph{new\_reply\_out} , to ensure that it can be freed correctly by the library.
+
+
+\paragraph{Declaration}
+\label{appdev/refs/types/krb5_post_recv_fn:declaration}
+typedef krb5\_error\_code( * krb5\_post\_recv\_fn)(krb5\_context context, void *data, krb5\_error\_code code, const krb5\_data *realm, const krb5\_data *message, const krb5\_data *reply, krb5\_data **new\_reply\_out)
+
+
+\subsubsection{krb5\_pre\_send\_fn}
+\label{appdev/refs/types/krb5_pre_send_fn:krb5-pre-send-fn-struct}\label{appdev/refs/types/krb5_pre_send_fn::doc}\label{appdev/refs/types/krb5_pre_send_fn:krb5-pre-send-fn}\index{krb5\_pre\_send\_fn (C type)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/types/krb5_pre_send_fn:c.krb5_pre_send_fn}\pysigline{\bfcode{krb5\_pre\_send\_fn}}
+\end{fulllineitems}
+
+
+Hook function for inspecting or modifying messages sent to KDCs.
+
+If the hook function sets \emph{reply\_out} , \emph{message} will not be sent to the KDC, and the given reply will used instead.
+If the hook function sets \emph{new\_message\_out} , the given message will be sent to the KDC in place of \emph{message} .
+If the hook function returns successfully without setting either output, \emph{message} will be sent to the KDC normally.
+The hook function should use {\hyperref[appdev/refs/api/krb5_copy_data:c.krb5_copy_data]{\code{krb5\_copy\_data()}}} to construct the value for \emph{new\_message\_out} or \emph{reply\_out} , to ensure that it can be freed correctly by the library.
+
+
+\paragraph{Declaration}
+\label{appdev/refs/types/krb5_pre_send_fn:declaration}
+typedef krb5\_error\_code( * krb5\_pre\_send\_fn)(krb5\_context context, void *data, const krb5\_data *realm, const krb5\_data *message, krb5\_data **new\_message\_out, krb5\_data **new\_reply\_out)
+
+
 \subsubsection{krb5\_preauthtype}
 \label{appdev/refs/types/krb5_preauthtype::doc}\label{appdev/refs/types/krb5_preauthtype:krb5-preauthtype}\label{appdev/refs/types/krb5_preauthtype:krb5-preauthtype-struct}\index{krb5\_preauthtype (C type)}
 
@@ -15933,6 +16093,44 @@ Used with ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96
 
 
 
+\subsubsection{CKSUMTYPE\_HMAC\_SHA256\_128\_AES128}
+\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA256_128_AES128:cksumtype-hmac-sha256-128-aes128-data}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA256_128_AES128::doc}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA256_128_AES128:cksumtype-hmac-sha256-128-aes128}\index{CKSUMTYPE\_HMAC\_SHA256\_128\_AES128 (built-in variable)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA256_128_AES128:CKSUMTYPE_HMAC_SHA256_128_AES128}\pysigline{\bfcode{CKSUMTYPE\_HMAC\_SHA256\_128\_AES128}}
+\end{fulllineitems}
+
+
+\begin{tabulary}{\linewidth}{|L|L|}
+\hline
+
+\code{CKSUMTYPE\_HMAC\_SHA256\_128\_AES128}
+ & 
+\code{0x0013}
+\\
+\hline\end{tabulary}
+
+
+
+\subsubsection{CKSUMTYPE\_HMAC\_SHA384\_192\_AES256}
+\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256:cksumtype-hmac-sha384-192-aes256}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256:cksumtype-hmac-sha384-192-aes256-data}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256::doc}\index{CKSUMTYPE\_HMAC\_SHA384\_192\_AES256 (built-in variable)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256:CKSUMTYPE_HMAC_SHA384_192_AES256}\pysigline{\bfcode{CKSUMTYPE\_HMAC\_SHA384\_192\_AES256}}
+\end{fulllineitems}
+
+
+\begin{tabulary}{\linewidth}{|L|L|}
+\hline
+
+\code{CKSUMTYPE\_HMAC\_SHA384\_192\_AES256}
+ & 
+\code{0x0014}
+\\
+\hline\end{tabulary}
+
+
+
 \subsubsection{CKSUMTYPE\_HMAC\_SHA1\_DES3}
 \label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_DES3::doc}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_DES3:cksumtype-hmac-sha1-des3}\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_DES3:cksumtype-hmac-sha1-des3-data}\index{CKSUMTYPE\_HMAC\_SHA1\_DES3 (built-in variable)}
 
@@ -16087,6 +16285,25 @@ RFC 3962.
 
 
 
+\subsubsection{ENCTYPE\_AES128\_CTS\_HMAC\_SHA256\_128}
+\label{appdev/refs/macros/ENCTYPE_AES128_CTS_HMAC_SHA256_128:enctype-aes128-cts-hmac-sha256-128}\label{appdev/refs/macros/ENCTYPE_AES128_CTS_HMAC_SHA256_128:enctype-aes128-cts-hmac-sha256-128-data}\label{appdev/refs/macros/ENCTYPE_AES128_CTS_HMAC_SHA256_128::doc}\index{ENCTYPE\_AES128\_CTS\_HMAC\_SHA256\_128 (built-in variable)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/macros/ENCTYPE_AES128_CTS_HMAC_SHA256_128:ENCTYPE_AES128_CTS_HMAC_SHA256_128}\pysigline{\bfcode{ENCTYPE\_AES128\_CTS\_HMAC\_SHA256\_128}}
+\end{fulllineitems}
+
+
+\begin{tabulary}{\linewidth}{|L|L|}
+\hline
+
+\code{ENCTYPE\_AES128\_CTS\_HMAC\_SHA256\_128}
+ & 
+\code{0x0013}
+\\
+\hline\end{tabulary}
+
+
+
 \subsubsection{ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96}
 \label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA1_96:enctype-aes256-cts-hmac-sha1-96-data}\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA1_96::doc}\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA1_96:enctype-aes256-cts-hmac-sha1-96}\index{ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96 (built-in variable)}
 
@@ -16103,6 +16320,25 @@ RFC 3962.
 \code{ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96}
  & 
 \code{0x0012}
+\\
+\hline\end{tabulary}
+
+
+
+\subsubsection{ENCTYPE\_AES256\_CTS\_HMAC\_SHA384\_192}
+\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA384_192:enctype-aes256-cts-hmac-sha384-192-data}\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA384_192:enctype-aes256-cts-hmac-sha384-192}\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA384_192::doc}\index{ENCTYPE\_AES256\_CTS\_HMAC\_SHA384\_192 (built-in variable)}
+
+\begin{fulllineitems}
+\phantomsection\label{appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA384_192:ENCTYPE_AES256_CTS_HMAC_SHA384_192}\pysigline{\bfcode{ENCTYPE\_AES256\_CTS\_HMAC\_SHA384\_192}}
+\end{fulllineitems}
+
+
+\begin{tabulary}{\linewidth}{|L|L|}
+\hline
+
+\code{ENCTYPE\_AES256\_CTS\_HMAC\_SHA384\_192}
+ & 
+\code{0x0014}
 \\
 \hline\end{tabulary}
 

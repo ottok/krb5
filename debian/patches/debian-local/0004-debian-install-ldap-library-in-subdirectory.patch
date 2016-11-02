@@ -1,4 +1,4 @@
-From 4d23b35fa9745f10272adf1285c9a723654cfe0e Mon Sep 17 00:00:00 2001
+From 6d6c28b7b0d5be1b0cd79c9dccd5ace46887ab02 Mon Sep 17 00:00:00 2001
 From: Sam Hartman <hartmans@debian.org>
 Date: Mon, 26 Dec 2011 18:12:39 -0500
 Subject: debian: install ldap library in subdirectory
@@ -16,7 +16,7 @@ Patch-Category: debian-local
  2 files changed, 2 insertions(+)
 
 diff --git a/src/plugins/kdb/ldap/Makefile.in b/src/plugins/kdb/ldap/Makefile.in
-index 3dd4ba6..9aaad52 100644
+index 94df816..2ed562b 100644
 --- a/src/plugins/kdb/ldap/Makefile.in
 +++ b/src/plugins/kdb/ldap/Makefile.in
 @@ -20,6 +20,7 @@ SHLIB_EXPDEPS = \
@@ -28,7 +28,7 @@ index 3dd4ba6..9aaad52 100644
  SRCS= 	$(srcdir)/ldap_exp.c
  
 diff --git a/src/plugins/kdb/ldap/ldap_util/Makefile.in b/src/plugins/kdb/ldap/ldap_util/Makefile.in
-index b9ea339..11d11a4 100644
+index 8669c24..2d92a26 100644
 --- a/src/plugins/kdb/ldap/ldap_util/Makefile.in
 +++ b/src/plugins/kdb/ldap/ldap_util/Makefile.in
 @@ -2,6 +2,7 @@ mydir=plugins$(S)kdb$(S)ldap$(S)ldap_util

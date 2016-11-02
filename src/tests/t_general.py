@@ -29,10 +29,15 @@ for realm in multipass_realms(create_host=False):
 conf={'plugins': {'pwqual': {'disable': 'empty'}}}
 realm = K5Realm(create_user=False, create_host=False, krb5_conf=conf)
 realm.run([kadminl, 'addprinc', '-pw', '', 'user'])
-realm.run(['./t_init_creds', 'user', ''])
+realm.run(['./icred', 'user', ''])
 realm.stop()
 
 realm = K5Realm(create_host=False)
+
+# Regression test for #8454 (responder callback isn't used when
+# preauth is not required).
+realm.run(['./responder', '-r', 'password=%s' % password('user'),
+           realm.user_princ])
 
 # Test that WRONG_REALM responses aren't treated as referrals unless
 # they contain a crealm field pointing to a different realm.

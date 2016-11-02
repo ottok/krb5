@@ -182,6 +182,14 @@ load_dump version 7".  If filename is not specified, or is the string
     corruption, this option will probably retrieve more principals
     than the **-rev** option will.
 
+    .. versionchanged:: 1.15
+        Release 1.15 restored the functionality of the **-recurse**
+        option.
+
+    .. versionchanged:: 1.5
+        The **-recurse** option ceased working until release 1.15,
+        doing a normal dump instead of a recursive traversal.
+
 .. _kdb5_util_dump_end:
 
 load

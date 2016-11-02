@@ -113,6 +113,7 @@ initialize_krb5_error_table
 initialize_k5e1_error_table
 initialize_kv5m_error_table
 initialize_prof_error_table
+k5_authind_decode
 k5_build_conf_principals
 k5_ccselect_free_context
 k5_change_error_message_code
@@ -130,6 +131,7 @@ k5_free_secure_cookie
 k5_free_serverlist
 k5_hostrealm_free_context
 k5_init_trace
+k5_is_string_numeric
 k5_kt_get_principal
 k5_localauth_free_context
 k5_locate_kdc
@@ -137,6 +139,7 @@ k5_marshal_cred
 k5_marshal_princ
 k5_os_free_context
 k5_os_init_context
+k5_parse_host_string
 k5_plugin_free_modules
 k5_plugin_load
 k5_plugin_load_all
@@ -144,6 +147,7 @@ k5_plugin_register
 k5_plugin_register_dyn
 k5_unmarshal_cred
 k5_unmarshal_princ
+k5_unwrap_cammac_svc
 k5_zapfree_pa_data
 krb524_convert_creds_kdc
 krb524_init_ets
@@ -278,6 +282,7 @@ krb5_encode_authdata_container
 krb5_encode_kdc_rep
 krb5_encrypt_helper
 krb5_encrypt_tkt_part
+krb5_expand_hostname
 krb5_externalize_data
 krb5_externalize_opaque
 krb5_fcc_ops
@@ -388,6 +393,7 @@ krb5_get_init_creds_opt_set_forwardable
 krb5_get_init_creds_opt_set_in_ccache
 krb5_get_init_creds_opt_set_out_ccache
 krb5_get_init_creds_opt_set_pa
+krb5_get_init_creds_opt_set_pac_request
 krb5_get_init_creds_opt_set_preauth_list
 krb5_get_init_creds_opt_set_proxiable
 krb5_get_init_creds_opt_set_renew_life
@@ -581,6 +587,8 @@ krb5_set_password
 krb5_set_password_using_ccache
 krb5_set_principal_realm
 krb5_set_real_time
+krb5_set_kdc_send_hook
+krb5_set_kdc_recv_hook
 krb5_set_time_offsets
 krb5_set_trace_callback
 krb5_set_trace_filename

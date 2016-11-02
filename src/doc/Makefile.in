@@ -108,8 +108,8 @@ substpdf: rst_composite
 composite: Doxyfile $(docsrc)/version.py
 	rm -rf doxy rst_apiref rst_composite
 	$(DOXYGEN)
-	cwd=`pwd`; cd $(docsrc)/tools && \
-		$(PYTHON) doxy.py -i $$cwd/doxy/xml -o $$cwd/rst_apiref
+	(cwd=`pwd`; cd $(docsrc)/tools && \
+		$(PYTHON) doxy.py -i $$cwd/doxy/xml -o $$cwd/rst_apiref)
 	mkdir -p rst_composite
 	do_subdirs="$(RST_SOURCES)" ; \
 	for i in $$do_subdirs; do \
@@ -143,7 +143,7 @@ $(docsrc)/version.py: $(top_srcdir)/patchlevel.h $(srcdir)/version.py.in
 	rm -f $@
 	$(CC) -E -I$(top_srcdir) - < $(srcdir)/version.py.in > $@
 
-clean::
+clean:
 	rm -rf doxy rst_apiref rst_composite rst_notice html_subst \
 		Doxyfile paths.py $(docsrc)/version.py notice.txt \
 		$(docsrc)/html/.doctrees $(docsrc)/pdf/.doctrees \

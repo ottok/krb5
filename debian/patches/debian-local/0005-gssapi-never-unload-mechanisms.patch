@@ -1,4 +1,4 @@
-From 0d7b76d961f9900ec9f713de211922d0c093de7c Mon Sep 17 00:00:00 2001
+From 612c9a346210ede9deab392bf10dc0849862589b Mon Sep 17 00:00:00 2001
 From: Benjamin Kaduk <kaduk@mit.edu>
 Date: Fri, 29 Mar 2013 17:18:40 -0400
 Subject: gssapi: never unload mechanisms
@@ -20,10 +20,10 @@ Patch-Category: debian-local
  1 file changed, 2 deletions(-)
 
 diff --git a/src/lib/gssapi/mechglue/g_initialize.c b/src/lib/gssapi/mechglue/g_initialize.c
-index b7e8a8d..8fa2085 100644
+index 213ea19..d0ac60a 100644
 --- a/src/lib/gssapi/mechglue/g_initialize.c
 +++ b/src/lib/gssapi/mechglue/g_initialize.c
-@@ -517,8 +517,6 @@ releaseMechInfo(gss_mech_info *pCf)
+@@ -564,8 +564,6 @@ releaseMechInfo(gss_mech_info *pCf)
  		memset(cf->mech, 0, sizeof(*cf->mech));
  		free(cf->mech);
  	}

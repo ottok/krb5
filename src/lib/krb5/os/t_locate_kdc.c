@@ -58,8 +58,10 @@ print_addrs (void)
         char hostbuf[NI_MAXHOST], srvbuf[NI_MAXSERV];
 
         if (entry->hostname != NULL) {
-            printf("%2d: host %s\t%s\tport %d\n", (int)i, entry->hostname,
-                   ttypename(entry->transport), ntohs(entry->port));
+            printf("%d: h:%s t:%s p:%d m:%d P:%s\n", (int)i,
+                   entry->hostname, ttypename(entry->transport),
+                   entry->port, entry->master,
+                   entry->uri_path ? entry->uri_path : "");
             continue;
         }
         err = getnameinfo((struct sockaddr *)&entry->addr, entry->addrlen,
@@ -121,8 +123,7 @@ main (int argc, char *argv[])
 
     switch (how) {
     case LOOKUP_CONF:
-        err = krb5_locate_srv_conf(ctx, &realm, "kdc", &sl,
-                                   htons(88), htons(750));
+        err = krb5_locate_srv_conf(ctx, &realm, "kdc", &sl, htons(88));
         break;
 
     case LOOKUP_DNS:

@@ -250,12 +250,8 @@ krb5_db_def_fetch_mkey_stash(krb5_context   context,
     krb5_ui_4 keylength;
     FILE *kf = NULL;
 
-#ifdef ANSI_STDIO
     if (!(kf = fopen(keyfile, "rb")))
-#else
-        if (!(kf = fopen(keyfile, "r")))
-#endif
-            return KRB5_KDB_CANTREAD_STORED;
+        return KRB5_KDB_CANTREAD_STORED;
     set_cloexec_file(kf);
 
     if (fread((krb5_pointer) &enctype, 2, 1, kf) != 1) {
@@ -541,4 +537,43 @@ clean_n_exit:
     if (retval != 0)
         krb5_dbe_free_key_list(context, mkey_list_head);
     return retval;
+}
+
+krb5_error_code
+krb5_db_def_rename_principal(krb5_context kcontext,
+                             krb5_const_principal source,
+                             krb5_const_principal target)
+{
+    krb5_db_entry *kdb = NULL;
+    krb5_principal oldprinc;
+    krb5_error_code ret;
+
+    if (source == NULL || target == NULL)
+        return EINVAL;
+
+    ret = krb5_db_get_principal(kcontext, source, KRB5_KDB_FLAG_ALIAS_OK,
+                                &kdb);
+    if (ret)
+        goto cleanup;
+
+    /* Store salt values explicitly so that they don't depend on the principal
+     * name. */
+    ret = krb5_dbe_specialize_salt(kcontext, kdb);
+    if (ret)
+        goto cleanup;
+
+    /* Temporarily alias kdb->princ to target and put the principal entry. */
+    oldprinc = kdb->princ;
+    kdb->princ = (krb5_principal)target;
+    ret = krb5_db_put_principal(kcontext, kdb);
+    kdb->princ = oldprinc;
+    if (ret)
+        goto cleanup;
+
+    ret = krb5_db_delete_principal(kcontext, (krb5_principal)source);
+
+
+cleanup:
+    krb5_db_free_principal(kcontext, kdb);
+    return ret;
 }

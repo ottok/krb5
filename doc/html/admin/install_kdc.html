@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -135,10 +135,11 @@ export KRB5_KDC_PROFILE=/yourdir/kdc.conf
 <h3>krb5.conf<a class="headerlink" href="#krb5-conf" title="Permalink to this headline">¶</a></h3>
 <p>If you are not using DNS TXT records (see <a class="reference internal" href="realm_config.html#mapping-hostnames"><em>Mapping hostnames onto Kerberos realms</em></a>),
 you must specify the <strong>default_realm</strong> in the <a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><em>[libdefaults]</em></a>
-section.  If you are not using DNS SRV records (see
-<a class="reference internal" href="realm_config.html#kdc-hostnames"><em>Hostnames for KDCs</em></a>), you must include the <strong>kdc</strong> tag for each
-<em>realm</em> in the <a class="reference internal" href="conf_files/krb5_conf.html#realms"><em>[realms]</em></a> section.  To communicate with the kadmin
-server in each realm, the <strong>admin_server</strong> tag must be set in the
+section.  If you are not using DNS URI or SRV records (see
+<a class="reference internal" href="realm_config.html#kdc-hostnames"><em>Hostnames for KDCs</em></a> and <a class="reference internal" href="realm_config.html#kdc-discovery"><em>KDC Discovery</em></a>), you must include the
+<strong>kdc</strong> tag for each <em>realm</em> in the <a class="reference internal" href="conf_files/krb5_conf.html#realms"><em>[realms]</em></a> section.  To
+communicate with the kadmin server in each realm, the <strong>admin_server</strong>
+tag must be set in the
 <a class="reference internal" href="conf_files/krb5_conf.html#realms"><em>[realms]</em></a> section.</p>
 <p>An example krb5.conf file:</p>
 <div class="highlight-python"><div class="highlight"><pre>[libdefaults]
@@ -160,7 +161,8 @@ KDC and kadmind, as well as realm-specific defaults, the database type
 and location, and logging.</p>
 <p>An example kdc.conf file:</p>
 <div class="highlight-python"><div class="highlight"><pre>[kdcdefaults]
-    kdc_ports = 88,750
+    kdc_listen = 88
+    kdc_tcp_listen = 88
 
 [realms]
     ATHENA.MIT.EDU = {
@@ -353,8 +355,8 @@ the master KDC with one of the slaves.</p>
 store them in each host&#8217;s default keytab file.  Ideally, you should
 extract each keytab locally on its own KDC.  If this is not feasible,
 you should use an encrypted session to send them across the network.
-To extract a keytab on a slave KDC called <tt class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></tt>, you
-would execute the following command:</p>
+To extract a keytab directly on a slave KDC called
+<tt class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></tt>, you would execute the following command:</p>
 <div class="highlight-python"><div class="highlight"><pre>kadmin: ktadd host/kerberos-1.mit.edu
 Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
     type aes256-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab.
@@ -366,6 +368,18 @@ Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
     type arcfour-hmac added to keytab FILE:/etc/krb5.keytab.
 </pre></div>
 </div>
+<p>If you are instead extracting a keytab for the slave KDC called
+<tt class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></tt> on the master KDC, you should use a dedicated
+temporary keytab file for that machine&#8217;s keytab:</p>
+<div class="highlight-python"><div class="highlight"><pre>kadmin: ktadd -k /tmp/kerberos-1.keytab host/kerberos-1.mit.edu
+Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
+    type aes256-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab.
+Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
+    type aes128-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab.
+</pre></div>
+</div>
+<p>The file <tt class="docutils literal"><span class="pre">/tmp/kerberos-1.keytab</span></tt> can then be installed as
+<tt class="docutils literal"><span class="pre">/etc/krb5.keytab</span></tt> on the host <tt class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></tt>.</p>
 </div>
 <div class="section" id="configure-slave-kdcs">
 <h3>Configure slave KDCs<a class="headerlink" href="#configure-slave-kdcs" title="Permalink to this headline">¶</a></h3>
@@ -617,7 +631,7 @@ for details.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

@@ -463,3 +463,10 @@ EXPORTS
 	krb5_vwrap_error_message			@430
 	krb5_c_prfplus					@431
 	krb5_c_derive_prfplus				@432
+
+; new in 1.15
+	krb5_set_kdc_send_hook				@433
+	krb5_set_kdc_recv_hook				@434
+	krb5_get_init_creds_opt_set_pac_request		@435
+	krb5int_trace					@436 ; PRIVATE GSSAPI
+	krb5_expand_hostname				@437

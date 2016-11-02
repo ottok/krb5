@@ -423,14 +423,16 @@ typedef struct _krb5_crypto_iov {
 #define ENCTYPE_RSA_ES_OAEP_ENV 0x000e  /**< RSA w/OEAP encryption, CMS enveloped data */
 #define ENCTYPE_DES3_CBC_ENV    0x000f  /**< DES-3 cbc mode, CMS enveloped data */
 
-#define ENCTYPE_DES3_CBC_SHA1           0x0010
-#define ENCTYPE_AES128_CTS_HMAC_SHA1_96 0x0011 /**< RFC 3962 */
-#define ENCTYPE_AES256_CTS_HMAC_SHA1_96 0x0012 /**< RFC 3962 */
-#define ENCTYPE_ARCFOUR_HMAC            0x0017
-#define ENCTYPE_ARCFOUR_HMAC_EXP        0x0018
-#define ENCTYPE_CAMELLIA128_CTS_CMAC    0x0019 /**< RFC 6803 */
-#define ENCTYPE_CAMELLIA256_CTS_CMAC    0x001a /**< RFC 6803 */
-#define ENCTYPE_UNKNOWN                 0x01ff
+#define ENCTYPE_DES3_CBC_SHA1               0x0010
+#define ENCTYPE_AES128_CTS_HMAC_SHA1_96     0x0011 /**< RFC 3962 */
+#define ENCTYPE_AES256_CTS_HMAC_SHA1_96     0x0012 /**< RFC 3962 */
+#define ENCTYPE_AES128_CTS_HMAC_SHA256_128  0x0013
+#define ENCTYPE_AES256_CTS_HMAC_SHA384_192  0x0014
+#define ENCTYPE_ARCFOUR_HMAC                0x0017
+#define ENCTYPE_ARCFOUR_HMAC_EXP            0x0018
+#define ENCTYPE_CAMELLIA128_CTS_CMAC        0x0019 /**< RFC 6803 */
+#define ENCTYPE_CAMELLIA256_CTS_CMAC        0x001a /**< RFC 6803 */
+#define ENCTYPE_UNKNOWN                     0x01ff
 
 #define CKSUMTYPE_CRC32         0x0001
 #define CKSUMTYPE_RSA_MD4       0x0002
@@ -446,6 +448,8 @@ typedef struct _krb5_crypto_iov {
                                                 ENCTYPE_AES128_CTS_HMAC_SHA1_96 */
 #define CKSUMTYPE_HMAC_SHA1_96_AES256 0x0010 /**< RFC 3962. Used with
                                                 ENCTYPE_AES256_CTS_HMAC_SHA1_96 */
+#define CKSUMTYPE_HMAC_SHA256_128_AES128 0x0013
+#define CKSUMTYPE_HMAC_SHA384_192_AES256 0x0014
 #define CKSUMTYPE_CMAC_CAMELLIA128 0x0011 /**< RFC 6803 */
 #define CKSUMTYPE_CMAC_CAMELLIA256 0x0012 /**< RFC 6803 */
 #define CKSUMTYPE_MD5_HMAC_ARCFOUR -137 /*Microsoft netlogon cksumtype*/
@@ -910,8 +914,10 @@ krb5_c_make_checksum(krb5_context context, krb5_cksumtype cksumtype,
  *
  * This function verifies that @a cksum is a valid checksum for @a data.  If
  * the checksum type of @a cksum is a keyed checksum, @a key is used to verify
- * the checksum.  The actual checksum key will be derived from @a key and @a
- * usage if key derivation is specified for the checksum type.
+ * the checksum.  If the checksum type in @a cksum is 0 and @a key is not NULL,
+ * the mandatory checksum type for @a key will be used.  The actual checksum
+ * key will be derived from @a key and @a usage if key derivation is specified
+ * for the checksum type.
  *
  * @note This function is similar to krb5_k_verify_checksum(), but operates
  * on keyblock @a key.
@@ -1476,8 +1482,10 @@ krb5_k_make_checksum_iov(krb5_context context, krb5_cksumtype cksumtype,
  *
  * This function verifies that @a cksum is a valid checksum for @a data.  If
  * the checksum type of @a cksum is a keyed checksum, @a key is used to verify
- * the checksum.  The actual checksum key will be derived from @a key and @a
- * usage if key derivation is specified for the checksum type.
+ * the checksum.  If the checksum type in @a cksum is 0 and @a key is not NULL,
+ * the mandatory checksum type for @a key will be used.  The actual checksum
+ * key will be derived from @a key and @a usage if key derivation is specified
+ * for the checksum type.
  *
  * @note This function is similar to krb5_c_verify_checksum(), but operates
  * on opaque @a key.
@@ -2899,6 +2907,7 @@ krb5_kt_start_seq_get(krb5_context context, krb5_keytab keytab,
  * @param [in]  cursor          Key table cursor
  *
  * Return the next sequential entry in @a keytab and advance @a cursor.
+ * Callers must release the returned entry with krb5_kt_free_entry().
  *
  * @sa krb5_kt_start_seq_get(), krb5_kt_end_seq_get()
  *
@@ -4962,6 +4971,23 @@ krb5_set_default_realm(krb5_context context, const char *lrealm);
  */
 void KRB5_CALLCONV
 krb5_free_default_realm(krb5_context context, char *lrealm);
+
+/**
+ * Canonicalize a hostname, possibly using name service.
+ *
+ * @param [in]  context         Library context
+ * @param [in]  host            Input hostname
+ * @param [out] canonhost_out   Canonicalized hostname
+ *
+ * This function canonicalizes orig_hostname, possibly using name service
+ * lookups if configuration permits.  Use krb5_free_string() to free @a
+ * canonhost_out when it is no longer needed.
+ *
+ * @version New in 1.15
+ */
+krb5_error_code KRB5_CALLCONV
+krb5_expand_hostname(krb5_context context, const char *host,
+                     char **canonhost_out);
 
 /**
  * Generate a full principal name from a service name.
@@ -7096,6 +7122,26 @@ krb5_get_init_creds_opt_set_out_ccache(krb5_context context,
                                        krb5_ccache ccache);
 
 /**
+ * @brief Ask the KDC to include or not include a PAC in the ticket
+ *
+ * @param [in] context          Library context
+ * @param [in] opt              Options structure
+ * @param [in] req_pac          Whether to request a PAC or not
+ *
+ * If this option is set, the AS request will include a PAC-REQUEST pa-data
+ * item explicitly asking the KDC to either include or not include a privilege
+ * attribute certificate in the ticket authorization data.  By default, no
+ * request is made; typically the KDC will default to including a PAC if it
+ * supports them.
+ *
+ * @version New in 1.15
+ */
+krb5_error_code KRB5_CALLCONV
+krb5_get_init_creds_opt_set_pac_request(krb5_context context,
+                                        krb5_get_init_creds_opt *opt,
+                                        krb5_boolean req_pac);
+
+/**
  * Set FAST flags in initial credential options.
  *
  * @param [in] context          Library context
@@ -8293,6 +8339,118 @@ krb5_set_trace_callback(krb5_context context, krb5_trace_callback fn,
  */
 krb5_error_code KRB5_CALLCONV
 krb5_set_trace_filename(krb5_context context, const char *filename);
+
+
+/**
+ * Hook function for inspecting or modifying messages sent to KDCs.
+ *
+ * @param [in]  context         Library context
+ * @param [in]  data            Callback data
+ * @param [in]  realm           The realm the message will be sent to
+ * @param [in]  message         The original message to be sent to the KDC
+ * @param [out] new_message_out Optional replacement message to be sent
+ * @param [out] reply_out       Optional synthetic reply
+ *
+ * If the hook function returns an error code, the KDC communication will be
+ * aborted and the error code will be returned to the library operation which
+ * initiated the communication.
+ *
+ * If the hook function sets @a reply_out, @a message will not be sent to the
+ * KDC, and the given reply will used instead.
+ *
+ * If the hook function sets @a new_message_out, the given message will be sent
+ * to the KDC in place of @a message.
+ *
+ * If the hook function returns successfully without setting either output,
+ * @a message will be sent to the KDC normally.
+ *
+ * The hook function should use krb5_copy_data() to construct the value for
+ * @a new_message_out or @a reply_out, to ensure that it can be freed correctly
+ * by the library.
+ *
+ * @version New in 1.15
+ *
+ * @retval 0 Success
+ * @return A Kerberos error code
+ */
+typedef krb5_error_code
+(KRB5_CALLCONV *krb5_pre_send_fn)(krb5_context context, void *data,
+                                  const krb5_data *realm,
+                                  const krb5_data *message,
+                                  krb5_data **new_message_out,
+                                  krb5_data **new_reply_out);
+
+/**
+ * Hook function for inspecting or overriding KDC replies.
+ *
+ * @param [in]  context         Library context
+ * @param [in]  data            Callback data
+ * @param [in]  code            Status of KDC communication
+ * @param [in]  realm           The realm the reply was received from
+ * @param [in]  message         The message sent to the realm's KDC
+ * @param [in]  reply           The reply received from the KDC
+ * @param [out] new_reply_out   Optional replacement reply
+ *
+ * If @a code is zero, @a reply contains the reply received from the KDC.  The
+ * hook function may return an error code to simulate an error, may synthesize
+ * a different reply by setting @a new_reply_out, or may simply return
+ * successfully to do nothing.
+ *
+ * If @a code is non-zero, KDC communication failed and @a reply should be
+ * ignored.  The hook function may return @a code or a different error code, or
+ * may synthesize a reply by setting @a new_reply_out and return successfully.
+ *
+ * The hook function should use krb5_copy_data() to construct the value for
+ * @a new_reply_out, to ensure that it can be freed correctly by the library.
+ *
+ * @version New in 1.15
+ *
+ * @retval 0 Success
+ * @return A Kerberos error code
+ */
+typedef krb5_error_code
+(KRB5_CALLCONV *krb5_post_recv_fn)(krb5_context context, void *data,
+                                   krb5_error_code code,
+                                   const krb5_data *realm,
+                                   const krb5_data *message,
+                                   const krb5_data *reply,
+                                   krb5_data **new_reply_out);
+
+/**
+ * Set a KDC pre-send hook function.
+ *
+ * @param [in] context          Library context
+ * @param [in] send_hook        Hook function (or NULL to disable the hook)
+ * @param [in] data             Callback data to be passed to @a send_hook
+ *
+ * @a send_hook will be called before messages are sent to KDCs by library
+ * functions such as krb5_get_credentials().  The hook function may inspect,
+ * override, or synthesize its own reply to the message.
+ *
+ * @version New in 1.15
+ */
+void KRB5_CALLCONV
+krb5_set_kdc_send_hook(krb5_context context, krb5_pre_send_fn send_hook,
+                       void *data);
+
+/**
+ * Set a KDC post-receive hook function.
+ *
+ * @param [in] context          The library context.
+ * @param [in] recv_hook        Hook function (or NULL to disable the hook)
+ * @param [in] data             Callback data to be passed to @a recv_hook
+ *
+ * @a recv_hook will be called after a reply is received from a KDC during a
+ * call to a library function such as krb5_get_credentials().  The hook
+ * function may inspect or override the reply.  This hook will not be executed
+ * if the pre-send hook returns a synthetic reply.
+ *
+ * @version New in 1.15
+ */
+void KRB5_CALLCONV
+krb5_set_kdc_recv_hook(krb5_context context, krb5_post_recv_fn recv_hook,
+                       void *data);
+
 
 #if TARGET_OS_MAC
 #    pragma pack(pop)

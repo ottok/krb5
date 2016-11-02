@@ -326,9 +326,8 @@ krb5_get_init_creds_password(krb5_context context,
     /* If all the kdc's are unavailable, or if the error was due to a
        user interrupt, fail */
 
-    if ((ret == KRB5_KDC_UNREACH) ||
-        (ret == KRB5_LIBOS_PWDINTR) ||
-        (ret == KRB5_REALM_CANT_RESOLVE))
+    if (ret == KRB5_KDC_UNREACH || ret == KRB5_REALM_CANT_RESOLVE ||
+        ret == KRB5_LIBOS_PWDINTR || ret == KRB5_LIBOS_CANTREADPWD)
         goto cleanup;
 
     /* if the reply did not come from the master kdc, try again with
@@ -443,6 +442,7 @@ krb5_get_init_creds_password(krb5_context context,
             /* the change succeeded.  go on */
 
             if (result_code == 0) {
+                free(code_string.data);
                 free(result_string.data);
                 break;
             }
@@ -452,6 +452,7 @@ krb5_get_init_creds_password(krb5_context context,
             ret = KRB5_CHPW_FAIL;
 
             if (result_code != KRB5_KPASSWD_SOFTERROR) {
+                free(code_string.data);
                 free(result_string.data);
                 goto cleanup;
             }

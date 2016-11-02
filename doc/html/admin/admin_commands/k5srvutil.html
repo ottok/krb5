@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -74,25 +74,27 @@
 </div>
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>k5srvutil allows an administrator to list or change keys currently in
-a keytab or to add new keys to the keytab.</p>
+<p>k5srvutil allows an administrator to list keys currently in
+a keytab, to obtain new keys for a principal currently in a keytab,
+or to delete non-current keys from a keytab.</p>
 <p><em>operation</em> must be one of the following:</p>
 <dl class="docutils">
 <dt><strong>list</strong></dt>
-<dd>Lists the keys in a keytab showing version number and principal
+<dd>Lists the keys in a keytab, showing version number and principal
 name.</dd>
 <dt><strong>change</strong></dt>
 <dd>Uses the kadmin protocol to update the keys in the Kerberos
 database to new randomly-generated keys, and updates the keys in
 the keytab to match.  If a key&#8217;s version number doesn&#8217;t match the
 version number stored in the Kerberos server&#8217;s database, then the
-operation will fail.  Old keys are retained in the keytab so that
-existing tickets continue to work.  If the <strong>-i</strong> flag is given,
-k5srvutil will prompt for confirmation before changing each key.
-If the <strong>-k</strong> option is given, the old and new keys will be
-displayed.  Ordinarily, keys will be generated with the default
-encryption types and key salts.  This can be overridden with the
-<strong>-e</strong> option.</dd>
+operation will fail.  If the <strong>-i</strong> flag is given, k5srvutil will
+prompt for confirmation before changing each key.  If the <strong>-k</strong>
+option is given, the old and new keys will be displayed.
+Ordinarily, keys will be generated with the default encryption
+types and key salts.  This can be overridden with the <strong>-e</strong>
+option.  Old keys are retained in the keytab so that existing
+tickets continue to work, but <strong>delold</strong> should be used after
+such tickets expire, to prevent attacks against the old keys.</dd>
 <dt><strong>delold</strong></dt>
 <dd>Deletes keys that are not the most recent version from the keytab.
 This operation should be used some time after a change operation
@@ -198,7 +200,7 @@ place.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

@@ -24,6 +24,7 @@ Frequently used public interfaces
    krb5_cc_resolve.rst
    krb5_change_password.rst
    krb5_chpw_message.rst
+   krb5_expand_hostname.rst
    krb5_free_context.rst
    krb5_free_error_message.rst
    krb5_free_principal.rst
@@ -50,6 +51,7 @@ Frequently used public interfaces
    krb5_get_init_creds_opt_set_in_ccache.rst
    krb5_get_init_creds_opt_set_out_ccache.rst
    krb5_get_init_creds_opt_set_pa.rst
+   krb5_get_init_creds_opt_set_pac_request.rst
    krb5_get_init_creds_opt_set_preauth_list.rst
    krb5_get_init_creds_opt_set_proxiable.rst
    krb5_get_init_creds_opt_set_renew_life.rst
@@ -268,6 +270,8 @@ Rarely used public interfaces
    krb5_server_decrypt_ticket_keytab.rst
    krb5_set_default_tgs_enctypes.rst
    krb5_set_error_message.rst
+   krb5_set_kdc_recv_hook.rst
+   krb5_set_kdc_send_hook.rst
    krb5_set_real_time.rst
    krb5_string_to_cksumtype.rst
    krb5_string_to_deltat.rst

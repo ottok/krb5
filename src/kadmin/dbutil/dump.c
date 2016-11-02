@@ -204,8 +204,10 @@ prep_ok_file(krb5_context context, char *file_name, int *fd)
     retval = krb5_lock_file(context, *fd, KRB5_LOCKMODE_EXCLUSIVE);
     if (retval) {
         com_err(progname, retval, _("while locking 'ok' file, '%s'"), file_ok);
+        free(file_ok);
         return 0;
     }
+    free(file_ok);
     return 1;
 }
 
@@ -535,6 +537,7 @@ dump_ov_princ(krb5_context context, krb5_db_entry *entry, const char *name,
 
     fputc('\n', fp);
     free(princstr);
+    xdr_free(xdr_osa_princ_ent_rec, &adb);
     return 0;
 }
 
@@ -712,10 +715,9 @@ process_k5beta7_princ(krb5_context context, const char *fname, FILE *filep,
     krb5_tl_data *tl;
     krb5_error_code ret;
 
-    dbentry = krb5_db_alloc(context, NULL, sizeof(*dbentry));
+    dbentry = calloc(1, sizeof(*dbentry));
     if (dbentry == NULL)
         return 1;
-    memset(dbentry, 0, sizeof(*dbentry));
     (*linenop)++;
     nread = fscanf(filep, "%u\t%u\t%u\t%u\t%u\t", &u1, &u2, &u3, &u4, &u5);
     if (nread == EOF) {
@@ -1302,8 +1304,7 @@ dump_db(int argc, char **argv)
         } else if (!strcmp(argv[aindex], "-rev")) {
             iterflags |= KRB5_DB_ITER_REV;
         } else if (!strcmp(argv[aindex], "-recurse")) {
-            /* Accept this for compatibility, but do nothing since
-             * krb5_db_iterate doesn't support it. */
+            iterflags |= KRB5_DB_ITER_RECURSE;
         } else {
             break;
         }

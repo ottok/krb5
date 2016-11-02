@@ -45,6 +45,7 @@
 #else
 #define DEFAULT_LOOKUP_REALM 0
 #endif
+#define DEFAULT_URI_LOOKUP TRUE
 
 static int
 maybe_use_dns (krb5_context context, const char *name, int defalt)
@@ -55,9 +56,10 @@ maybe_use_dns (krb5_context context, const char *name, int defalt)
 
     code = profile_get_string(context->profile, KRB5_CONF_LIBDEFAULTS,
                               name, 0, 0, &value);
-    if (value == 0 && code == 0)
+    if (value == 0 && code == 0) {
         code = profile_get_string(context->profile, KRB5_CONF_LIBDEFAULTS,
                                   KRB5_CONF_DNS_FALLBACK, 0, 0, &value);
+    }
     if (code)
         return defalt;
 
@@ -69,22 +71,36 @@ maybe_use_dns (krb5_context context, const char *name, int defalt)
     return use_dns;
 }
 
+static krb5_boolean
+use_dns_uri(krb5_context ctx)
+{
+    krb5_error_code ret;
+    int use;
+
+    ret = profile_get_boolean(ctx->profile, KRB5_CONF_LIBDEFAULTS,
+                              KRB5_CONF_DNS_URI_LOOKUP, NULL,
+                              DEFAULT_URI_LOOKUP, &use);
+    return ret ? DEFAULT_URI_LOOKUP : use;
+}
+
 int
 _krb5_use_dns_kdc(krb5_context context)
 {
-    return maybe_use_dns (context, KRB5_CONF_DNS_LOOKUP_KDC, DEFAULT_LOOKUP_KDC);
+    return maybe_use_dns(context, KRB5_CONF_DNS_LOOKUP_KDC,
+                         DEFAULT_LOOKUP_KDC);
 }
 
 int
 _krb5_use_dns_realm(krb5_context context)
 {
-    return maybe_use_dns (context, KRB5_CONF_DNS_LOOKUP_REALM, DEFAULT_LOOKUP_REALM);
+    return maybe_use_dns(context, KRB5_CONF_DNS_LOOKUP_REALM,
+                         DEFAULT_LOOKUP_REALM);
 }
 
 #endif /* KRB5_DNS_LOOKUP */
 
 /* Free up everything pointed to by the serverlist structure, but don't
-   free the structure itself.  */
+ * free the structure itself. */
 void
 k5_free_serverlist (struct serverlist *list)
 {
@@ -125,6 +141,7 @@ new_server_entry(struct serverlist *list)
     list->servers = newservers;
     entry = &newservers[list->nservers];
     memset(entry, 0, sizeof(*entry));
+    entry->master = -1;
     return entry;
 }
 
@@ -151,7 +168,8 @@ add_addr_to_list(struct serverlist *list, k5_transport transport, int family,
 /* Add a hostname entry to list. */
 static int
 add_host_to_list(struct serverlist *list, const char *hostname, int port,
-                 k5_transport transport, int family, char *uri_path)
+                 k5_transport transport, int family, const char *uri_path,
+                 int master)
 {
     struct server_entry *entry;
 
@@ -169,6 +187,7 @@ add_host_to_list(struct serverlist *list, const char *hostname, int port,
             goto oom;
     }
     entry->port = port;
+    entry->master = master;
     list->nservers++;
     return 0;
 oom:
@@ -178,8 +197,8 @@ oom:
 }
 
 static void
-parse_uri_if_https(char *host_or_uri, k5_transport *transport, char **host,
-                   char **uri_path)
+parse_uri_if_https(const char *host_or_uri, k5_transport *transport,
+                   const char **host, const char **uri_path)
 {
     char *cp;
 
@@ -216,96 +235,62 @@ server_list_contains(struct serverlist *list, struct server_entry *server)
 static krb5_error_code
 locate_srv_conf_1(krb5_context context, const krb5_data *realm,
                   const char * name, struct serverlist *serverlist,
-                  k5_transport transport, int udpport, int sec_udpport)
+                  k5_transport transport, int udpport)
 {
-    const char  *realm_srv_names[4];
-    char **hostlist, *host, *port, *cp;
+    const char *realm_srv_names[4];
+    char **hostlist = NULL, *realmstr = NULL, *host = NULL;
+    const char *hostspec;
     krb5_error_code code;
-    int i;
+    int i, default_port;
 
-    Tprintf ("looking in krb5.conf for realm %s entry %s; ports %d,%d\n",
-             realm->data, name, ntohs (udpport), ntohs (sec_udpport));
+    Tprintf("looking in krb5.conf for realm %s entry %s; ports %d,%d\n",
+            realm->data, name, udpport);
 
-    if ((host = malloc(realm->length + 1)) == NULL)
-        return ENOMEM;
-
-    strncpy(host, realm->data, realm->length);
-    host[realm->length] = '\0';
-    hostlist = 0;
+    realmstr = k5memdup0(realm->data, realm->length, &code);
+    if (realmstr == NULL)
+        goto cleanup;
 
     realm_srv_names[0] = KRB5_CONF_REALMS;
-    realm_srv_names[1] = host;
+    realm_srv_names[1] = realmstr;
     realm_srv_names[2] = name;
     realm_srv_names[3] = 0;
-
     code = profile_get_values(context->profile, realm_srv_names, &hostlist);
-    free(host);
-
     if (code) {
-        Tprintf ("config file lookup failed: %s\n",
-                 error_message(code));
+        Tprintf("config file lookup failed: %s\n", error_message(code));
         if (code == PROF_NO_SECTION || code == PROF_NO_RELATION)
             code = 0;
-        return code;
+        goto cleanup;
     }
 
-    for (i=0; hostlist[i]; i++) {
-        int p1, p2;
+    for (i = 0; hostlist[i]; i++) {
+        int port_num;
         k5_transport this_transport = transport;
-        char *uri_path = NULL;
+        const char *uri_path = NULL;
 
-        host = hostlist[i];
-        Tprintf ("entry %d is '%s'\n", i, host);
+        hostspec = hostlist[i];
+        Tprintf("entry %d is '%s'\n", i, hostspec);
 
-        parse_uri_if_https(host, &this_transport, &host, &uri_path);
+        parse_uri_if_https(hostspec, &this_transport, &hostspec, &uri_path);
 
-        /* Find port number, and strip off any excess characters. */
-        if (*host == '[' && (cp = strchr(host, ']')))
-            cp = cp + 1;
-        else
-            cp = host + strcspn(host, " \t:");
-        port = (*cp == ':') ? cp + 1 : NULL;
-        *cp = '\0';
-
-        if (port) {
-            unsigned long l;
-            char *endptr;
-            l = strtoul (port, &endptr, 10);
-            if (endptr == NULL || *endptr != 0)
-                return EINVAL;
-            /* L is unsigned, don't need to check <0.  */
-            if (l > 65535)
-                return EINVAL;
-            p1 = htons (l);
-            p2 = 0;
-        } else if (this_transport == HTTPS) {
-            p1 = htons(443);
-            p2 = 0;
-        } else {
-            p1 = udpport;
-            p2 = sec_udpport;
-        }
-
-        /* If the hostname was in brackets, strip those off now. */
-        if (*host == '[' && (cp = strchr(host, ']'))) {
-            host++;
-            *cp = '\0';
-        }
-
-        code = add_host_to_list(serverlist, host, p1, this_transport,
-                                AF_UNSPEC, uri_path);
-        /* Second port is for IPv4 UDP only, and should possibly go away as
-         * it was originally a krb4 compatibility measure. */
-        if (code == 0 && p2 != 0 &&
-            (this_transport == TCP_OR_UDP || this_transport == UDP)) {
-            code = add_host_to_list(serverlist, host, p2, UDP, AF_INET,
-                                    uri_path);
-        }
+        default_port = (this_transport == HTTPS) ? 443 : udpport;
+        code = k5_parse_host_string(hostspec, default_port, &host, &port_num);
+        if (code == 0 && host == NULL)
+            code = EINVAL;
         if (code)
             goto cleanup;
+
+        code = add_host_to_list(serverlist, host, port_num, this_transport,
+                                AF_UNSPEC, uri_path, -1);
+        if (code)
+            goto cleanup;
+
+        free(host);
+        host = NULL;
     }
 
 cleanup:
+    free(realmstr);
+    free(host);
     profile_free_list(hostlist);
     return code;
 }
@@ -313,13 +298,11 @@ cleanup:
 #ifdef TEST
 static krb5_error_code
 krb5_locate_srv_conf(krb5_context context, const krb5_data *realm,
-                     const char *name, struct serverlist *al, int udpport,
-                     int sec_udpport)
+                     const char *name, struct serverlist *al, int udpport)
 {
     krb5_error_code ret;
 
-    ret = locate_srv_conf_1(context, realm, name, al, TCP_OR_UDP, udpport,
-                            sec_udpport);
+    ret = locate_srv_conf_1(context, realm, name, al, TCP_OR_UDP, udpport);
     if (ret)
         return ret;
     if (al->nservers == 0)        /* Couldn't resolve any KDC names */
@@ -352,8 +335,8 @@ locate_srv_dns_1(const krb5_data *realm, const char *service,
 
     for (entry = head; entry != NULL; entry = entry->next) {
         transport = (strcmp(protocol, "_tcp") == 0) ? TCP : UDP;
-        code = add_host_to_list(serverlist, entry->host, htons(entry->port),
-                                transport, AF_UNSPEC, NULL);
+        code = add_host_to_list(serverlist, entry->host, entry->port,
+                                transport, AF_UNSPEC, NULL, -1);
         if (code)
             goto cleanup;
     }
@@ -367,7 +350,9 @@ cleanup:
 #include <krb5/locate_plugin.h>
 
 #if TARGET_OS_MAC
-static const char *objdirs[] = { KRB5_PLUGIN_BUNDLE_DIR, LIBDIR "/krb5/plugins/libkrb5", NULL }; /* should be a list */
+static const char *objdirs[] = { KRB5_PLUGIN_BUNDLE_DIR,
+                                 LIBDIR "/krb5/plugins/libkrb5",
+                                 NULL }; /* should be a list */
 #else
 static const char *objdirs[] = { LIBDIR "/krb5/plugins/libkrb5", NULL };
 #endif
@@ -418,16 +403,16 @@ module_locate_server(krb5_context ctx, const krb5_data *realm,
 
     Tprintf("in module_locate_server\n");
     cbdata.list = serverlist;
-    if (!PLUGIN_DIR_OPEN (&ctx->libkrb5_plugins)) {
+    if (!PLUGIN_DIR_OPEN(&ctx->libkrb5_plugins)) {
 
-        code = krb5int_open_plugin_dirs (objdirs, NULL, &ctx->libkrb5_plugins,
-                                         &ctx->err);
+        code = krb5int_open_plugin_dirs(objdirs, NULL, &ctx->libkrb5_plugins,
+                                        &ctx->err);
         if (code)
             return KRB5_PLUGIN_NO_HANDLE;
     }
 
-    code = krb5int_get_plugin_dir_data (&ctx->libkrb5_plugins,
-                                        "service_locator", &ptrs, &ctx->err);
+    code = krb5int_get_plugin_dir_data(&ctx->libkrb5_plugins,
+                                       "service_locator", &ptrs, &ctx->err);
     if (code) {
         Tprintf("error looking up plugin symbols: %s\n",
                 (msg = krb5_get_error_message(ctx, code)));
@@ -451,7 +436,7 @@ module_locate_server(krb5_context ctx, const krb5_data *realm,
         Tprintf("element %d is %p\n", i, ptrs[i]);
 
         /* For now, don't keep the plugin data alive.  For long-lived
-           contexts, it may be desirable to change that later.  */
+         * contexts, it may be desirable to change that later. */
         code = vtbl->init(ctx, &blob);
         if (code)
             continue;
@@ -470,7 +455,8 @@ module_locate_server(krb5_context ctx, const krb5_data *realm,
         if (code == KRB5_PLUGIN_NO_HANDLE) {
             /* Module passes, keep going.  */
             /* XXX */
-            Tprintf("plugin doesn't handle this realm (KRB5_PLUGIN_NO_HANDLE)\n");
+            Tprintf("plugin doesn't handle this realm (KRB5_PLUGIN_NO_HANDLE)"
+                    "\n");
             continue;
         }
         if (code != 0) {
@@ -478,7 +464,7 @@ module_locate_server(krb5_context ctx, const krb5_data *realm,
             Tprintf("plugin lookup routine returned error %d: %s\n",
                     code, error_message(code));
             free(realmz);
-            krb5int_free_plugin_dir_data (ptrs);
+            krb5int_free_plugin_dir_data(ptrs);
             return code;
         }
         break;
@@ -486,16 +472,16 @@ module_locate_server(krb5_context ctx, const krb5_data *realm,
     if (ptrs[i] == NULL) {
         Tprintf("ran off end of plugin list\n");
         free(realmz);
-        krb5int_free_plugin_dir_data (ptrs);
+        krb5int_free_plugin_dir_data(ptrs);
         return KRB5_PLUGIN_NO_HANDLE;
     }
     Tprintf("stopped with plugin #%d, res=%p\n", i, res);
 
     /* Got something back, yippee.  */
     Tprintf("now have %lu addrs in list %p\n",
-            (unsigned long) serverlist->nservers, serverlist);
+            (unsigned long)serverlist->nservers, serverlist);
     free(realmz);
-    krb5int_free_plugin_dir_data (ptrs);
+    krb5int_free_plugin_dir_data(ptrs);
     return 0;
 }
 
@@ -505,48 +491,215 @@ prof_locate_server(krb5_context context, const krb5_data *realm,
                    k5_transport transport)
 {
     const char *profname;
-    int dflport1, dflport2 = 0;
+    int dflport = 0;
     struct servent *serv;
 
     switch (svc) {
     case locate_service_kdc:
         profname = KRB5_CONF_KDC;
-        /* We used to use /etc/services for these, but enough systems
-           have old, crufty, wrong settings that this is probably
-           better.  */
+        /* We used to use /etc/services for these, but enough systems have old,
+         * crufty, wrong settings that this is probably better. */
     kdc_ports:
-        dflport1 = htons(KRB5_DEFAULT_PORT);
-        dflport2 = htons(KRB5_DEFAULT_SEC_PORT);
+        dflport = KRB5_DEFAULT_PORT;
         break;
     case locate_service_master_kdc:
         profname = KRB5_CONF_MASTER_KDC;
         goto kdc_ports;
     case locate_service_kadmin:
         profname = KRB5_CONF_ADMIN_SERVER;
-        dflport1 = htons(DEFAULT_KADM5_PORT);
+        dflport = DEFAULT_KADM5_PORT;
         break;
     case locate_service_krb524:
         profname = KRB5_CONF_KRB524_SERVER;
         serv = getservbyname("krb524", "udp");
-        dflport1 = serv ? serv->s_port : htons(4444);
+        dflport = serv ? serv->s_port : 4444;
         break;
     case locate_service_kpasswd:
         profname = KRB5_CONF_KPASSWD_SERVER;
-        dflport1 = htons(DEFAULT_KPASSWD_PORT);
+        dflport = DEFAULT_KPASSWD_PORT;
         break;
     default:
         return EBUSY;           /* XXX */
     }
 
     return locate_srv_conf_1(context, realm, profname, serverlist, transport,
-                             dflport1, dflport2);
+                             dflport);
 }
 
 #ifdef KRB5_DNS_LOOKUP
+
+/*
+ * Parse the initial part of the URI, first confirming the scheme name.  Get
+ * the transport, flags (indicating master status), and host.  The host is
+ * either an address or hostname with an optional port, or an HTTPS URL.
+ * The format is krb5srv:flags:udp|tcp|kkdcp:host
+ *
+ * Return a NULL *host_out if there are any problems parsing the URI.
+ */
+static void
+parse_uri_fields(const char *uri, k5_transport *transport_out,
+                 const char **host_out, int *master_out)
+
+{
+    k5_transport transport;
+    int master = FALSE;
+
+    *transport_out = 0;
+    *host_out = NULL;
+    *master_out = -1;
+
+    /* Confirm the scheme name. */
+    if (strncasecmp(uri, "krb5srv", 7) != 0)
+        return;
+
+    uri += 7;
+    if (*uri != ':')
+        return;
+
+    uri++;
+    if (*uri == '\0')
+        return;
+
+    /* Check the flags field for supported flags. */
+    for (; *uri != ':' && *uri != '\0'; uri++) {
+        if (*uri == 'm' || *uri == 'M')
+            master = TRUE;
+    }
+    if (*uri != ':')
+        return;
+
+    /* Look for the transport type. */
+    uri++;
+    if (strncasecmp(uri, "udp", 3) == 0) {
+        transport = UDP;
+        uri += 3;
+    } else if (strncasecmp(uri, "tcp", 3) == 0) {
+        transport = TCP;
+        uri += 3;
+    } else if (strncasecmp(uri, "kkdcp", 5) == 0) {
+        /* Currently the only MS-KKDCP transport type is HTTPS. */
+        transport = HTTPS;
+        uri += 5;
+    } else {
+        return;
+    }
+
+    if (*uri != ':')
+        return;
+
+    /* The rest of the URI is the host (with optional port) or URI. */
+    *host_out = uri + 1;
+    *transport_out = transport;
+    *master_out = master;
+}
+
+/*
+ * Collect a list of servers from DNS URI records, for the requested service
+ * and transport type.  Problematic entries are skipped.
+ */
 static krb5_error_code
-dns_locate_server(krb5_context context, const krb5_data *realm,
-                  struct serverlist *serverlist, enum locate_service_type svc,
-                  k5_transport transport)
+locate_uri(const krb5_data *realm, const char *req_service,
+           struct serverlist *serverlist, k5_transport req_transport,
+           int default_port, krb5_boolean master_only)
+{
+    krb5_error_code ret;
+    k5_transport transport, host_trans;
+    struct srv_dns_entry *answers, *entry;
+    char *host;
+    const char *host_field, *path;
+    int port, def_port, master;
+
+    ret = k5_make_uri_query(realm, req_service, &answers);
+    if (ret || answers == NULL)
+        return ret;
+
+    for (entry = answers; entry != NULL; entry = entry->next) {
+        def_port = default_port;
+        path = NULL;
+
+        parse_uri_fields(entry->host, &transport, &host_field, &master);
+        if (host_field == NULL)
+            continue;
+
+        /* TCP_OR_UDP allows entries of any transport type; otherwise
+         * we're asking for a match. */
+        if (req_transport != TCP_OR_UDP && req_transport != transport)
+            continue;
+
+        /* Process a MS-KKDCP target. */
+        if (transport == HTTPS) {
+            host_trans = 0;
+            def_port = 443;
+            parse_uri_if_https(host_field, &host_trans, &host_field, &path);
+            if (host_trans != HTTPS)
+                continue;
+        }
+
+        ret = k5_parse_host_string(host_field, def_port, &host, &port);
+        if (ret == ENOMEM)
+            break;
+
+        if (ret || host == NULL) {
+            ret = 0;
+            continue;
+        }
+
+        ret = add_host_to_list(serverlist, host, port, transport, AF_UNSPEC,
+                               path, master);
+        free(host);
+        if (ret)
+            break;
+    }
+
+    krb5int_free_srv_dns_data(answers);
+    return ret;
+}
+
+static krb5_error_code
+dns_locate_server_uri(krb5_context context, const krb5_data *realm,
+                      struct serverlist *serverlist,
+                      enum locate_service_type svc, k5_transport transport)
+{
+    krb5_error_code ret;
+    char *svcname;
+    int def_port;
+    krb5_boolean find_master = FALSE;
+
+    if (!_krb5_use_dns_kdc(context) || !use_dns_uri(context))
+        return 0;
+
+    switch (svc) {
+    case locate_service_master_kdc:
+        find_master = TRUE;
+        /* Fall through */
+    case locate_service_kdc:
+        svcname = "_kerberos";
+        def_port = 88;
+        break;
+    case locate_service_kadmin:
+        svcname = "_kerberos-adm";
+        def_port = 749;
+        break;
+    case locate_service_kpasswd:
+        svcname = "_kpasswd";
+        def_port = 464;
+        break;
+    default:
+        return 0;
+    }
+
+    ret = locate_uri(realm, svcname, serverlist, transport, def_port,
+                     find_master);
+    if (ret)
+        Tprintf("dns URI lookup returned error %d\n", ret);
+
+    return ret;
+}
+
+static krb5_error_code
+dns_locate_server_srv(krb5_context context, const krb5_data *realm,
+                      struct serverlist *serverlist,
+                      enum locate_service_type svc, k5_transport transport)
 {
     const char *dnsname;
     int use_dns = _krb5_use_dns_kdc(context);
@@ -618,8 +771,14 @@ locate_server(krb5_context context, const krb5_data *realm,
         goto done;
 
 #ifdef KRB5_DNS_LOOKUP
+    if (list.nservers == 0) {
+        ret = dns_locate_server_uri(context, realm, &list, svc, transport);
+        if (ret)
+            goto done;
+    }
+
     if (list.nservers == 0)
-        ret = dns_locate_server(context, realm, &list, svc, transport);
+        ret = dns_locate_server_srv(context, realm, &list, svc, transport);
 #endif
 
 done:
@@ -681,6 +840,9 @@ k5_kdc_is_master(krb5_context context, const krb5_data *realm,
 {
     struct serverlist list;
     krb5_boolean found;
+
+    if (server->master != -1)
+        return server->master;
 
     if (locate_server(context, realm, &list, locate_service_master_kdc,
                       server->transport) != 0)

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from k5test import *
 import time
+from itertools import imap
 
 # Run kdbtest against the BDB module.
 realm = K5Realm(create_kdb=False)
@@ -41,9 +42,11 @@ os.mkdir(dbdir)
 shutil.copy(system_slapd, slapd)
 
 # Find the core schema file if we can.
-core_schema = None
-if os.path.isfile('/etc/ldap/schema/core.schema'):
-    core_schema = '/etc/ldap/schema/core.schema'
+ldap_homes = ['/etc/ldap', '/etc/openldap', '/usr/local/etc/openldap',
+              '/usr/local/etc/ldap']
+local_schema_path = '/schema/core.schema'
+core_schema = next((i for i in imap(lambda x:x+local_schema_path, ldap_homes)
+                    if os.path.isfile(i)), None)
 
 # Make a slapd config file.  This is deprecated in OpenLDAP 2.3 and
 # later, but it's easier than using LDIF and slapadd.  Include some
@@ -111,8 +114,17 @@ def kldaputil(args, **kw):
 kldaputil(['destroy', '-f'])
 
 ldapmodify = which('ldapmodify')
-if not ldapmodify:
-    skip_rest('some LDAP KDB tests', 'ldapmodify not found')
+ldapsearch = which('ldapsearch')
+if not ldapmodify or not ldapsearch:
+    skip_rest('some LDAP KDB tests', 'ldapmodify or ldapsearch not found')
+
+def ldap_search(args):
+    proc = subprocess.Popen([ldapsearch, '-H', ldap_uri, '-b', top_dn,
+                             '-D', admin_dn, '-w', admin_pw, args],
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+    (out, dummy) = proc.communicate()
+    return out
 
 def ldap_modify(ldif, args=[]):
     proc = subprocess.Popen([ldapmodify, '-H', ldap_uri, '-D', admin_dn,
@@ -273,6 +285,20 @@ realm.kinit(realm.user_princ, password('user'))
 realm.run([kvno, realm.host_princ])
 realm.klist(realm.user_princ, realm.host_princ)
 
+# Test auth indicator support
+realm.addprinc('authind', password('authind'))
+realm.run([kadminl, 'setstr', 'authind', 'require_auth', 'otp radius'])
+
+out = ldap_search('(krbPrincipalName=authind*)')
+if 'krbPrincipalAuthInd: otp' not in out:
+    fail('Expected krbPrincipalAuthInd value not in output')
+if 'krbPrincipalAuthInd: radius' not in out:
+    fail('Expected krbPrincipalAuthInd value not in output')
+
+out = realm.run([kadminl, 'getstrs', 'authind'])
+if 'require_auth: otp radius' not in out:
+    fail('Expected auth indicators value not in output')
+
 # Test service principal aliases.
 realm.addprinc('canon', password('canon'))
 ldap_modify('dn: krbPrincipalName=canon@KRBTEST.COM,cn=t1,cn=krb5\n'
@@ -333,6 +359,52 @@ realm.run([kadminl, 'modprinc', '+requires_preauth', 'canon'])
 realm.kinit('canon', password('canon'))
 realm.kinit('alias', password('canon'), ['-C'])
 
+# Test password history.
+def test_pwhist(nhist):
+    def cpw(n, **kwargs):
+        realm.run([kadminl, 'cpw', '-pw', str(n), princ], **kwargs)
+    def cpw_fail(n):
+        cpw(n, expected_code=1)
+    output('*** Testing password history of size %d\n' % nhist)
+    princ = 'pwhistprinc' + str(nhist)
+    pol = 'pwhistpol' + str(nhist)
+    realm.run([kadminl, 'addpol', '-history', str(nhist), pol])
+    realm.run([kadminl, 'addprinc', '-policy', pol, '-nokey', princ])
+    for i in range(nhist):
+        # Set a password, then check that all previous passwords fail.
+        cpw(i)
+        for j in range(i + 1):
+            cpw_fail(j)
+    # Set one more new password, and make sure the oldest key is
+    # rotated out.
+    cpw(nhist)
+    cpw_fail(1)
+    cpw(0)
+
+for n in (1, 2, 3, 4, 5):
+    test_pwhist(n)
+
+# Regression test for #8193: test password character class requirements.
+princ = 'charclassprinc'
+pol = 'charclasspol'
+realm.run([kadminl, 'addpol', '-minclasses', '3', pol])
+realm.run([kadminl, 'addprinc', '-policy', pol, '-nokey', princ])
+realm.run([kadminl, 'cpw', '-pw', 'abcdef', princ], expected_code=1)
+realm.run([kadminl, 'cpw', '-pw', 'Abcdef', princ], expected_code=1)
+realm.run([kadminl, 'cpw', '-pw', 'Abcdef1', princ])
+
+# Test principal renaming and make sure last modified is changed
+def get_princ(princ):
+    out = realm.run([kadminl, 'getprinc', princ])
+    return dict(map(str.strip, x.split(":", 1)) for x in out.splitlines())
+
+realm.addprinc("rename", password('rename'))
+renameprinc = get_princ("rename")
+realm.run([kadminl, '-p', 'fake@KRBTEST.COM', 'renprinc', 'rename', 'renamed'])
+renamedprinc = get_princ("renamed")
+if renameprinc['Last modified'] == renamedprinc['Last modified']:
+    fail('Last modified data not updated when principal was renamed')
+
 # Regression test for #7980 (fencepost when dividing keys up by kvno).
 realm.run([kadminl, 'addprinc', '-randkey', '-e', 'aes256-cts,aes128-cts',
            'kvnoprinc'])
@@ -363,6 +435,13 @@ realm.run([kadminl, 'purgekeys', '-all', 'keylessprinc'])
 out = realm.run([kadminl, 'getprinc', 'keylessprinc'])
 if 'Number of keys: 0' not in out:
     fail('After purgekeys -all, keys remain')
+
+# Test for 8354 (old password history entries when -keepold is used)
+realm.run([kadminl, 'addpol', '-history', '2', 'keepoldpasspol'])
+realm.run([kadminl, 'addprinc', '-policy', 'keepoldpasspol', '-pw', 'aaaa',
+           'keepoldpassprinc'])
+for p in ('bbbb', 'cccc', 'aaaa'):
+    realm.run([kadminl, 'cpw', '-keepold', '-pw', p, 'keepoldpassprinc'])
 
 realm.stop()
 

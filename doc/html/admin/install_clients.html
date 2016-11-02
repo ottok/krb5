@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -82,7 +82,8 @@ in place of its non-Kerberos counterparts passwd.</p>
 <h2>Client machine configuration files<a class="headerlink" href="#client-machine-configuration-files" title="Permalink to this headline">¶</a></h2>
 <p>Each machine running Kerberos should have a <a class="reference internal" href="conf_files/krb5_conf.html#krb5-conf-5"><em>krb5.conf</em></a> file.
 At a minimum, it should define a <strong>default_realm</strong> setting in
-<a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><em>[libdefaults]</em></a>.  If you are not using DNS SRV records, it must
+<a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><em>[libdefaults]</em></a>.  If you are not using DNS SRV records
+(<a class="reference internal" href="realm_config.html#kdc-hostnames"><em>Hostnames for KDCs</em></a>) or URI records (<a class="reference internal" href="realm_config.html#kdc-discovery"><em>KDC Discovery</em></a>), it must
 also contain a <a class="reference internal" href="conf_files/krb5_conf.html#realms"><em>[realms]</em></a> section containing information for your
 realm&#8217;s KDCs.</p>
 <p>Consider setting <strong>rdns</strong> to false in order to reduce your dependence
@@ -187,7 +188,7 @@ krb5.conf.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

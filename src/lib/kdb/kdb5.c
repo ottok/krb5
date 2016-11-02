@@ -1,6 +1,7 @@
 /* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /*
- * Copyright 2006, 2009, 2010 by the Massachusetts Institute of Technology.
+ * Copyright 2006, 2009, 2010, 2016 by the Massachusetts Institute of
+ * Technology.
  * All Rights Reserved.
  *
  * Export of this software from the United States of America may
@@ -113,10 +114,6 @@ logging(krb5_context context)
         log_ctx->ulog != NULL;
 }
 
-/*
- * XXX eventually this should be consolidated with krb5_free_key_data_contents
- * so there is only a single version.
- */
 void
 krb5_dbe_free_key_data_contents(krb5_context context, krb5_key_data *key)
 {
@@ -302,6 +299,8 @@ kdb_setup_opt_functions(db_library lib)
         lib->vftabl.decrypt_key_data = krb5_dbe_def_decrypt_key_data;
     if (lib->vftabl.encrypt_key_data == NULL)
         lib->vftabl.encrypt_key_data = krb5_dbe_def_encrypt_key_data;
+    if (lib->vftabl.rename_principal == NULL)
+        lib->vftabl.rename_principal = krb5_db_def_rename_principal;
 }
 
 #ifdef STATIC_PLUGINS
@@ -758,30 +757,52 @@ krb5_db_get_principal(krb5_context kcontext, krb5_const_principal search_for,
         return status;
     if (v->get_principal == NULL)
         return KRB5_PLUGIN_OP_NOTSUPP;
-    return v->get_principal(kcontext, search_for, flags, entry);
+    status = v->get_principal(kcontext, search_for, flags, entry);
+    if (status)
+        return status;
+
+    /* Sort the keys in the db entry as some parts of krb5 expect it to be. */
+    if ((*entry)->key_data != NULL)
+        krb5_dbe_sort_key_data((*entry)->key_data, (*entry)->n_key_data);
+
+    return 0;
+}
+
+static void
+free_tl_data(krb5_tl_data *list)
+{
+    krb5_tl_data *next;
+
+    for (; list != NULL; list = next) {
+        next = list->tl_data_next;
+        free(list->tl_data_contents);
+        free(list);
+    }
 }
 
 void
 krb5_db_free_principal(krb5_context kcontext, krb5_db_entry *entry)
 {
-    krb5_error_code status = 0;
-    kdb_vftabl *v;
+    int i;
 
-    status = get_vftabl(kcontext, &v);
-    if (status)
+    if (entry == NULL)
         return;
-    v->free_principal(kcontext, entry);
+    free(entry->e_data);
+    krb5_free_principal(kcontext, entry->princ);
+    free_tl_data(entry->tl_data);
+    for (i = 0; i < entry->n_key_data; i++)
+        krb5_dbe_free_key_data_contents(kcontext, &entry->key_data[i]);
+    free(entry->key_data);
+    free(entry);
 }
 
 static void
-free_db_args(krb5_context kcontext, char **db_args)
+free_db_args(char **db_args)
 {
     int i;
     if (db_args) {
-        /* XXX Is this right?  Or are we borrowing storage from
-           the caller?  */
         for (i = 0; db_args[i]; i++)
-            krb5_db_free(kcontext, db_args[i]);
+            free(db_args[i]);
         free(db_args);
     }
 }
@@ -833,7 +854,7 @@ extract_db_args_from_tl_data(krb5_context kcontext, krb5_tl_data **start,
                 prev->tl_data_next = curr->tl_data_next;
             }
             (*count)--;
-            krb5_db_free(kcontext, curr);
+            free(curr);
 
             /* previous does not change */
             curr = next;
@@ -845,7 +866,7 @@ extract_db_args_from_tl_data(krb5_context kcontext, krb5_tl_data **start,
     status = 0;
 clean_n_exit:
     if (status != 0) {
-        free_db_args(kcontext, db_args);
+        free_db_args(db_args);
         db_args = NULL;
     }
     *db_argsp = db_args;
@@ -870,7 +891,7 @@ krb5int_put_principal_no_log(krb5_context kcontext, krb5_db_entry *entry)
     if (status)
         return status;
     status = v->put_principal(kcontext, entry, db_args);
-    free_db_args(kcontext, db_args);
+    free_db_args(db_args);
     return status;
 }
 
@@ -949,19 +970,77 @@ krb5_db_delete_principal(krb5_context kcontext, krb5_principal search_for)
 }
 
 krb5_error_code
+krb5_db_rename_principal(krb5_context kcontext, krb5_principal source,
+                         krb5_principal target)
+{
+    kdb_vftabl *v;
+    krb5_error_code status;
+    krb5_db_entry *entry;
+
+    status = get_vftabl(kcontext, &v);
+    if (status)
+        return status;
+
+    /*
+     * If the default rename function isn't used and logging is enabled, iprop
+     * would fail since it doesn't formally support renaming.  In that case
+     * return KRB5_PLUGIN_OP_NOTSUPP.
+     */
+    if (v->rename_principal != krb5_db_def_rename_principal &&
+        logging(kcontext))
+        return KRB5_PLUGIN_OP_NOTSUPP;
+
+    status = krb5_db_get_principal(kcontext, target, KRB5_KDB_FLAG_ALIAS_OK,
+                                   &entry);
+    if (status == 0) {
+        krb5_db_free_principal(kcontext, entry);
+        return KRB5_KDB_INUSE;
+    }
+
+    return v->rename_principal(kcontext, source, target);
+}
+
+/*
+ * Use a proxy function for iterate so that we can sort the keys before sending
+ * them to the callback.
+ */
+struct callback_proxy_args {
+    int (*func)(krb5_pointer, krb5_db_entry *);
+    krb5_pointer func_arg;
+};
+
+static int
+sort_entry_callback_proxy(krb5_pointer func_arg, krb5_db_entry *entry)
+{
+    struct callback_proxy_args *args = (struct callback_proxy_args *)func_arg;
+
+    /* Sort the keys in the db entry as some parts of krb5 expect it to be. */
+    if (entry && entry->key_data)
+        krb5_dbe_sort_key_data(entry->key_data, entry->n_key_data);
+    return args->func(args->func_arg, entry);
+}
+
+krb5_error_code
 krb5_db_iterate(krb5_context kcontext, char *match_entry,
                 int (*func)(krb5_pointer, krb5_db_entry *),
                 krb5_pointer func_arg, krb5_flags iterflags)
 {
     krb5_error_code status = 0;
     kdb_vftabl *v;
+    struct callback_proxy_args proxy_args;
 
     status = get_vftabl(kcontext, &v);
     if (status)
         return status;
     if (v->iterate == NULL)
         return KRB5_PLUGIN_OP_NOTSUPP;
-    return v->iterate(kcontext, match_entry, func, func_arg, iterflags);
+
+    /* Use the proxy function to sort key data before passing entries to
+     * callback. */
+    proxy_args.func = func;
+    proxy_args.func_arg = func_arg;
+    return v->iterate(kcontext, match_entry, sort_entry_callback_proxy,
+                      &proxy_args, iterflags);
 }
 
 /* Return a read only pointer alias to mkey list.  Do not free this! */
@@ -1131,10 +1210,7 @@ krb5_db_fetch_mkey(krb5_context context, krb5_principal mname,
     }
 
 clean_n_exit:
-    if (tmp_key.contents) {
-        zap(tmp_key.contents, tmp_key.length);
-        krb5_db_free(context, tmp_key.contents);
-    }
+    zapfree(tmp_key.contents, tmp_key.length);
     return retval;
 }
 
@@ -1269,25 +1345,13 @@ krb5_dbe_find_mkey(krb5_context context, krb5_db_entry *entry,
 void   *
 krb5_db_alloc(krb5_context kcontext, void *ptr, size_t size)
 {
-    krb5_error_code status;
-    kdb_vftabl *v;
-
-    status = get_vftabl(kcontext, &v);
-    if (status)
-        return NULL;
-    return v->alloc(kcontext, ptr, size);
+    return realloc(ptr, size);
 }
 
 void
 krb5_db_free(krb5_context kcontext, void *ptr)
 {
-    krb5_error_code status;
-    kdb_vftabl *v;
-
-    status = get_vftabl(kcontext, &v);
-    if (status)
-        return;
-    v->free(kcontext, ptr);
+    free(ptr);
 }
 
 /* has to be modified */
@@ -1419,11 +1483,13 @@ krb5_dbe_lookup_tl_data(krb5_context context, krb5_db_entry *entry,
 krb5_error_code
 krb5_dbe_create_key_data(krb5_context context, krb5_db_entry *entry)
 {
-    if ((entry->key_data =
-         (krb5_key_data *) krb5_db_alloc(context, entry->key_data,
-                                         (sizeof(krb5_key_data) *
-                                          (entry->n_key_data + 1)))) == NULL)
-        return (ENOMEM);
+    krb5_key_data *newptr;
+
+    newptr = realloc(entry->key_data,
+                     (entry->n_key_data + 1) * sizeof(*entry->key_data));
+    if (newptr == NULL)
+        return ENOMEM;
+    entry->key_data = newptr;
 
     memset(entry->key_data + entry->n_key_data, 0, sizeof(krb5_key_data));
     entry->n_key_data++;
@@ -1662,6 +1728,7 @@ krb5_error_code
 krb5_dbe_update_mkey_aux(krb5_context context, krb5_db_entry *entry,
                          krb5_mkey_aux_node *mkey_aux_data_list)
 {
+    krb5_error_code status;
     krb5_tl_data tl_data;
     krb5_int16 version, tmp_kvno;
     unsigned char *nextloc;
@@ -1726,7 +1793,9 @@ krb5_dbe_update_mkey_aux(krb5_context context, krb5_db_entry *entry,
         }
     }
 
-    return (krb5_dbe_update_tl_data(context, entry, &tl_data));
+    status = krb5_dbe_update_tl_data(context, entry, &tl_data);
+    free(tl_data.tl_data_contents);
+    return status;
 }
 #endif /* KRB5_TL_MKEY_AUX_VER == 1 */
 
@@ -2128,9 +2197,8 @@ krb5_db_update_tl_data(krb5_context context, krb5_int16 *n_tl_datap,
      * Copy the new data first, so we can fail cleanly if malloc()
      * fails.
      */
-    if ((tmp =
-         (krb5_octet *) krb5_db_alloc(context, NULL,
-                                      new_tl_data->tl_data_length)) == NULL)
+    tmp = malloc(new_tl_data->tl_data_length);
+    if (tmp == NULL)
         return (ENOMEM);
 
     /*
@@ -2148,12 +2216,11 @@ krb5_db_update_tl_data(krb5_context context, krb5_int16 *n_tl_datap,
     /* If necessary, chain a new record in the beginning and point at it.  */
 
     if (!tl_data) {
-        tl_data = krb5_db_alloc(context, NULL, sizeof(krb5_tl_data));
+        tl_data = calloc(1, sizeof(*tl_data));
         if (tl_data == NULL) {
             free(tmp);
             return (ENOMEM);
         }
-        memset(tl_data, 0, sizeof(krb5_tl_data));
         tl_data->tl_data_next = *tl_datap;
         *tl_datap = tl_data;
         (*n_tl_datap)++;
@@ -2161,8 +2228,7 @@ krb5_db_update_tl_data(krb5_context context, krb5_int16 *n_tl_datap,
 
     /* fill in the record */
 
-    if (tl_data->tl_data_contents)
-        krb5_db_free(context, tl_data->tl_data_contents);
+    free(tl_data->tl_data_contents);
 
     tl_data->tl_data_type = new_tl_data->tl_data_type;
     tl_data->tl_data_length = new_tl_data->tl_data_length;
@@ -2227,6 +2293,39 @@ krb5_dbe_compute_salt(krb5_context context, const krb5_key_data *key,
     }
     *salt = sdata;
     *salt_out = salt;
+    return 0;
+}
+
+krb5_error_code
+krb5_dbe_specialize_salt(krb5_context context, krb5_db_entry *entry)
+{
+    krb5_int16 stype, i;
+    krb5_data *salt;
+    krb5_error_code ret;
+
+    if (context == NULL || entry == NULL)
+        return EINVAL;
+
+    /*
+     * Store salt values explicitly so that they don't depend on the principal
+     * name.
+     */
+    for (i = 0; i < entry->n_key_data; i++) {
+        ret = krb5_dbe_compute_salt(context, &entry->key_data[i], entry->princ,
+                                    &stype, &salt);
+        if (ret)
+            return ret;
+
+        /* Steal the data pointer from salt and free the container. */
+        if (entry->key_data[i].key_data_ver >= 2)
+            free(entry->key_data[i].key_data_contents[1]);
+        entry->key_data[i].key_data_type[1] = KRB5_KDB_SALTTYPE_SPECIAL;
+        entry->key_data[i].key_data_contents[1] = (uint8_t *)salt->data;
+        entry->key_data[i].key_data_length[1] = salt->length;
+        entry->key_data[i].key_data_ver = 2;
+        free(salt);
+    }
+
     return 0;
 }
 
@@ -2336,13 +2435,12 @@ krb5_db_delete_policy(krb5_context kcontext, char *policy)
 void
 krb5_db_free_policy(krb5_context kcontext, osa_policy_ent_t policy)
 {
-    krb5_error_code status = 0;
-    kdb_vftabl *v;
-
-    status = get_vftabl(kcontext, &v);
-    if (status || v->free_policy == NULL)
+    if (policy == NULL)
         return;
-    v->free_policy(kcontext, policy);
+    free(policy->name);
+    free(policy->allowed_keysalts);
+    free_tl_data(policy->tl_data);
+    free(policy);
 }
 
 krb5_error_code
@@ -2569,4 +2667,23 @@ krb5_db_check_allowed_to_delegate(krb5_context kcontext,
     if (v->check_allowed_to_delegate == NULL)
         return KRB5_PLUGIN_OP_NOTSUPP;
     return v->check_allowed_to_delegate(kcontext, client, server, proxy);
+}
+
+void
+krb5_dbe_sort_key_data(krb5_key_data *key_data, size_t key_data_length)
+{
+    size_t i, j;
+    krb5_key_data tmp;
+
+    /* Use insertion sort as a stable sort. */
+    for (i = 1; i < key_data_length; i++) {
+        j = i;
+        while (j > 0 &&
+               key_data[j - 1].key_data_kvno < key_data[j].key_data_kvno) {
+            tmp = key_data[j];
+            key_data[j] = key_data[j - 1];
+            key_data[j - 1] = tmp;
+            j--;
+        }
+    }
 }

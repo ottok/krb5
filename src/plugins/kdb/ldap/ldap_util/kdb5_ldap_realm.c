@@ -466,6 +466,7 @@ kdb5_ldap_create(int argc, char *argv[])
                         global_params.realm);
                 goto err_nomsg;
             }
+            free(rparams->containerref);
             rparams->containerref = strdup(argv[i]);
             if (rparams->containerref == NULL) {
                 retval = ENOMEM;
@@ -592,6 +593,7 @@ kdb5_ldap_create(int argc, char *argv[])
                 global_params.realm);
         goto err_nomsg;
     }
+    free(ldap_context->lrparams->realm_name);
     ldap_context->lrparams->realm_name = strdup(global_params.realm);
     if (ldap_context->lrparams->realm_name == NULL) {
         retval = ENOMEM;
@@ -699,7 +701,8 @@ cleanup:
         exit_status++;
     }
 
-    return;
+    krb5_free_keyblock_contents(util_context, &master_keyblock);
+    krb5_free_principal(util_context, master_princ);
 }
 
 
@@ -749,7 +752,9 @@ kdb5_ldap_modify(int argc, char *argv[])
                 if (rparams->subtree) {
                     for (k=0; k<rparams->subtreecount && rparams->subtree[k]; k++)
                         free(rparams->subtree[k]);
+                    free(rparams->subtree);
                     rparams->subtreecount=0;
+                    rparams->subtree = NULL;
                 }
             }
             if (strncmp(argv[i] ,"", strlen(argv[i]))!=0) {
@@ -787,6 +792,7 @@ kdb5_ldap_modify(int argc, char *argv[])
                         global_params.realm);
                 goto err_nomsg;
             }
+            free(rparams->containerref);
             rparams->containerref = strdup(argv[i]);
             if (rparams->containerref == NULL) {
                 retval = ENOMEM;
@@ -1129,11 +1135,6 @@ krb5_dbe_update_tl_data_new(krb5_context context, krb5_db_entry *entry,
 
     /* copy the new data first, so we can fail cleanly if malloc()
      * fails */
-/*
-  if ((tmp =
-  (krb5_octet *) krb5_db_alloc(context, NULL,
-  new_tl_data->tl_data_length)) == NULL)
-*/
     if ((tmp = (krb5_octet *) malloc (new_tl_data->tl_data_length)) == NULL)
         return (ENOMEM);
 
@@ -1150,12 +1151,6 @@ krb5_dbe_update_tl_data_new(krb5_context context, krb5_db_entry *entry,
     /* if necessary, chain a new record in the beginning and point at it */
 
     if (!tl_data) {
-/*
-  if ((tl_data =
-  (krb5_tl_data *) krb5_db_alloc(context, NULL,
-  sizeof(krb5_tl_data)))
-  == NULL) {
-*/
         if ((tl_data = (krb5_tl_data *) malloc (sizeof(krb5_tl_data))) == NULL) {
             free(tmp);
             return (ENOMEM);
@@ -1168,8 +1163,7 @@ krb5_dbe_update_tl_data_new(krb5_context context, krb5_db_entry *entry,
 
     /* fill in the record */
 
-    if (tl_data->tl_data_contents)
-        krb5_db_free(context, tl_data->tl_data_contents);
+    free(tl_data->tl_data_contents);
 
     tl_data->tl_data_type = new_tl_data->tl_data_type;
     tl_data->tl_data_length = new_tl_data->tl_data_length;

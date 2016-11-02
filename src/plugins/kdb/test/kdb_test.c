@@ -71,6 +71,8 @@
 #include "adm_proto.h"
 #include <ctype.h>
 
+#define TEST_AD_TYPE -456
+
 typedef struct {
     void *profile;
     char *section;
@@ -391,48 +393,6 @@ cleanup:
     return ret;
 }
 
-static void
-test_free_principal(krb5_context context, krb5_db_entry *entry)
-{
-    krb5_tl_data *tl, *next;
-    int i, j;
-
-    if (entry == NULL)
-        return;
-    free(entry->e_data);
-    krb5_free_principal(context, entry->princ);
-    for (tl = entry->tl_data; tl != NULL; tl = next) {
-        next = tl->tl_data_next;
-        free(tl->tl_data_contents);
-        free(tl);
-    }
-    for (i = 0; i < entry->n_key_data; i++) {
-        for (j = 0; j < entry->key_data[i].key_data_ver; j++) {
-            if (entry->key_data[i].key_data_length[j]) {
-                zapfree(entry->key_data[i].key_data_contents[j],
-                        entry->key_data[i].key_data_length[j]);
-            }
-            entry->key_data[i].key_data_contents[j] = NULL;
-            entry->key_data[i].key_data_length[j] = 0;
-            entry->key_data[i].key_data_type[j] = 0;
-        }
-    }
-    free(entry->key_data);
-    free(entry);
-}
-
-static void *
-test_alloc(krb5_context context, void *ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-static void
-test_free(krb5_context context, void *ptr)
-{
-    free(ptr);
-}
-
 static krb5_error_code
 test_fetch_master_key(krb5_context context, krb5_principal mname,
                       krb5_keyblock *key_out, krb5_kvno *kvno_out,
@@ -490,6 +450,29 @@ test_encrypt_key_data(krb5_context context, const krb5_keyblock *mkey,
 }
 
 static krb5_error_code
+test_sign_authdata(krb5_context context, unsigned int flags,
+                   krb5_const_principal client_princ, krb5_db_entry *client,
+                   krb5_db_entry *server, krb5_db_entry *krbtgt,
+                   krb5_keyblock *client_key, krb5_keyblock *server_key,
+                   krb5_keyblock *krbtgt_key, krb5_keyblock *session_key,
+                   krb5_timestamp authtime, krb5_authdata **tgt_auth_data,
+                   krb5_authdata ***signed_auth_data)
+{
+    krb5_authdata **list, *ad;
+
+    ad = ealloc(sizeof(*ad));
+    ad->magic = KV5M_AUTHDATA;
+    ad->ad_type = TEST_AD_TYPE;
+    ad->contents = (uint8_t *)estrdup("db-authdata-test");
+    ad->length = strlen((char *)ad->contents);
+    list = ealloc(2 * sizeof(*list));
+    list[0] = ad;
+    list[1] = NULL;
+    *signed_auth_data = list;
+    return 0;
+}
+
+static krb5_error_code
 test_check_allowed_to_delegate(krb5_context context,
                                krb5_const_principal client,
                                const krb5_db_entry *server,
@@ -506,15 +489,17 @@ test_check_allowed_to_delegate(krb5_context context,
                                   KRB5_PRINCIPAL_UNPARSE_NO_REALM, &tprinc));
     set_names(h, "delegation", sprinc, NULL);
     ret = profile_get_values(h->profile, h->names, &values);
-    if (ret == PROF_NO_RELATION)
-        return KRB5KDC_ERR_POLICY;
-    for (v = values; *v != NULL; v++) {
-        if (strcmp(*v, tprinc) == 0) {
-            found = TRUE;
-            break;
+    if (ret != PROF_NO_RELATION) {
+        for (v = values; *v != NULL; v++) {
+            if (strcmp(*v, tprinc) == 0) {
+                found = TRUE;
+                break;
+            }
         }
+        profile_free_list(values);
     }
-    profile_free_list(values);
+    krb5_free_unparsed_name(context, sprinc);
+    krb5_free_unparsed_name(context, tprinc);
     return found ? 0 : KRB5KDC_ERR_POLICY;
 }
 
@@ -531,18 +516,15 @@ kdb_vftabl PLUGIN_SYMBOL_NAME(krb5_test, kdb_function_table) = {
     NULL, /* lock */
     NULL, /* unlock */
     test_get_principal,
-    test_free_principal,
     NULL, /* put_principal */
     NULL, /* delete_principal */
+    NULL, /* rename_principal */
     NULL, /* iterate */
     NULL, /* create_policy */
     NULL, /* get_policy */
     NULL, /* put_policy */
     NULL, /* iter_policy */
     NULL, /* delete_policy */
-    NULL, /* free_policy */
-    test_alloc,
-    test_free,
     test_fetch_master_key,
     test_fetch_master_key_list,
     NULL, /* store_master_key_list */
@@ -551,7 +533,7 @@ kdb_vftabl PLUGIN_SYMBOL_NAME(krb5_test, kdb_function_table) = {
     NULL, /* promote_db */
     test_decrypt_key_data,
     test_encrypt_key_data,
-    NULL, /* sign_authdata */
+    test_sign_authdata,
     NULL, /* check_transited_realms */
     NULL, /* check_policy_as */
     NULL, /* check_policy_tgs */

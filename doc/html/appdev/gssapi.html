@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -209,6 +209,22 @@ string returned by gethostname().</p>
 <p>If the <em>desired_name</em> is a krb5 principal name or a local system name
 type which is mapped to a krb5 principal name, clients will only be
 allowed to authenticate to that principal in the default keytab.</p>
+</div>
+<div class="section" id="name-attributes">
+<h2>Name Attributes<a class="headerlink" href="#name-attributes" title="Permalink to this headline">¶</a></h2>
+<p>In release 1.8 or later, the <a class="reference external" href="http://tools.ietf.org/html/rfc6680.txt#section-7.4">gss_inquire_name</a> and
+<a class="reference external" href="http://tools.ietf.org/html/6680.html#section-7.5">gss_get_name_attribute</a> functions, specified in <span class="target" id="index-2"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc6680.html"><strong>RFC 6680</strong></a>, can be
+used to retrieve name attributes from the <em>src_name</em> returned by
+<a class="reference external" href="http://tools.ietf.org/html/rfc2744.html#section-5.1">gss_accept_sec_context</a>.  The following attributes are defined when
+the krb5 mechanism is used:</p>
+<ul class="simple" id="gssapi-authind-attr">
+<li>&#8220;auth-indicator&#8221; attribute:</li>
+</ul>
+<p>This attribute will be included in the <a class="reference external" href="http://tools.ietf.org/html/rfc6680.txt#section-7.4">gss_inquire_name</a> output if the
+ticket contains <a class="reference internal" href="../admin/auth_indicator.html#auth-indicator"><em>authentication indicators</em></a>.
+One indicator is returned per invocation of <a class="reference external" href="http://tools.ietf.org/html/6680.html#section-7.5">gss_get_name_attribute</a>,
+so multiple invocations may be necessary to retrieve all of the
+indicators from the ticket.  (New in release 1.15.)</p>
 </div>
 <div class="section" id="importing-and-exporting-credentials">
 <h2>Importing and exporting credentials<a class="headerlink" href="#importing-and-exporting-credentials" title="Permalink to this headline">¶</a></h2>
@@ -409,7 +425,7 @@ if (GSS_ERROR(major))
 </pre></div>
 </div>
 <p>If the context was established using the <strong>GSS_C_DCE_STYLE</strong> flag
-(described in <span class="target" id="index-2"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc4757.html"><strong>RFC 4757</strong></a>), wrap tokens compatible with Microsoft DCE
+(described in <span class="target" id="index-3"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc4757.html"><strong>RFC 4757</strong></a>), wrap tokens compatible with Microsoft DCE
 RPC can be constructed.  In this case, the IOV list must include a
 SIGN_ONLY buffer, a DATA buffer, a second SIGN_ONLY buffer, and a
 HEADER buffer in that order (the order of the buffer contents remains
@@ -548,6 +564,7 @@ if (GSS_ERROR(major))
 <li><a class="reference internal" href="#name-types">Name types</a></li>
 <li><a class="reference internal" href="#initiator-credentials">Initiator credentials</a></li>
 <li><a class="reference internal" href="#acceptor-names">Acceptor names</a></li>
+<li><a class="reference internal" href="#name-attributes">Name Attributes</a></li>
 <li><a class="reference internal" href="#importing-and-exporting-credentials">Importing and exporting credentials</a></li>
 <li><a class="reference internal" href="#aead-message-wrapping">AEAD message wrapping</a></li>
 <li><a class="reference internal" href="#iov-message-wrapping">IOV message wrapping</a></li>
@@ -597,7 +614,7 @@ if (GSS_ERROR(major))
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

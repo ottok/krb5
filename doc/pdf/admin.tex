@@ -15,7 +15,7 @@
 
 \title{Kerberos Administration Guide}
 \date{ }
-\release{1.14.3}
+\release{1.15-beta1}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -213,10 +213,11 @@ export KRB5\PYGZus{}KDC\PYGZus{}PROFILE=/yourdir/kdc.conf
 \label{admin/install_kdc:krb5-conf}
 If you are not using DNS TXT records (see {\hyperref[admin/realm_config:mapping-hostnames]{\emph{Mapping hostnames onto Kerberos realms}}}),
 you must specify the \textbf{default\_realm} in the {\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}}
-section.  If you are not using DNS SRV records (see
-{\hyperref[admin/realm_config:kdc-hostnames]{\emph{Hostnames for KDCs}}}), you must include the \textbf{kdc} tag for each
-\emph{realm} in the {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section.  To communicate with the kadmin
-server in each realm, the \textbf{admin\_server} tag must be set in the
+section.  If you are not using DNS URI or SRV records (see
+{\hyperref[admin/realm_config:kdc-hostnames]{\emph{Hostnames for KDCs}}} and {\hyperref[admin/realm_config:kdc-discovery]{\emph{KDC Discovery}}}), you must include the
+\textbf{kdc} tag for each \emph{realm} in the {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section.  To
+communicate with the kadmin server in each realm, the \textbf{admin\_server}
+tag must be set in the
 {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section.
 
 An example krb5.conf file:
@@ -244,7 +245,8 @@ An example kdc.conf file:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 [kdcdefaults]
-    kdc\PYGZus{}ports = 88,750
+    kdc\PYGZus{}listen = 88
+    kdc\PYGZus{}tcp\PYGZus{}listen = 88
 
 [realms]
     ATHENA.MIT.EDU = \PYGZob{}
@@ -471,8 +473,8 @@ Next, extract \code{host} random keys for all participating KDCs and
 store them in each host's default keytab file.  Ideally, you should
 extract each keytab locally on its own KDC.  If this is not feasible,
 you should use an encrypted session to send them across the network.
-To extract a keytab on a slave KDC called \code{kerberos-1.mit.edu}, you
-would execute the following command:
+To extract a keytab directly on a slave KDC called
+\code{kerberos-1.mit.edu}, you would execute the following command:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 kadmin: ktadd host/kerberos\PYGZhy{}1.mit.edu
@@ -485,6 +487,21 @@ Entry for principal host/kerberos\PYGZhy{}1.mit.edu with kvno 2, encryption
 Entry for principal host/kerberos\PYGZhy{}1.mit.edu with kvno 2, encryption
     type arcfour\PYGZhy{}hmac added to keytab FILE:/etc/krb5.keytab.
 \end{Verbatim}
+
+If you are instead extracting a keytab for the slave KDC called
+\code{kerberos-1.mit.edu} on the master KDC, you should use a dedicated
+temporary keytab file for that machine's keytab:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+kadmin: ktadd \PYGZhy{}k /tmp/kerberos\PYGZhy{}1.keytab host/kerberos\PYGZhy{}1.mit.edu
+Entry for principal host/kerberos\PYGZhy{}1.mit.edu with kvno 2, encryption
+    type aes256\PYGZhy{}cts\PYGZhy{}hmac\PYGZhy{}sha1\PYGZhy{}96 added to keytab FILE:/etc/krb5.keytab.
+Entry for principal host/kerberos\PYGZhy{}1.mit.edu with kvno 2, encryption
+    type aes128\PYGZhy{}cts\PYGZhy{}hmac\PYGZhy{}sha1\PYGZhy{}96 added to keytab FILE:/etc/krb5.keytab.
+\end{Verbatim}
+
+The file \code{/tmp/kerberos-1.keytab} can then be installed as
+\code{/etc/krb5.keytab} on the host \code{kerberos-1.mit.edu}.
 
 
 \paragraph{Configure slave KDCs}
@@ -718,7 +735,8 @@ in place of its non-Kerberos counterparts passwd.
 \label{admin/install_clients:client-machine-configuration-files}
 Each machine running Kerberos should have a {\hyperref[admin/conf_files/krb5_conf:krb5-conf-5]{\emph{krb5.conf}}} file.
 At a minimum, it should define a \textbf{default\_realm} setting in
-{\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}}.  If you are not using DNS SRV records, it must
+{\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}}.  If you are not using DNS SRV records
+({\hyperref[admin/realm_config:kdc-hostnames]{\emph{Hostnames for KDCs}}}) or URI records ({\hyperref[admin/realm_config:kdc-discovery]{\emph{KDC Discovery}}}), it must
 also contain a {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section containing information for your
 realm's KDCs.
 
@@ -920,9 +938,10 @@ includedir DIRNAME
 \emph{FILENAME} or \emph{DIRNAME} should be an absolute path. The named file or
 directory must exist and be readable.  Including a directory includes
 all files within the directory whose names consist solely of
-alphanumeric characters, dashes, or underscores.  Included profile
-files are syntactically independent of their parents, so each included
-file must begin with a section header.
+alphanumeric characters, dashes, or underscores.  Starting in release
+1.15, files with names ending in ''.conf'' are also included.  Included
+profile files are syntactically independent of their parents, so each
+included file must begin with a section header.
 
 The krb5.conf file can specify that configuration should be obtained
 from a loadable module, rather than the file itself, using the
@@ -1101,6 +1120,13 @@ because that fake KDC will be unable to decode anything you send
 it (besides the initial ticket request, which has no encrypted
 data), and anything the fake KDC sends will not be trusted without
 verification using some secret that it won't know.
+
+\item[{\textbf{dns\_uri\_lookup}}] \leavevmode
+Indicate whether DNS URI records should be used to locate the KDCs
+and other servers for a realm, if they are not listed in the
+krb5.conf information for the realm.  SRV records are used as a
+fallback if no URI records were found.  The default value is true.
+New in release 1.15.
 
 \item[{\textbf{err\_fmt}}] \leavevmode
 This relation allows for custom error message formatting.  If a
@@ -2167,7 +2193,7 @@ Here is an example of a generic krb5.conf file:
     ATHENA.MIT.EDU = \PYGZob{}
         kdc = kerberos.mit.edu
         kdc = kerberos\PYGZhy{}1.mit.edu
-        kdc = kerberos\PYGZhy{}2.mit.edu:750
+        kdc = kerberos\PYGZhy{}2.mit.edu
         admin\PYGZus{}server = kerberos.mit.edu
         master\PYGZus{}kdc = kerberos.mit.edu
     \PYGZcb{}
@@ -2260,7 +2286,7 @@ Controls how Kerberos daemons perform logging
 
 \paragraph{{[}kdcdefaults{]}}
 \label{admin/conf_files/kdc_conf:kdcdefaults}\label{admin/conf_files/kdc_conf:id1}
-With one exception, relations in the {[}kdcdefaults{]} section specify
+With two exceptions, relations in the {[}kdcdefaults{]} section specify
 default values for realm variables, to be used if the {[}realms{]}
 subsection does not contain a relation for the tag.  See the
 {\hyperref[admin/conf_files/kdc_conf:kdc-realms]{\emph{{[}realms{]}}}} section for the definitions of these relations.
@@ -2269,7 +2295,13 @@ subsection does not contain a relation for the tag.  See the
 \textbf{host\_based\_services}
 
 \item {} 
+\textbf{kdc\_listen}
+
+\item {} 
 \textbf{kdc\_ports}
+
+\item {} 
+\textbf{kdc\_tcp\_listen}
 
 \item {} 
 \textbf{kdc\_tcp\_ports}
@@ -2285,6 +2317,11 @@ subsection does not contain a relation for the tag.  See the
 \item[{\textbf{kdc\_max\_dgram\_reply\_size}}] \leavevmode
 Specifies the maximum packet size that can be sent over UDP.  The
 default value is 4096 bytes.
+
+\item[{\textbf{kdc\_tcp\_listen\_backlog}}] \leavevmode
+(Integer.)  Set the size of the listen queue length for the KDC
+daemon.  The value may be limited by OS settings.  The default
+value is 5.
 
 \end{description}
 
@@ -2441,10 +2478,26 @@ Prior to release 1.11, the maximum value was 2500.
 new updates from the master.  The default value is \code{2m} (that
 is, two minutes).
 
+\item[{\textbf{iprop\_listen}}] \leavevmode
+(Whitespace- or comma-separated list.)  Specifies the iprop RPC
+listening addresses and/or ports for the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If kadmind fails to bind
+to any of the specified addresses, it will fail to start.  The
+default (when \textbf{iprop\_enable} is true) is to bind to the wildcard
+address at the port specified in \textbf{iprop\_port}.  New in release
+1.15.
+
 \item[{\textbf{iprop\_port}}] \leavevmode
 (Port number.)  Specifies the port number to be used for
-incremental propagation.  This is required in both master and
-slave configuration files.
+incremental propagation.  When \textbf{iprop\_enable} is true, this
+relation is required in the slave configuration file, and this
+relation or \textbf{iprop\_listen} is required in the master
+configuration file, as there is no default port number.  Port
+numbers specified in \textbf{iprop\_listen} entries will override this
+port number for the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} daemon.
 
 \item[{\textbf{iprop\_resync\_timeout}}] \leavevmode
 (Delta time string.)  Specifies the amount of time to wait for a
@@ -2463,30 +2516,84 @@ back end is being used, or the file name is specified in the
 \textbf{database\_name} is used.  Determination of the \textbf{iprop\_logfile}
 default value will not use values from the {[}dbmodules{]} section.)
 
+\item[{\textbf{kadmind\_listen}}] \leavevmode
+(Whitespace- or comma-separated list.)  Specifies the kadmin RPC
+listening addresses and/or ports for the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If kadmind fails to bind
+to any of the specified addresses, it will fail to start.  The
+default is to bind to the wildcard address at the port specified
+in \textbf{kadmind\_port}, or the standard kadmin port (749).  New in
+release 1.15.
+
 \item[{\textbf{kadmind\_port}}] \leavevmode
 (Port number.)  Specifies the port on which the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}}
-daemon is to listen for this realm.  The assigned port for kadmind
-is 749, which is used by default.
+daemon is to listen for this realm.  Port numbers specified in
+\textbf{kadmind\_listen} entries will override this port number.  The
+assigned port for kadmind is 749, which is used by default.
 
 \item[{\textbf{key\_stash\_file}}] \leavevmode
 (String.)  Specifies the location where the master key has been
 stored (via kdb5\_util stash).  The default is {\hyperref[mitK5defaults:paths]{\emph{LOCALSTATEDIR}}}\code{/krb5kdc}\code{/.k5.REALM}, where \emph{REALM} is the Kerberos realm.
 
+\item[{\textbf{kdc\_listen}}] \leavevmode
+(Whitespace- or comma-separated list.)  Specifies the UDP
+listening addresses and/or ports for the {\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If no port is specified,
+the standard port (88) is used.  If the KDC daemon fails to bind
+to any of the specified addresses, it will fail to start.  The
+default is to bind to the wildcard address on the standard port.
+New in release 1.15.
+
 \item[{\textbf{kdc\_ports}}] \leavevmode
-(Whitespace- or comma-separated list.)  Lists the ports on which
-the Kerberos server should listen for UDP requests, as a
-comma-separated list of integers.  The default value is
-\code{88,750}, which are the assigned Kerberos port and the port
-historically used by Kerberos V4.
+(Whitespace- or comma-separated list, deprecated.)  Prior to
+release 1.15, this relation lists the ports for the
+{\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} daemon to listen on for UDP requests.  In
+release 1.15 and later, it has the same meaning as \textbf{kdc\_listen}
+if that relation is not defined.
+
+\item[{\textbf{kdc\_tcp\_listen}}] \leavevmode
+(Whitespace- or comma-separated list.)  Specifies the TCP
+listening addresses and/or ports for the {\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If no port is specified,
+the standard port (88) is used.  To disable listening on TCP, set
+this relation to the empty string with \code{kdc\_tcp\_listen = ""}.
+If the KDC daemon fails to bind to any of the specified addresses,
+it will fail to start.  The default is to bind to the wildcard
+address on the standard port.  New in release 1.15.
 
 \item[{\textbf{kdc\_tcp\_ports}}] \leavevmode
-(Whitespace- or comma-separated list.)  Lists the ports on which
-the Kerberos server should listen for TCP connections, as a
-comma-separated list of integers.  To disable listening on TCP,
-set this relation to the empty string with \code{kdc\_tcp\_ports = ""}.
-If this relation is not specified, the default is to listen on TCP
-port 88 (the standard port).  Prior to release 1.13, the default
-was not to listen for TCP connections at all.
+(Whitespace- or comma-separated list, deprecated.)  Prior to
+release 1.15, this relation lists the ports for the
+{\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} daemon to listen on for UDP requests.  In
+release 1.15 and later, it has the same meaning as
+\textbf{kdc\_tcp\_listen} if that relation is not defined.
+
+\item[{\textbf{kpasswd\_listen}}] \leavevmode
+(Comma-separated list.)  Specifies the kpasswd listening addresses
+and/or ports for the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} daemon.  Each entry may be
+an interface address, a port number, or an address and port number
+separated by a colon.  If the address contains colons, enclose it
+in square brackets.  If no address is specified, the wildcard
+address is used.  If kadmind fails to bind to any of the specified
+addresses, it will fail to start.  The default is to bind to the
+wildcard address at the port specified in \textbf{kpasswd\_port}, or the
+standard kpasswd port (464).  New in release 1.15.
+
+\item[{\textbf{kpasswd\_port}}] \leavevmode
+(Port number.)  Specifies the port on which the {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}}
+daemon is to listen for password change requests for this realm.
+Port numbers specified in \textbf{kpasswd\_listen} entries will override
+this port number.  The assigned port for password change requests
+is 464, which is used by default.
 
 \item[{\textbf{master\_key\_name}}] \leavevmode
 (String.)  Specifies the name of the principal associated with the
@@ -2733,8 +2840,8 @@ modules.  The value should be an absolute path.
 \paragraph{{[}logging{]}}
 \label{admin/conf_files/kdc_conf:id4}\label{admin/conf_files/kdc_conf:logging}
 The {[}logging{]} section indicates how {\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} and
-{\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} perform logging.  The keys in this section are
-daemon names, which may be one of:
+{\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} perform logging.  It may contain the following
+relations:
 \begin{description}
 \item[{\textbf{admin\_server}}] \leavevmode
 Specifies how {\hyperref[admin/admin_commands/kadmind:kadmind-8]{\emph{kadmind}}} performs logging.
@@ -2746,9 +2853,16 @@ Specifies how {\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}
 Specifies how either daemon performs logging in the absence of
 relations specific to the daemon.
 
+\item[{\textbf{debug}}] \leavevmode
+(Boolean value.)  Specifies whether debugging messages are
+included in log outputs other than SYSLOG.  Debugging messages are
+always included in the system log output because syslog performs
+its own priority filtering.  The default value is false.  New in
+release 1.15.
+
 \end{description}
 
-Values are of the following forms:
+Logging specifications may have the following forms:
 \begin{description}
 \item[{\textbf{FILE=}\emph{filename} or \textbf{FILE:}\emph{filename}}] \leavevmode
 This value causes the daemon's logging messages to go to the
@@ -3037,14 +3151,24 @@ des-hmac-sha1
 DES with HMAC/sha1 (weak)
 \\
 \hline
-aes256-cts-hmac-sha1-96 aes256-cts AES-256
+aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1
  & 
-CTS mode with 96-bit SHA-1 HMAC
+AES-256 CTS mode with 96-bit SHA-1 HMAC
 \\
 \hline
-aes128-cts-hmac-sha1-96 aes128-cts AES-128
+aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1
  & 
-CTS mode with 96-bit SHA-1 HMAC
+AES-128 CTS mode with 96-bit SHA-1 HMAC
+\\
+\hline
+aes256-cts-hmac-sha384-192 aes256-sha2
+ & 
+AES-256 CTS mode with 192-bit SHA-384 HMAC
+\\
+\hline
+aes128-cts-hmac-sha256-128 aes128-sha2
+ & 
+AES-128 CTS mode with 128-bit SHA-256 HMAC
 \\
 \hline
 arcfour-hmac rc4-hmac arcfour-hmac-md5
@@ -3107,8 +3231,13 @@ front.
 While \textbf{aes128-cts} and \textbf{aes256-cts} are supported for all Kerberos
 operations, they are not supported by very old versions of our GSSAPI
 implementation (krb5-1.3.1 and earlier).  Services running versions of
-krb5 without AES support must not be given AES keys in the KDC
-database.
+krb5 without AES support must not be given keys of these encryption
+types in the KDC database.
+
+The \textbf{aes128-sha2} and \textbf{aes256-sha2} encryption types are new in
+release 1.15.  Services running versions of krb5 without support for
+these newer encryption types must not be given keys of these
+encryption types in the KDC database.
 
 
 \subsubsection{Keysalt lists}
@@ -3175,8 +3304,8 @@ Here's an example of a kdc.conf file:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 [kdcdefaults]
-    kdc\PYGZus{}ports = 88
-
+    kdc\PYGZus{}listen = 88
+    kdc\PYGZus{}tcp\PYGZus{}listen = 88
 [realms]
     ATHENA.MIT.EDU = \PYGZob{}
         kadmind\PYGZus{}port = 749
@@ -3283,6 +3412,11 @@ d
 {[}Dis{]}allows the deletion of principals or policies
 \\
 \hline
+e
+ & 
+{[}Dis{]}allows the extraction of principal keys
+\\
+\hline
 i
  & 
 {[}Dis{]}allows inquiries about principals or policies
@@ -3310,7 +3444,7 @@ s
 \hline
 x
  & 
-Short for admcilsp. All privileges
+Short for admcilsp. All privileges (except \code{e})
 \\
 \hline
 *
@@ -3320,6 +3454,19 @@ Same as x.
 \hline\end{tabulary}
 
 
+\end{description}
+
+\begin{notice}{note}{Note:}
+The \code{extract} privilege is not included in the wildcard
+privilege; it must be explicitly assigned.  This privilege
+allows the user to extract keys from the database, and must be
+handled with great care to avoid disclosure of important keys
+like those of the kadmin/* or krbtgt/* principals.  The
+\textbf{lockdown\_keys} principal attribute can be used to prevent
+key extraction from specific principals regardless of the
+granted privilege.
+\end{notice}
+\begin{description}
 \item[{\emph{target\_principal}}] \leavevmode
 (Optional. Partially or fully qualified Kerberos principal name.)
 Specifies the principal on which \emph{permissions} may be applied.
@@ -3629,6 +3776,69 @@ explicit server locations, providing SRV records will still benefit
 unconfigured clients, and be useful for other sites.
 
 
+\section{KDC Discovery}
+\label{admin/realm_config:kdc-discovery}\label{admin/realm_config:id1}
+As of MIT krb5 1.15, clients can also locate KDCs in DNS through URI
+records (\index{RFC!RFC 7553}\href{http://tools.ietf.org/html/rfc7553.html}{\textbf{RFC 7553}}).  Limitations with the SRV record format may
+result in extra DNS queries in situations where a client must failover
+to other transport types, or find a master server.  The URI record can
+convey more information about a realm's KDCs with a single query.
+
+The client performs a query for the following URI records:
+\begin{itemize}
+\item {} 
+\code{\_kerberos.REALM} for fiding KDCs.
+
+\item {} 
+\code{\_kerberos-adm.REALM} for finding kadmin services.
+
+\item {} 
+\code{\_kpasswd.REALM} for finding password services.
+
+\end{itemize}
+
+The URI record includes a priority, weight, and a URI string that
+consists of case-insensitive colon separated fields, in the form
+\code{scheme:{[}flags{]}:transport:residual}.
+\begin{itemize}
+\item {} 
+\emph{scheme} defines the registered URI type.  It should always be
+\code{krb5srv}.
+
+\item {} 
+\emph{flags} contains zero or more flag characters.  Currently the only
+valid flag is \code{m}, which indicates that the record is for a master
+server.
+
+\item {} 
+\emph{transport} defines the transport type of the residual URL or
+address.  Accepted values are \code{tcp}, \code{udp}, or \code{kkdcp} for the
+MS-KKDCP type.
+
+\item {} 
+\emph{residual} contains the hostname, IP address, or URL to be
+contacted using the specified transport, with an optional port
+extension.  The MS-KKDCP transport type uses a HTTPS URL, and can
+include a port and/or path extension.
+
+\end{itemize}
+
+An example of URI records in a zone file:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZus{}kerberos.EXAMPLE.COM  URI  10 1 krb5srv:m:tcp:kdc1.example.com
+                       URI  20 1 krb5srv:m:udp:kdc2.example.com:89
+                       URI  40 1 krb5srv::udp:10.10.0.23
+                       URI  30 1 krb5srv::kkdcp:https://proxy:89/auth
+\end{Verbatim}
+
+URI lookups are enabled by default, and can be disabled by setting
+\textbf{dns\_uri\_lookup} in the {\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}} section of
+{\hyperref[admin/conf_files/krb5_conf:krb5-conf-5]{\emph{krb5.conf}}} to False.  When enabled, URI lookups take
+precedence over SRV lookups, falling back to SRV lookups if no URI
+records are found.
+
+
 \section{Database propagation}
 \label{admin/realm_config:database-propagation}\label{admin/realm_config:db-prop}
 The Kerberos database resides on the master KDC, and must be
@@ -3845,11 +4055,12 @@ Options:
 (\emph{getdate} string) The password expiration date.
 
 \item[{\textbf{-maxlife} \emph{maxlife}}] \leavevmode
-(\emph{getdate} string) The maximum ticket life for the principal.
+(\emph{duration} or \emph{getdate} string) The maximum ticket life
+for the principal.
 
 \item[{\textbf{-maxrenewlife} \emph{maxrenewlife}}] \leavevmode
-(\emph{getdate} string) The maximum renewable life of tickets for
-the principal.
+(\emph{duration} or \emph{getdate} string) The maximum renewable
+life of tickets for the principal.
 
 \item[{\textbf{-kvno} \emph{kvno}}] \leavevmode
 The initial key version number.
@@ -3937,6 +4148,17 @@ constrained delegation.
 \item[{\{-\textbar{}+\}\textbf{no\_auth\_data\_required}}] \leavevmode
 \textbf{+no\_auth\_data\_required} prevents PAC or AD-SIGNEDPATH data from
 being added to service tickets for the principal.
+
+\item[{\{-\textbar{}+\}\textbf{lockdown\_keys}}] \leavevmode
+\textbf{+lockdown\_keys} prevents keys for this principal from leaving
+the KDC via kadmind.  The chpass and extract operations are denied
+for a principal with this attribute.  The chrand operation is
+allowed, but will not return the new keys.  The delete and rename
+operations are also denied if this attribute is set, in order to
+prevent a malicious administrator from replacing principals like
+krbtgt/* or kadmin/* with new principals without the attribute.
+This attribute can be set via the network protocol, but can only
+be removed using kadmin.local.
 
 \item[{\textbf{-randkey}}] \leavevmode
 Sets the key of the principal to a random value.
@@ -4286,10 +4508,12 @@ Alias: \textbf{addpol}
 The following options are available:
 \begin{description}
 \item[{\textbf{-maxlife} \emph{time}}] \leavevmode
-(\emph{getdate} string) Sets the maximum lifetime of a password.
+(\emph{duration} or \emph{getdate} string) Sets the maximum
+lifetime of a password.
 
 \item[{\textbf{-minlife} \emph{time}}] \leavevmode
-(\emph{getdate} string) Sets the minimum lifetime of a password.
+(\emph{duration} or \emph{getdate} string) Sets the minimum
+lifetime of a password.
 
 \item[{\textbf{-minlength} \emph{length}}] \leavevmode
 Sets the minimum length of a password.
@@ -4315,21 +4539,21 @@ resets to 0 after a successful attempt to authenticate.  A
 \end{description}
 \phantomsection\label{admin/database:policy-failurecountinterval}\begin{description}
 \item[{\textbf{-failurecountinterval} \emph{failuretime}}] \leavevmode
-(\emph{getdate} string) Sets the allowable time between
-authentication failures.  If an authentication failure happens
-after \emph{failuretime} has elapsed since the previous failure,
-the number of authentication failures is reset to 1.  A
+(\emph{duration} or \emph{getdate} string) Sets the allowable time
+between authentication failures.  If an authentication failure
+happens after \emph{failuretime} has elapsed since the previous
+failure, the number of authentication failures is reset to 1.  A
 \emph{failuretime} value of 0 (the default) means forever.
 
 \end{description}
 \phantomsection\label{admin/database:policy-lockoutduration}\begin{description}
 \item[{\textbf{-lockoutduration} \emph{lockouttime}}] \leavevmode
-(\emph{getdate} string) Sets the duration for which the principal
-is locked from authenticating if too many authentication failures
-occur without the specified failure count interval elapsing.
-A duration of 0 (the default) means the principal remains locked
-out until it is administratively unlocked with \code{modprinc
--unlock}.
+(\emph{duration} or \emph{getdate} string) Sets the duration for
+which the principal is locked from authenticating if too many
+authentication failures occur without the specified failure count
+interval elapsing.  A duration of 0 (the default) means the
+principal remains locked out until it is administratively unlocked
+with \code{modprinc -unlock}.
 
 \item[{\textbf{-allowedkeysalts}}] \leavevmode
 Specifies the key/salt tuples supported for long-term keys when
@@ -4632,6 +4856,12 @@ This may recover principals that do not dump normally, in cases
 where database corruption has occurred.  In cases of such
 corruption, this option will probably retrieve more principals
 than the \textbf{-rev} option will.
+
+\DUspan{versionmodified}{Changed in version 1.15: }Release 1.15 restored the functionality of the \textbf{-recurse}
+option.
+
+\DUspan{versionmodified}{Changed in version 1.5: }The \textbf{-recurse} option ceased working until release 1.15,
+doing a normal dump instead of a recursive traversal.
 
 \end{description}
 
@@ -5698,7 +5928,7 @@ kinit: Password incorrect while getting initial credentials
 Password for user@KRBTEST.COM:
 kinit: Password incorrect while getting initial credentials
 \PYGZdl{} kinit user
-kinit: Clients credentials have been revoked while getting initial credentials
+kinit: Client\PYGZsq{}s credentials have been revoked while getting initial credentials
 \end{Verbatim}
 
 
@@ -6071,8 +6301,8 @@ Display less verbose information.
 
 \item[{\textbf{-norandkey}}] \leavevmode
 Do not randomize the keys. The keys and their version numbers stay
-unchanged.  This option is only available in kadmin.local, and
-cannot be specified in combination with the \textbf{-e} option.
+unchanged.  This option cannot be specified in combination with the
+\textbf{-e} option.
 
 \end{description}
 
@@ -6582,7 +6812,7 @@ Because of the larger size of requests and responses using PKINIT, you
 may also need to allow TCP access to the KDC:
 
 \begin{Verbatim}[commandchars=\\\{\}]
-\PYG{n}{kdc\PYGZus{}tcp\PYGZus{}ports} \PYG{o}{=} \PYG{l+m+mi}{88}
+\PYG{n}{kdc\PYGZus{}tcp\PYGZus{}listen} \PYG{o}{=} \PYG{l+m+mi}{88}
 \end{Verbatim}
 
 Restart the {\hyperref[admin/admin_commands/krb5kdc:krb5kdc-8]{\emph{krb5kdc}}} daemon to pick up the configuration
@@ -7114,6 +7344,20 @@ aes256-cts-hmac-sha1-96
 \textgreater{}=Vista
 \\
 \hline
+aes128-cts-hmac-sha256-128
+ &  & 
+\textgreater{}=1.15
+ & 
+none
+\\
+\hline
+aes256-cts-hmac-sha384-192
+ &  & 
+\textgreater{}=1.15
+ & 
+none
+\\
+\hline
 camellia128-cts-cmac
  &  & 
 \textgreater{}=1.9
@@ -7243,6 +7487,10 @@ Password for user@KRBTEST.COM:
 kvno: KDC policy rejects request while getting credentials for
   host/high.value.server@KRBTEST.COM
 \end{Verbatim}
+
+GSSAPI server applications can inspect authentication indicators
+through the \emph{auth-indicator} name
+attribute.
 
 
 \chapter{Administration  programs}
@@ -7513,11 +7761,12 @@ Options:
 (\emph{getdate} string) The password expiration date.
 
 \item[{\textbf{-maxlife} \emph{maxlife}}] \leavevmode
-(\emph{getdate} string) The maximum ticket life for the principal.
+(\emph{duration} or \emph{getdate} string) The maximum ticket life
+for the principal.
 
 \item[{\textbf{-maxrenewlife} \emph{maxrenewlife}}] \leavevmode
-(\emph{getdate} string) The maximum renewable life of tickets for
-the principal.
+(\emph{duration} or \emph{getdate} string) The maximum renewable
+life of tickets for the principal.
 
 \item[{\textbf{-kvno} \emph{kvno}}] \leavevmode
 The initial key version number.
@@ -7605,6 +7854,17 @@ constrained delegation.
 \item[{\{-\textbar{}+\}\textbf{no\_auth\_data\_required}}] \leavevmode
 \textbf{+no\_auth\_data\_required} prevents PAC or AD-SIGNEDPATH data from
 being added to service tickets for the principal.
+
+\item[{\{-\textbar{}+\}\textbf{lockdown\_keys}}] \leavevmode
+\textbf{+lockdown\_keys} prevents keys for this principal from leaving
+the KDC via kadmind.  The chpass and extract operations are denied
+for a principal with this attribute.  The chrand operation is
+allowed, but will not return the new keys.  The delete and rename
+operations are also denied if this attribute is set, in order to
+prevent a malicious administrator from replacing principals like
+krbtgt/* or kadmin/* with new principals without the attribute.
+This attribute can be set via the network protocol, but can only
+be removed using kadmin.local.
 
 \item[{\textbf{-randkey}}] \leavevmode
 Sets the key of the principal to a random value.
@@ -7917,7 +8177,7 @@ Example:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 set\PYGZus{}string host/foo.mit.edu session\PYGZus{}enctypes aes128\PYGZhy{}cts
-set\PYGZus{}string user@FOO.COM otp [\PYGZob{}\PYGZdq{}type\PYGZdq{}:\PYGZdq{}hotp\PYGZdq{},\PYGZdq{}username\PYGZdq{}:\PYGZdq{}custom\PYGZdq{}\PYGZcb{}]
+set\PYGZus{}string user@FOO.COM otp \PYGZdq{}[\PYGZob{}\PYGZdq{}\PYGZdq{}type\PYGZdq{}\PYGZdq{}:\PYGZdq{}\PYGZdq{}hotp\PYGZdq{}\PYGZdq{},\PYGZdq{}\PYGZdq{}username\PYGZdq{}\PYGZdq{}:\PYGZdq{}\PYGZdq{}al\PYGZdq{}\PYGZdq{}\PYGZcb{}]\PYGZdq{}
 \end{Verbatim}
 \phantomsection\label{admin/admin_commands/kadmin_local:set-string-end}
 
@@ -7949,10 +8209,12 @@ Alias: \textbf{addpol}
 The following options are available:
 \begin{description}
 \item[{\textbf{-maxlife} \emph{time}}] \leavevmode
-(\emph{getdate} string) Sets the maximum lifetime of a password.
+(\emph{duration} or \emph{getdate} string) Sets the maximum
+lifetime of a password.
 
 \item[{\textbf{-minlife} \emph{time}}] \leavevmode
-(\emph{getdate} string) Sets the minimum lifetime of a password.
+(\emph{duration} or \emph{getdate} string) Sets the minimum
+lifetime of a password.
 
 \item[{\textbf{-minlength} \emph{length}}] \leavevmode
 Sets the minimum length of a password.
@@ -7978,21 +8240,21 @@ resets to 0 after a successful attempt to authenticate.  A
 \end{description}
 \phantomsection\label{admin/admin_commands/kadmin_local:policy-failurecountinterval}\begin{description}
 \item[{\textbf{-failurecountinterval} \emph{failuretime}}] \leavevmode
-(\emph{getdate} string) Sets the allowable time between
-authentication failures.  If an authentication failure happens
-after \emph{failuretime} has elapsed since the previous failure,
-the number of authentication failures is reset to 1.  A
+(\emph{duration} or \emph{getdate} string) Sets the allowable time
+between authentication failures.  If an authentication failure
+happens after \emph{failuretime} has elapsed since the previous
+failure, the number of authentication failures is reset to 1.  A
 \emph{failuretime} value of 0 (the default) means forever.
 
 \end{description}
 \phantomsection\label{admin/admin_commands/kadmin_local:policy-lockoutduration}\begin{description}
 \item[{\textbf{-lockoutduration} \emph{lockouttime}}] \leavevmode
-(\emph{getdate} string) Sets the duration for which the principal
-is locked from authenticating if too many authentication failures
-occur without the specified failure count interval elapsing.
-A duration of 0 (the default) means the principal remains locked
-out until it is administratively unlocked with \code{modprinc
--unlock}.
+(\emph{duration} or \emph{getdate} string) Sets the duration for
+which the principal is locked from authenticating if too many
+authentication failures occur without the specified failure count
+interval elapsing.  A duration of 0 (the default) means the
+principal remains locked out until it is administratively unlocked
+with \code{modprinc -unlock}.
 
 \item[{\textbf{-allowedkeysalts}}] \leavevmode
 Specifies the key/salt tuples supported for long-term keys when
@@ -8151,8 +8413,8 @@ Display less verbose information.
 
 \item[{\textbf{-norandkey}}] \leavevmode
 Do not randomize the keys. The keys and their version numbers stay
-unchanged.  This option is only available in kadmin.local, and
-cannot be specified in combination with the \textbf{-e} option.
+unchanged.  This option cannot be specified in combination with the
+\textbf{-e} option.
 
 \end{description}
 
@@ -8258,6 +8520,7 @@ interface to the OpenVision Kerberos administration program.
 {[}\textbf{-P} \emph{pid\_file}{]}
 {[}\textbf{-p} \emph{kdb5\_util\_path}{]}
 {[}\textbf{-K} \emph{kprop\_path}{]}
+{[}\textbf{-k} \emph{kprop\_port}{]}
 {[}\textbf{-F} \emph{dump\_file}{]}
 
 
@@ -8343,6 +8606,11 @@ KDB in response to full resync requests when iprop is enabled.
 \item[{\textbf{-K} \emph{kprop\_path}}] \leavevmode
 specifies the path to the kprop command to use to send full dumps
 to slaves in response to full resync requests.
+
+\item[{\textbf{-k} \emph{kprop\_port}}] \leavevmode
+specifies the port by which the kprop process that is spawned by kadmind
+connects to the slave kpropd, in order to transfer the dump file during
+an iprop full resync request.
 
 \item[{\textbf{-F} \emph{dump\_file}}] \leavevmode
 specifies the file path to be used for dumping the KDB in response
@@ -8526,6 +8794,12 @@ This may recover principals that do not dump normally, in cases
 where database corruption has occurred.  In cases of such
 corruption, this option will probably retrieve more principals
 than the \textbf{-rev} option will.
+
+\DUspan{versionmodified}{Changed in version 1.15: }Release 1.15 restored the functionality of the \textbf{-recurse}
+option.
+
+\DUspan{versionmodified}{Changed in version 1.5: }The \textbf{-recurse} option ceased working until release 1.15,
+doing a normal dump instead of a recursive traversal.
 
 \end{description}
 
@@ -9418,7 +9692,7 @@ which the KDC should listen on for Kerberos version 5 requests, as a
 comma-separated list.  This value overrides the UDP port numbers
 specified in the {\hyperref[admin/conf_files/kdc_conf:kdcdefaults]{\emph{{[}kdcdefaults{]}}}} section of {\hyperref[admin/conf_files/kdc_conf:kdc-conf-5]{\emph{kdc.conf}}}, but
 may be overridden by realm-specific values.  If no value is given from
-any source, the default ports are 88 and 750.
+any source, the default port is 88.
 
 The \textbf{-w} \emph{numworkers} option tells the KDC to fork \emph{numworkers}
 processes to listen to the KDC ports and process requests in parallel.
@@ -9928,13 +10202,14 @@ ktutil:
 
 \subsection{DESCRIPTION}
 \label{admin/admin_commands/k5srvutil:description}
-k5srvutil allows an administrator to list or change keys currently in
-a keytab or to add new keys to the keytab.
+k5srvutil allows an administrator to list keys currently in
+a keytab, to obtain new keys for a principal currently in a keytab,
+or to delete non-current keys from a keytab.
 
 \emph{operation} must be one of the following:
 \begin{description}
 \item[{\textbf{list}}] \leavevmode
-Lists the keys in a keytab showing version number and principal
+Lists the keys in a keytab, showing version number and principal
 name.
 
 \item[{\textbf{change}}] \leavevmode
@@ -9942,13 +10217,14 @@ Uses the kadmin protocol to update the keys in the Kerberos
 database to new randomly-generated keys, and updates the keys in
 the keytab to match.  If a key's version number doesn't match the
 version number stored in the Kerberos server's database, then the
-operation will fail.  Old keys are retained in the keytab so that
-existing tickets continue to work.  If the \textbf{-i} flag is given,
-k5srvutil will prompt for confirmation before changing each key.
-If the \textbf{-k} option is given, the old and new keys will be
-displayed.  Ordinarily, keys will be generated with the default
-encryption types and key salts.  This can be overridden with the
-\textbf{-e} option.
+operation will fail.  If the \textbf{-i} flag is given, k5srvutil will
+prompt for confirmation before changing each key.  If the \textbf{-k}
+option is given, the old and new keys will be displayed.
+Ordinarily, keys will be generated with the default encryption
+types and key salts.  This can be overridden with the \textbf{-e}
+option.  Old keys are retained in the keytab so that existing
+tickets continue to work, but \textbf{delold} should be used after
+such tickets expire, to prevent attacks against the old keys.
 
 \item[{\textbf{delold}}] \leavevmode
 Deletes keys that are not the most recent version from the keytab.
@@ -10192,11 +10468,6 @@ Permitted enctypes
 KDC default port
  & 
 88
- & \\
-\hline
-Second KDC default port
- & 
-750
  & \\
 \hline
 Admin server port

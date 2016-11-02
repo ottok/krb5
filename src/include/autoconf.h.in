@@ -8,9 +8,6 @@
 /* Define if AES-NI support is enabled */
 #undef AESNI
 
-/* Define if ANSI stdio is present (in particular "b" option to fopen) */
-#undef ANSI_STDIO
-
 /* Define if socket can't be bound to 0.0.0.0 */
 #undef BROKEN_STREAMS_SOCKETS
 
@@ -22,9 +19,6 @@
 
 /* Define if __attribute__((constructor)) works */
 #undef CONSTRUCTOR_ATTR_WORKS
-
-/* Define if crypto implementation is NSS */
-#undef CRYPTO_IMPL_NSS
 
 /* Define to default ccache name */
 #undef DEFCCNAME
@@ -130,9 +124,6 @@
 /* Define to 1 if you have the `chmod' function. */
 #undef HAVE_CHMOD
 
-/* Define to 1 if you have the `closelog' function. */
-#undef HAVE_CLOSELOG
-
 /* Define to 1 if you have the `compile' function. */
 #undef HAVE_COMPILE
 
@@ -197,6 +188,12 @@
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
+
+/* Define if system getopt should be used. */
+#undef HAVE_GETOPT
+
+/* Define if system getopt_long should be used. */
+#undef HAVE_GETOPT_LONG
 
 /* Define if getpwnam_r is available and useful. */
 #undef HAVE_GETPWNAM_R
@@ -315,9 +312,6 @@
 /* Define to 1 if you have the `ns_name_uncompress' function. */
 #undef HAVE_NS_NAME_UNCOMPRESS
 
-/* Define to 1 if you have the `openlog' function. */
-#undef HAVE_OPENLOG
-
 /* Define if OpenSSL supports cms. */
 #undef HAVE_OPENSSL_CMS
 
@@ -347,15 +341,6 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
-
-/* Define to 1 if you have the <python2.3/Python.h> header file. */
-#undef HAVE_PYTHON2_3_PYTHON_H
-
-/* Define to 1 if you have the <python2.5/Python.h> header file. */
-#undef HAVE_PYTHON2_5_PYTHON_H
-
-/* Define to 1 if you have the <Python.h> header file. */
-#undef HAVE_PYTHON_H
 
 /* Define if building with GNU Readline. */
 #undef HAVE_READLINE
@@ -515,12 +500,6 @@
 
 /* Define to 1 if `st_mtim.tv_nsec' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-
-/* Define to 1 if you have the `syslog' function. */
-#undef HAVE_SYSLOG
-
-/* Define to 1 if you have the <syslog.h> header file. */
-#undef HAVE_SYSLOG_H
 
 /* Define to 1 if you have the <sys/bswap.h> header file. */
 #undef HAVE_SYS_BSWAP_H

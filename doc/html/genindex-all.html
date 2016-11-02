@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -193,10 +193,18 @@
   <dt><a href="appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_96_AES256.html#CKSUMTYPE_HMAC_SHA1_96_AES256">CKSUMTYPE_HMAC_SHA1_96_AES256 (built-in variable)</a>
   </dt>
 
+      
+  <dt><a href="appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_DES3.html#CKSUMTYPE_HMAC_SHA1_DES3">CKSUMTYPE_HMAC_SHA1_DES3 (built-in variable)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="appdev/refs/macros/CKSUMTYPE_HMAC_SHA1_DES3.html#CKSUMTYPE_HMAC_SHA1_DES3">CKSUMTYPE_HMAC_SHA1_DES3 (built-in variable)</a>
+  <dt><a href="appdev/refs/macros/CKSUMTYPE_HMAC_SHA256_128_AES128.html#CKSUMTYPE_HMAC_SHA256_128_AES128">CKSUMTYPE_HMAC_SHA256_128_AES128 (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256.html#CKSUMTYPE_HMAC_SHA384_192_AES256">CKSUMTYPE_HMAC_SHA384_192_AES256 (built-in variable)</a>
   </dt>
 
       
@@ -234,7 +242,15 @@
   </dt>
 
       
+  <dt><a href="appdev/refs/macros/ENCTYPE_AES128_CTS_HMAC_SHA256_128.html#ENCTYPE_AES128_CTS_HMAC_SHA256_128">ENCTYPE_AES128_CTS_HMAC_SHA256_128 (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA1_96.html#ENCTYPE_AES256_CTS_HMAC_SHA1_96">ENCTYPE_AES256_CTS_HMAC_SHA1_96 (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="appdev/refs/macros/ENCTYPE_AES256_CTS_HMAC_SHA384_192.html#ENCTYPE_AES256_CTS_HMAC_SHA384_192">ENCTYPE_AES256_CTS_HMAC_SHA384_192 (built-in variable)</a>
   </dt>
 
       
@@ -273,12 +289,12 @@
   <dt><a href="appdev/refs/macros/ENCTYPE_DES_CBC_CRC.html#ENCTYPE_DES_CBC_CRC">ENCTYPE_DES_CBC_CRC (built-in variable)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="appdev/refs/macros/ENCTYPE_DES_CBC_MD4.html#ENCTYPE_DES_CBC_MD4">ENCTYPE_DES_CBC_MD4 (built-in variable)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="appdev/refs/macros/ENCTYPE_DES_CBC_MD5.html#ENCTYPE_DES_CBC_MD5">ENCTYPE_DES_CBC_MD5 (built-in variable)</a>
   </dt>
@@ -1738,6 +1754,10 @@
   </dt>
 
       
+  <dt><a href="appdev/refs/api/krb5_expand_hostname.html#c.krb5_expand_hostname">krb5_expand_hostname (C function)</a>
+  </dt>
+
+      
   <dt><a href="appdev/refs/types/krb5_expire_callback_func.html#c.krb5_expire_callback_func">krb5_expire_callback_func (C type)</a>
   </dt>
 
@@ -2094,6 +2114,10 @@
   </dt>
 
       
+  <dt><a href="appdev/refs/api/krb5_get_init_creds_opt_set_pac_request.html#c.krb5_get_init_creds_opt_set_pac_request">krb5_get_init_creds_opt_set_pac_request (C function)</a>
+  </dt>
+
+      
   <dt><a href="appdev/refs/api/krb5_get_init_creds_opt_set_preauth_list.html#c.krb5_get_init_creds_opt_set_preauth_list">krb5_get_init_creds_opt_set_preauth_list (C function)</a>
   </dt>
 
@@ -2241,12 +2265,12 @@
   <dt><a href="appdev/refs/api/krb5_init_secure_context.html#c.krb5_init_secure_context">krb5_init_secure_context (C function)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="appdev/refs/types/krb5_int16.html#c.krb5_int16">krb5_int16 (C type)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="appdev/refs/macros/KRB5_INT16_MAX.html#KRB5_INT16_MAX">KRB5_INT16_MAX (built-in variable)</a>
   </dt>
@@ -3248,6 +3272,14 @@
   </dt>
 
       
+  <dt><a href="appdev/refs/types/krb5_post_recv_fn.html#c.krb5_post_recv_fn">krb5_post_recv_fn (C type)</a>
+  </dt>
+
+      
+  <dt><a href="appdev/refs/types/krb5_pre_send_fn.html#c.krb5_pre_send_fn">krb5_pre_send_fn (C type)</a>
+  </dt>
+
+      
   <dt><a href="appdev/refs/types/krb5_preauthtype.html#c.krb5_preauthtype">krb5_preauthtype (C type)</a>
   </dt>
 
@@ -3780,6 +3812,14 @@
   </dt>
 
       
+  <dt><a href="appdev/refs/api/krb5_set_kdc_recv_hook.html#c.krb5_set_kdc_recv_hook">krb5_set_kdc_recv_hook (C function)</a>
+  </dt>
+
+      
+  <dt><a href="appdev/refs/api/krb5_set_kdc_send_hook.html#c.krb5_set_kdc_send_hook">krb5_set_kdc_send_hook (C function)</a>
+  </dt>
+
+      
   <dt><a href="appdev/refs/api/krb5_set_password.html#c.krb5_set_password">krb5_set_password (C function)</a>
   </dt>
 
@@ -4272,7 +4312,7 @@
   </dt>
 
         
-  <dt><a href="appdev/gssapi.html#index-2">RFC 4757</a>
+  <dt><a href="appdev/gssapi.html#index-3">RFC 4757</a>
   </dt>
 
         
@@ -4312,7 +4352,7 @@
   </dt>
 
         
-  <dt><a href="mitK5features.html#index-5">RFC 6680</a>
+  <dt><a href="appdev/gssapi.html#index-2">RFC 6680</a>, <a href="mitK5features.html#index-5">[1]</a>
   </dt>
 
         
@@ -4321,6 +4361,10 @@
 
         
   <dt><a href="formats/ccache_file_format.html#index-1">RFC 6806</a>, <a href="mitK5features.html#index-2">[1]</a>
+  </dt>
+
+        
+  <dt><a href="admin/realm_config.html#index-1">RFC 7553</a>
   </dt>
 
       </dl></dd>
@@ -4472,7 +4516,7 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">
