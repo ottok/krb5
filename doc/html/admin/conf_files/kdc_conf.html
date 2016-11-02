@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -109,13 +109,15 @@ changes to take effect.</p>
 </table>
 <div class="section" id="kdcdefaults">
 <span id="id1"></span><h3>[kdcdefaults]<a class="headerlink" href="#kdcdefaults" title="Permalink to this headline">¶</a></h3>
-<p>With one exception, relations in the [kdcdefaults] section specify
+<p>With two exceptions, relations in the [kdcdefaults] section specify
 default values for realm variables, to be used if the [realms]
 subsection does not contain a relation for the tag.  See the
 <a class="reference internal" href="#kdc-realms"><em>[realms]</em></a> section for the definitions of these relations.</p>
 <ul class="simple">
 <li><strong>host_based_services</strong></li>
+<li><strong>kdc_listen</strong></li>
 <li><strong>kdc_ports</strong></li>
+<li><strong>kdc_tcp_listen</strong></li>
 <li><strong>kdc_tcp_ports</strong></li>
 <li><strong>no_host_referral</strong></li>
 <li><strong>restrict_anonymous_to_tgt</strong></li>
@@ -124,6 +126,10 @@ subsection does not contain a relation for the tag.  See the
 <dt><strong>kdc_max_dgram_reply_size</strong></dt>
 <dd>Specifies the maximum packet size that can be sent over UDP.  The
 default value is 4096 bytes.</dd>
+<dt><strong>kdc_tcp_listen_backlog</strong></dt>
+<dd>(Integer.)  Set the size of the listen queue length for the KDC
+daemon.  The value may be limited by OS settings.  The default
+value is 5.</dd>
 </dl>
 </div>
 <div class="section" id="realms">
@@ -251,10 +257,25 @@ Prior to release 1.11, the maximum value was 2500.</dd>
 <dd>(Delta time string.)  Specifies how often the slave KDC polls for
 new updates from the master.  The default value is <tt class="docutils literal"><span class="pre">2m</span></tt> (that
 is, two minutes).</dd>
+<dt><strong>iprop_listen</strong></dt>
+<dd>(Whitespace- or comma-separated list.)  Specifies the iprop RPC
+listening addresses and/or ports for the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If kadmind fails to bind
+to any of the specified addresses, it will fail to start.  The
+default (when <strong>iprop_enable</strong> is true) is to bind to the wildcard
+address at the port specified in <strong>iprop_port</strong>.  New in release
+1.15.</dd>
 <dt><strong>iprop_port</strong></dt>
 <dd>(Port number.)  Specifies the port number to be used for
-incremental propagation.  This is required in both master and
-slave configuration files.</dd>
+incremental propagation.  When <strong>iprop_enable</strong> is true, this
+relation is required in the slave configuration file, and this
+relation or <strong>iprop_listen</strong> is required in the master
+configuration file, as there is no default port number.  Port
+numbers specified in <strong>iprop_listen</strong> entries will override this
+port number for the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> daemon.</dd>
 <dt><strong>iprop_resync_timeout</strong></dt>
 <dd>(Delta time string.)  Specifies the amount of time to wait for a
 full propagation to complete.  This is optional in configuration
@@ -270,27 +291,76 @@ back end is being used, or the file name is specified in the
 [dbmodules] section, then the hard-coded default for
 <strong>database_name</strong> is used.  Determination of the <strong>iprop_logfile</strong>
 default value will not use values from the [dbmodules] section.)</dd>
+<dt><strong>kadmind_listen</strong></dt>
+<dd>(Whitespace- or comma-separated list.)  Specifies the kadmin RPC
+listening addresses and/or ports for the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If kadmind fails to bind
+to any of the specified addresses, it will fail to start.  The
+default is to bind to the wildcard address at the port specified
+in <strong>kadmind_port</strong>, or the standard kadmin port (749).  New in
+release 1.15.</dd>
 <dt><strong>kadmind_port</strong></dt>
 <dd>(Port number.)  Specifies the port on which the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a>
-daemon is to listen for this realm.  The assigned port for kadmind
-is 749, which is used by default.</dd>
+daemon is to listen for this realm.  Port numbers specified in
+<strong>kadmind_listen</strong> entries will override this port number.  The
+assigned port for kadmind is 749, which is used by default.</dd>
 <dt><strong>key_stash_file</strong></dt>
 <dd>(String.)  Specifies the location where the master key has been
 stored (via kdb5_util stash).  The default is <a class="reference internal" href="../../mitK5defaults.html#paths"><em>LOCALSTATEDIR</em></a><tt class="docutils literal"><span class="pre">/krb5kdc</span></tt><tt class="docutils literal"><span class="pre">/.k5.REALM</span></tt>, where <em>REALM</em> is the Kerberos realm.</dd>
+<dt><strong>kdc_listen</strong></dt>
+<dd>(Whitespace- or comma-separated list.)  Specifies the UDP
+listening addresses and/or ports for the <a class="reference internal" href="../admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If no port is specified,
+the standard port (88) is used.  If the KDC daemon fails to bind
+to any of the specified addresses, it will fail to start.  The
+default is to bind to the wildcard address on the standard port.
+New in release 1.15.</dd>
 <dt><strong>kdc_ports</strong></dt>
-<dd>(Whitespace- or comma-separated list.)  Lists the ports on which
-the Kerberos server should listen for UDP requests, as a
-comma-separated list of integers.  The default value is
-<tt class="docutils literal"><span class="pre">88,750</span></tt>, which are the assigned Kerberos port and the port
-historically used by Kerberos V4.</dd>
+<dd>(Whitespace- or comma-separated list, deprecated.)  Prior to
+release 1.15, this relation lists the ports for the
+<a class="reference internal" href="../admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> daemon to listen on for UDP requests.  In
+release 1.15 and later, it has the same meaning as <strong>kdc_listen</strong>
+if that relation is not defined.</dd>
+<dt><strong>kdc_tcp_listen</strong></dt>
+<dd>(Whitespace- or comma-separated list.)  Specifies the TCP
+listening addresses and/or ports for the <a class="reference internal" href="../admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> daemon.
+Each entry may be an interface address, a port number, or an
+address and port number separated by a colon.  If the address
+contains colons, enclose it in square brackets.  If no address is
+specified, the wildcard address is used.  If no port is specified,
+the standard port (88) is used.  To disable listening on TCP, set
+this relation to the empty string with <tt class="docutils literal"><span class="pre">kdc_tcp_listen</span> <span class="pre">=</span> <span class="pre">&quot;&quot;</span></tt>.
+If the KDC daemon fails to bind to any of the specified addresses,
+it will fail to start.  The default is to bind to the wildcard
+address on the standard port.  New in release 1.15.</dd>
 <dt><strong>kdc_tcp_ports</strong></dt>
-<dd>(Whitespace- or comma-separated list.)  Lists the ports on which
-the Kerberos server should listen for TCP connections, as a
-comma-separated list of integers.  To disable listening on TCP,
-set this relation to the empty string with <tt class="docutils literal"><span class="pre">kdc_tcp_ports</span> <span class="pre">=</span> <span class="pre">&quot;&quot;</span></tt>.
-If this relation is not specified, the default is to listen on TCP
-port 88 (the standard port).  Prior to release 1.13, the default
-was not to listen for TCP connections at all.</dd>
+<dd>(Whitespace- or comma-separated list, deprecated.)  Prior to
+release 1.15, this relation lists the ports for the
+<a class="reference internal" href="../admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> daemon to listen on for UDP requests.  In
+release 1.15 and later, it has the same meaning as
+<strong>kdc_tcp_listen</strong> if that relation is not defined.</dd>
+<dt><strong>kpasswd_listen</strong></dt>
+<dd>(Comma-separated list.)  Specifies the kpasswd listening addresses
+and/or ports for the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> daemon.  Each entry may be
+an interface address, a port number, or an address and port number
+separated by a colon.  If the address contains colons, enclose it
+in square brackets.  If no address is specified, the wildcard
+address is used.  If kadmind fails to bind to any of the specified
+addresses, it will fail to start.  The default is to bind to the
+wildcard address at the port specified in <strong>kpasswd_port</strong>, or the
+standard kpasswd port (464).  New in release 1.15.</dd>
+<dt><strong>kpasswd_port</strong></dt>
+<dd>(Port number.)  Specifies the port on which the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a>
+daemon is to listen for password change requests for this realm.
+Port numbers specified in <strong>kpasswd_listen</strong> entries will override
+this port number.  The assigned port for password change requests
+is 464, which is used by default.</dd>
 <dt><strong>master_key_name</strong></dt>
 <dd>(String.)  Specifies the name of the principal associated with the
 master key.  The default is <tt class="docutils literal"><span class="pre">K/M</span></tt>.</dd>
@@ -476,8 +546,8 @@ modules.  The value should be an absolute path.</dd>
 <div class="section" id="logging">
 <span id="id4"></span><h3>[logging]<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
 <p>The [logging] section indicates how <a class="reference internal" href="../admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> and
-<a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> perform logging.  The keys in this section are
-daemon names, which may be one of:</p>
+<a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> perform logging.  It may contain the following
+relations:</p>
 <dl class="docutils">
 <dt><strong>admin_server</strong></dt>
 <dd>Specifies how <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a> performs logging.</dd>
@@ -486,8 +556,14 @@ daemon names, which may be one of:</p>
 <dt><strong>default</strong></dt>
 <dd>Specifies how either daemon performs logging in the absence of
 relations specific to the daemon.</dd>
+<dt><strong>debug</strong></dt>
+<dd>(Boolean value.)  Specifies whether debugging messages are
+included in log outputs other than SYSLOG.  Debugging messages are
+always included in the system log output because syslog performs
+its own priority filtering.  The default value is false.  New in
+release 1.15.</dd>
 </dl>
-<p>Values are of the following forms:</p>
+<p>Logging specifications may have the following forms:</p>
 <dl class="docutils">
 <dt><strong>FILE=</strong><em>filename</em> or <strong>FILE:</strong><em>filename</em></dt>
 <dd>This value causes the daemon&#8217;s logging messages to go to the
@@ -725,11 +801,17 @@ not recommended for use.</p>
 <tr class="row-odd"><td>des-hmac-sha1</td>
 <td>DES with HMAC/sha1 (weak)</td>
 </tr>
-<tr class="row-even"><td>aes256-cts-hmac-sha1-96 aes256-cts AES-256</td>
-<td>CTS mode with 96-bit SHA-1 HMAC</td>
+<tr class="row-even"><td>aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1</td>
+<td>AES-256 CTS mode with 96-bit SHA-1 HMAC</td>
 </tr>
-<tr class="row-odd"><td>aes128-cts-hmac-sha1-96 aes128-cts AES-128</td>
-<td>CTS mode with 96-bit SHA-1 HMAC</td>
+<tr class="row-odd"><td>aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1</td>
+<td>AES-128 CTS mode with 96-bit SHA-1 HMAC</td>
+</tr>
+<tr class="row-even"><td>aes256-cts-hmac-sha384-192 aes256-sha2</td>
+<td>AES-256 CTS mode with 192-bit SHA-384 HMAC</td>
+</tr>
+<tr class="row-odd"><td>aes128-cts-hmac-sha256-128 aes128-sha2</td>
+<td>AES-128 CTS mode with 128-bit SHA-256 HMAC</td>
 </tr>
 <tr class="row-even"><td>arcfour-hmac rc4-hmac arcfour-hmac-md5</td>
 <td>RC4 with HMAC/MD5</td>
@@ -772,8 +854,12 @@ front.</p>
 <p>While <strong>aes128-cts</strong> and <strong>aes256-cts</strong> are supported for all Kerberos
 operations, they are not supported by very old versions of our GSSAPI
 implementation (krb5-1.3.1 and earlier).  Services running versions of
-krb5 without AES support must not be given AES keys in the KDC
-database.</p>
+krb5 without AES support must not be given keys of these encryption
+types in the KDC database.</p>
+<p>The <strong>aes128-sha2</strong> and <strong>aes256-sha2</strong> encryption types are new in
+release 1.15.  Services running versions of krb5 without support for
+these newer encryption types must not be given keys of these
+encryption types in the KDC database.</p>
 </div>
 <div class="section" id="keysalt-lists">
 <span id="id7"></span><h2>Keysalt lists<a class="headerlink" href="#keysalt-lists" title="Permalink to this headline">¶</a></h2>
@@ -824,8 +910,8 @@ follows:</p>
 <h2>Sample kdc.conf File<a class="headerlink" href="#sample-kdc-conf-file" title="Permalink to this headline">¶</a></h2>
 <p>Here&#8217;s an example of a kdc.conf file:</p>
 <div class="highlight-python"><div class="highlight"><pre>[kdcdefaults]
-    kdc_ports = 88
-
+    kdc_listen = 88
+    kdc_tcp_listen = 88
 [realms]
     ATHENA.MIT.EDU = {
         kadmind_port = 749
@@ -959,7 +1045,7 @@ follows:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

@@ -156,7 +156,7 @@ mpool_delete(mp, page)
 	struct _hqh *head;
 	BKT *bp;
 
-	bp = (BKT *)((char *)page - sizeof(BKT));
+	bp = (void *)((char *)page - sizeof(BKT));
 
 #ifdef DEBUG
 	if (!(bp->flags & MPOOL_PINNED)) {
@@ -214,7 +214,8 @@ mpool_get(mp, pgno, flags)
 		TAILQ_INSERT_TAIL(&mp->lqh, bp, q);
 
 		/* Return a pinned page. */
-		bp->flags |= MPOOL_PINNED;
+		if (!(flags & MPOOL_IGNOREPIN))
+			bp->flags |= MPOOL_PINNED;
 		return (bp->page);
 	}
 
@@ -236,7 +237,8 @@ mpool_get(mp, pgno, flags)
 	if (lseek(mp->fd, off, SEEK_SET) != off)
 		return (NULL);
 
-	if ((nr = read(mp->fd, bp->page, mp->pagesize)) != mp->pagesize) {
+	if ((nr = read(mp->fd, bp->page, mp->pagesize)) !=
+	    (ssize_t)mp->pagesize) {
 		if (nr > 0) {
 			/* A partial read is definitely bad. */
 			errno = EINVAL;
@@ -286,7 +288,7 @@ mpool_put(mp, page, flags)
 #ifdef STATISTICS
 	++mp->pageput;
 #endif
-	bp = (BKT *)((char *)page - sizeof(BKT));
+	bp = (void *)((char *)page - sizeof(BKT));
 #ifdef DEBUG
 	if (!(bp->flags & MPOOL_PINNED)) {
 		(void)fprintf(stderr,
@@ -428,9 +430,18 @@ mpool_write(mp, bp)
 	}
 	if (lseek(mp->fd, off, SEEK_SET) != off)
 		return (RET_ERROR);
-	if (write(mp->fd, bp->page, mp->pagesize) != mp->pagesize)
+	if (write(mp->fd, bp->page, mp->pagesize) !=
+	    (ssize_t)mp->pagesize)
 		return (RET_ERROR);
 
+	/*
+	 * Re-run through the input filter since this page may soon be
+	 * accessed via the cache, and whatever the user's output filter
+	 * did may screw things up if we don't let the input filter
+	 * restore the in-core copy.
+	 */
+	if (mp->pgin)
+		(mp->pgin)(mp->pgcookie, bp->pgno, bp->page);
 	bp->flags &= ~MPOOL_DIRTY;
 	return (RET_SUCCESS);
 }
@@ -506,5 +517,11 @@ mpool_stat(mp)
 
 	}
 	(void)fprintf(stderr, "\n");
+}
+#else
+void
+mpool_stat(mp)
+	MPOOL *mp;
+{
 }
 #endif

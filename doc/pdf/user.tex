@@ -15,7 +15,7 @@
 
 \title{Kerberos User Guide}
 \date{ }
-\release{1.14.3}
+\release{1.15-beta1}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -865,7 +865,10 @@ Default location of Kerberos 5 credentials cache
 \subsection{DESCRIPTION}
 \label{user/user_commands/kinit:description}
 kinit obtains and caches an initial ticket-granting ticket for
-\emph{principal}.
+\emph{principal}.  If \emph{principal} is absent, kinit chooses an appropriate
+principal name based on existing credential cache contents or the
+local username of the user invoking kinit.  Some options modify the
+choice of principal name.
 
 
 \subsection{OPTIONS}

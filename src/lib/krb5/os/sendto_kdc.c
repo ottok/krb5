@@ -78,6 +78,7 @@
 #define MAX_PASS                    3
 #define DEFAULT_UDP_PREF_LIMIT   1465
 #define HARD_UDP_LIMIT          32700 /* could probably do 64K-epsilon ? */
+#define PORT_LENGTH                 6 /* decimal repr of UINT16_MAX */
 
 /* Select state flags.  */
 #define SSF_READ 0x01
@@ -138,6 +139,7 @@ struct conn_state {
     struct {
         const char *uri_path;
         const char *servername;
+        char port[PORT_LENGTH];
         char *https_request;
         k5_tls_handle tls;
     } http;
@@ -170,6 +172,8 @@ static krb5_error_code
 get_curtime_ms(time_ms *time_out)
 {
     struct timeval tv;
+
+    *time_out = 0;
 
     if (gettimeofday(&tv, 0))
         return errno;
@@ -399,6 +403,22 @@ check_for_svc_unavailable (krb5_context context,
     return 1;
 }
 
+void KRB5_CALLCONV
+krb5_set_kdc_send_hook(krb5_context context, krb5_pre_send_fn send_hook,
+                       void *data)
+{
+    context->kdc_send_hook = send_hook;
+    context->kdc_send_hook_data = data;
+}
+
+void KRB5_CALLCONV
+krb5_set_kdc_recv_hook(krb5_context context, krb5_post_recv_fn recv_hook,
+                       void *data)
+{
+    context->kdc_recv_hook = recv_hook;
+    context->kdc_recv_hook_data = data;
+}
+
 /*
  * send the formatted request 'message' to a KDC for realm 'realm' and
  * return the response (if any) in 'reply'.
@@ -412,13 +432,16 @@ check_for_svc_unavailable (krb5_context context,
 
 krb5_error_code
 krb5_sendto_kdc(krb5_context context, const krb5_data *message,
-                const krb5_data *realm, krb5_data *reply, int *use_master,
+                const krb5_data *realm, krb5_data *reply_out, int *use_master,
                 int no_udp)
 {
-    krb5_error_code retval, err;
+    krb5_error_code retval, oldret, err;
     struct serverlist servers;
     int server_used;
     k5_transport_strategy strategy;
+    krb5_data reply = empty_data(), *hook_message = NULL, *hook_reply = NULL;
+
+    *reply_out = empty_data();
 
     /*
      * find KDC location(s) for realm
@@ -463,9 +486,26 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
     if (retval)
         return retval;
 
+    if (context->kdc_send_hook != NULL) {
+        retval = context->kdc_send_hook(context, context->kdc_send_hook_data,
+                                        realm, message, &hook_message,
+                                        &hook_reply);
+        if (retval)
+            goto cleanup;
+
+        if (hook_reply != NULL) {
+            *reply_out = *hook_reply;
+            free(hook_reply);
+            goto cleanup;
+        }
+
+        if (hook_message != NULL)
+            message = hook_message;
+    }
+
     err = 0;
     retval = k5_sendto(context, message, realm, &servers, strategy, NULL,
-                       reply, NULL, NULL, &server_used,
+                       &reply, NULL, NULL, &server_used,
                        check_for_svc_unavailable, &err);
     if (retval == KRB5_KDC_UNREACH) {
         if (err == KDC_ERR_SVC_UNAVAILABLE) {
@@ -476,8 +516,29 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
                       realm->length, realm->data);
         }
     }
+
+    if (context->kdc_recv_hook != NULL) {
+        oldret = retval;
+        retval = context->kdc_recv_hook(context, context->kdc_recv_hook_data,
+                                        retval, realm, message, &reply,
+                                        &hook_reply);
+        if (oldret && !retval) {
+            /* The hook must set a reply if it overrides an error from
+             * k5_sendto().  Treat this reply as coming from the master KDC. */
+            assert(hook_reply != NULL);
+            *use_master = 1;
+        }
+    }
     if (retval)
         goto cleanup;
+
+    if (hook_reply != NULL) {
+        *reply_out = *hook_reply;
+        free(hook_reply);
+    } else {
+        *reply_out = reply;
+        reply = empty_data();
+    }
 
     /* Set use_master to 1 if we ended up talking to a master when we didn't
      * explicitly request to. */
@@ -488,6 +549,8 @@ krb5_sendto_kdc(krb5_context context, const krb5_data *message,
     }
 
 cleanup:
+    krb5_free_data(context, hook_message);
+    krb5_free_data_contents(context, &reply);
     k5_free_serverlist(&servers);
     return retval;
 }
@@ -552,6 +615,8 @@ make_proxy_request(struct conn_state *state, const krb5_data *realm,
     k5_buf_init_dynamic(&buf);
     uri_path = (state->http.uri_path != NULL) ? state->http.uri_path : "";
     k5_buf_add_fmt(&buf, "POST /%s HTTP/1.0\r\n", uri_path);
+    k5_buf_add_fmt(&buf, "Host: %s:%s\r\n", state->http.servername,
+                   state->http.port);
     k5_buf_add(&buf, "Cache-Control: no-cache\r\n");
     k5_buf_add(&buf, "Pragma: no-cache\r\n");
     k5_buf_add(&buf, "User-Agent: kerberos/1.0\r\n");
@@ -614,7 +679,7 @@ static krb5_error_code
 add_connection(struct conn_state **conns, k5_transport transport,
                krb5_boolean defer, struct addrinfo *ai, size_t server_index,
                const krb5_data *realm, const char *hostname,
-               const char *uri_path, char **udpbufp)
+               const char *port, const char *uri_path, char **udpbufp)
 {
     struct conn_state *state, **tailptr;
 
@@ -636,11 +701,13 @@ add_connection(struct conn_state **conns, k5_transport transport,
         state->service_write = service_tcp_write;
         state->service_read = service_tcp_read;
     } else if (transport == HTTPS) {
+        assert(hostname != NULL && port != NULL);
         state->service_connect = service_tcp_connect;
         state->service_write = service_https_write;
         state->service_read = service_https_read;
         state->http.uri_path = uri_path;
         state->http.servername = hostname;
+        strlcpy(state->http.port, port, PORT_LENGTH);
     } else {
         state->service_connect = NULL;
         state->service_write = NULL;
@@ -726,7 +793,7 @@ resolve_server(krb5_context context, const krb5_data *realm,
     struct addrinfo *addrs, *a, hint, ai;
     krb5_boolean defer;
     int err, result;
-    char portbuf[64];
+    char portbuf[PORT_LENGTH];
 
     /* Skip UDP entries if we don't want UDP. */
     if (strategy == NO_UDP && entry->transport == UDP)
@@ -741,7 +808,7 @@ resolve_server(krb5_context context, const krb5_data *realm,
         ai.ai_addr = (struct sockaddr *)&entry->addr;
         defer = (entry->transport != transport);
         return add_connection(conns, entry->transport, defer, &ai, ind, realm,
-                              NULL, entry->uri_path, udpbufp);
+                              NULL, NULL, entry->uri_path, udpbufp);
     }
 
     /* If the entry has a specified transport, use it. */
@@ -755,7 +822,7 @@ resolve_server(krb5_context context, const krb5_data *realm,
 #ifdef AI_NUMERICSERV
     hint.ai_flags |= AI_NUMERICSERV;
 #endif
-    result = snprintf(portbuf, sizeof(portbuf), "%d", ntohs(entry->port));
+    result = snprintf(portbuf, sizeof(portbuf), "%d", entry->port);
     if (SNPRINTF_OVERFLOW(result, sizeof(portbuf)))
         return EINVAL;
     TRACE_SENDTO_KDC_RESOLVING(context, entry->hostname);
@@ -767,7 +834,8 @@ resolve_server(krb5_context context, const krb5_data *realm,
     retval = 0;
     for (a = addrs; a != 0 && retval == 0; a = a->ai_next) {
         retval = add_connection(conns, transport, FALSE, a, ind, realm,
-                                entry->hostname, entry->uri_path, udpbufp);
+                                entry->hostname, portbuf, entry->uri_path,
+                                udpbufp);
     }
 
     /* For TCP_OR_UDP entries, add each address again with the non-preferred
@@ -777,7 +845,8 @@ resolve_server(krb5_context context, const krb5_data *realm,
         for (a = addrs; a != 0 && retval == 0; a = a->ai_next) {
             a->ai_socktype = socktype_for_transport(transport);
             retval = add_connection(conns, transport, TRUE, a, ind, realm,
-                                    entry->hostname, entry->uri_path, udpbufp);
+                                    entry->hostname, portbuf,
+                                    entry->uri_path, udpbufp);
         }
     }
     freeaddrinfo(addrs);
@@ -1387,8 +1456,7 @@ service_fds(krb5_context context, struct select_state *selstate,
  * If P=3, Total = 3*U + T + 14.
  * If P=4, Total = 4*U + T + 30.
  *
- * Note that if you try to reach two ports (e.g., both 88 and 750) on
- * one server, it counts as two.
+ * Note that if you try to reach two ports on one server, it counts as two.
  *
  * There is one exception to the above rules.  Whenever a TCP connection is
  * established, we wait up to ten seconds for it to finish or fail before
@@ -1512,7 +1580,7 @@ cleanup:
             closesocket(state->fd);
             free_http_tls_data(context, state);
         }
-        if (state->state == READING && state->in.buf != udpbuf)
+        if (state->in.buf != udpbuf)
             free(state->in.buf);
         if (callback_info) {
             callback_info->pfn_cleanup(callback_info->data,

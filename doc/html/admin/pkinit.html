@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -230,7 +230,7 @@ appropriate pathname):</p>
 </div>
 <p>Because of the larger size of requests and responses using PKINIT, you
 may also need to allow TCP access to the KDC:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">kdc_tcp_ports</span> <span class="o">=</span> <span class="mi">88</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">kdc_tcp_listen</span> <span class="o">=</span> <span class="mi">88</span>
 </pre></div>
 </div>
 <p>Restart the <a class="reference internal" href="admin_commands/krb5kdc.html#krb5kdc-8"><em>krb5kdc</em></a> daemon to pick up the configuration
@@ -409,7 +409,7 @@ will have the client name <tt class="docutils literal"><span class="pre">WELLKNO
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

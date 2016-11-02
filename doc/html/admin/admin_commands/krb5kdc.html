@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -112,7 +112,7 @@ which the KDC should listen on for Kerberos version 5 requests, as a
 comma-separated list.  This value overrides the UDP port numbers
 specified in the <a class="reference internal" href="../conf_files/kdc_conf.html#kdcdefaults"><em>[kdcdefaults]</em></a> section of <a class="reference internal" href="../conf_files/kdc_conf.html#kdc-conf-5"><em>kdc.conf</em></a>, but
 may be overridden by realm-specific values.  If no value is given from
-any source, the default ports are 88 and 750.</p>
+any source, the default port is 88.</p>
 <p>The <strong>-w</strong> <em>numworkers</em> option tells the KDC to fork <em>numworkers</em>
 processes to listen to the KDC ports and process requests in parallel.
 The top level KDC process (whose pid is recorded in the pid file if
@@ -253,7 +253,7 @@ description for further details.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

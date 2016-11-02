@@ -47,15 +47,26 @@ ignored.  Lines containing ACL entries have the format::
     a  [Dis]allows the addition of principals or policies
     c  [Dis]allows the changing of passwords for principals
     d  [Dis]allows the deletion of principals or policies
+    e  [Dis]allows the extraction of principal keys
     i  [Dis]allows inquiries about principals or policies
     l  [Dis]allows the listing of all principals or policies
     m  [Dis]allows the modification of principals or policies
     p  [Dis]allows the propagation of the principal database (used in :ref:`incr_db_prop`)
     s  [Dis]allows the explicit setting of the key for a principal
-    x  Short for admcilsp. All privileges
+    x  Short for admcilsp. All privileges (except ``e``)
     \* Same as x.
     == ======================================================
 
+.. note::
+
+        The ``extract`` privilege is not included in the wildcard
+        privilege; it must be explicitly assigned.  This privilege
+        allows the user to extract keys from the database, and must be
+        handled with great care to avoid disclosure of important keys
+        like those of the kadmin/* or krbtgt/* principals.  The
+        **lockdown_keys** principal attribute can be used to prevent
+        key extraction from specific principals regardless of the
+        granted privilege.
 
 *target_principal*
     (Optional. Partially or fully qualified Kerberos principal name.)

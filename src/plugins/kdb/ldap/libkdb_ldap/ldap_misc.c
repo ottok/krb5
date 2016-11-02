@@ -40,6 +40,7 @@
 #include "ldap_pwd_policy.h"
 #include <time.h>
 #include <ctype.h>
+#include <kadm5/admin.h>
 
 #ifdef NEED_STRPTIME_PROTO
 extern char *strptime(const char *, const char *, struct tm *);
@@ -798,6 +799,48 @@ get_str_from_tl_data(krb5_context context, krb5_db_entry *entry, int type,
     return 0;
 }
 
+/*
+ * Replace the relative DN component of dn with newrdn.
+ */
+krb5_error_code
+replace_rdn(krb5_context context, const char *dn, const char *newrdn,
+            char **newdn_out)
+{
+    krb5_error_code ret;
+    LDAPDN ldn = NULL;
+    LDAPRDN lrdn = NULL;
+    char *next;
+
+    *newdn_out = NULL;
+
+    ret = ldap_str2dn(dn, &ldn, LDAP_DN_FORMAT_LDAPV3);
+    if (ret != LDAP_SUCCESS || ldn[0] == NULL) {
+        ret = EINVAL;
+        goto cleanup;
+    }
+
+    ret = ldap_str2rdn(newrdn, &lrdn, &next, LDAP_DN_FORMAT_LDAPV3);
+    if (ret != LDAP_SUCCESS) {
+        ret = EINVAL;
+        goto cleanup;
+    }
+
+    ldap_rdnfree(ldn[0]);
+    ldn[0] = lrdn;
+    lrdn = NULL;
+
+    ret = ldap_dn2str(ldn, newdn_out, LDAP_DN_FORMAT_LDAPV3);
+    if (ret != LDAP_SUCCESS)
+        ret = KRB5_KDB_SERVER_INTERNAL_ERR;
+
+cleanup:
+    if (ldn != NULL)
+        ldap_dnfree(ldn);
+    if (lrdn != NULL)
+        ldap_rdnfree(lrdn);
+    return ret;
+}
+
 krb5_error_code
 krb5_get_userdn(krb5_context context, krb5_db_entry *entry, char **userdn)
 {
@@ -1068,6 +1111,16 @@ krb5_add_int_mem_ldap_mod(LDAPMod ***list, char *attribute, int op, int value)
 }
 
 krb5_error_code
+krb5_ldap_modify_ext(krb5_context context, LDAP *ld, const char *dn,
+                     LDAPMod **mods, int op)
+{
+    int ret;
+
+    ret = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
+    return (ret == LDAP_SUCCESS) ? 0 : set_ldap_error(context, ret, op);
+}
+
+krb5_error_code
 krb5_ldap_lock(krb5_context kcontext, int mode)
 {
     krb5_error_code status = KRB5_PLUGIN_OP_NOTSUPP;
@@ -1313,6 +1366,61 @@ remove_overlapping_subtrees(char **list, int *subtcount, int sscope)
     *subtcount = count;
 }
 
+static void
+free_princ_ent_contents(osa_princ_ent_t princ_ent)
+{
+    unsigned int i;
+
+    for (i = 0; i < princ_ent->old_key_len; i++) {
+        k5_free_key_data(princ_ent->old_keys[i].n_key_data,
+                         princ_ent->old_keys[i].key_data);
+        princ_ent->old_keys[i].n_key_data = 0;
+        princ_ent->old_keys[i].key_data = NULL;
+    }
+    free(princ_ent->old_keys);
+    princ_ent->old_keys = NULL;
+    princ_ent->old_key_len = 0;
+}
+
+/* Get any auth indicator values from LDAP and update the "require_auth"
+ * string. */
+static krb5_error_code
+get_ldap_auth_ind(krb5_context context, LDAP *ld, LDAPMessage *ldap_ent,
+                  krb5_db_entry *entry, unsigned int *mask)
+{
+    krb5_error_code ret;
+    int i;
+    char **auth_inds = NULL;
+    struct k5buf buf = EMPTY_K5BUF;
+
+    auth_inds = ldap_get_values(ld, ldap_ent, "krbPrincipalAuthInd");
+    if (auth_inds == NULL)
+        return 0;
+
+    k5_buf_init_dynamic(&buf);
+
+    /* Make a space seperated list of indicators. */
+    for (i = 0; auth_inds[i] != NULL; i++) {
+        k5_buf_add(&buf, auth_inds[i]);
+        if (auth_inds[i + 1] != NULL)
+            k5_buf_add(&buf, " ");
+    }
+
+    ret = k5_buf_status(&buf);
+    if (ret)
+        goto cleanup;
+
+    ret = krb5_dbe_set_string(context, entry, KRB5_KDB_SK_REQUIRE_AUTH,
+                              buf.data);
+    if (!ret)
+        *mask |= KDB_AUTH_IND_ATTR;
+
+cleanup:
+    k5_buf_free(&buf);
+    ldap_value_free(auth_inds);
+    return ret;
+}
+
 /*
  * Fill out a krb5_db_entry princ entry struct given a LDAP message containing
  * the results of a principal search of the directory.
@@ -1333,6 +1441,9 @@ populate_krb5_db_entry(krb5_context context, krb5_ldap_context *ldap_context,
     char **pnvalues = NULL, **ocvalues = NULL, **a2d2 = NULL;
     struct berval **ber_key_data = NULL, **ber_tl_data = NULL;
     krb5_tl_data userinfo_tl_data = { NULL }, **endp, *tl;
+    osa_princ_ent_rec princ_ent;
+
+    memset(&princ_ent, 0, sizeof(princ_ent));
 
     ret = krb5_copy_principal(context, princ, &entry->princ);
     if (ret)
@@ -1451,8 +1562,21 @@ populate_krb5_db_entry(krb5_context context, krb5_ldap_context *ldap_context,
         ret = krb5_ldap_policydn_to_name(context, pwdpolicydn, &polname);
         if (ret)
             goto cleanup;
+        princ_ent.policy = polname;
+        princ_ent.aux_attributes |= KADM5_POLICY;
+    }
 
-        ret = krb5_update_tl_kadm_data(context, entry, polname);
+    ber_key_data = ldap_get_values_len(ld, ent, "krbpwdhistory");
+    if (ber_key_data != NULL) {
+        mask |= KDB_PWD_HISTORY_ATTR;
+        ret = krb5_decode_histkey(context, ber_key_data, &princ_ent);
+        if (ret)
+            goto cleanup;
+        ldap_value_free_len(ber_key_data);
+    }
+
+    if (princ_ent.aux_attributes) {
+        ret = krb5_update_tl_kadm_data(context, entry, &princ_ent);
         if (ret)
             goto cleanup;
     }
@@ -1460,8 +1584,7 @@ populate_krb5_db_entry(krb5_context context, krb5_ldap_context *ldap_context,
     ber_key_data = ldap_get_values_len(ld, ent, "krbprincipalkey");
     if (ber_key_data != NULL) {
         mask |= KDB_SECRET_KEY_ATTR;
-        ret = krb5_decode_krbsecretkey(context, entry, ber_key_data,
-                                       &userinfo_tl_data, &mkvno);
+        ret = krb5_decode_krbsecretkey(context, entry, ber_key_data, &mkvno);
         if (ret)
             goto cleanup;
         if (mkvno != 0) {
@@ -1537,6 +1660,12 @@ populate_krb5_db_entry(krb5_context context, krb5_ldap_context *ldap_context,
         mask |= KDB_EXTRA_DATA_ATTR;
     }
 
+    /* Auth indicators from krbPrincipalAuthInd will replace those from
+     * krbExtraData. */
+    ret = get_ldap_auth_ind(context, ld, ent, entry, &mask);
+    if (ret)
+        goto cleanup;
+
     /* Update the mask of attributes present on the directory object to the
      * tl_data. */
     ret = store_tl_data(&userinfo_tl_data, KDB_TL_MASK, &mask);
@@ -1567,6 +1696,7 @@ cleanup:
     free(tktpolname);
     free(policydn);
     krb5_free_unparsed_name(context, user);
+    free_princ_ent_contents(&princ_ent);
     return ret;
 }
 

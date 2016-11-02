@@ -13,9 +13,9 @@ STLIBOBJS=cltest.o kdctest.o
 
 SRCS= $(srcdir)/cltest.c $(srcdir)/kdctest.c
 
-all-unix:: all-liblinks
-install-unix:: install-libs
-clean-unix:: clean-libs clean-libobjs
+all-unix: all-liblinks
+install-unix: install-libs
+clean-unix:: clean-liblinks clean-libs clean-libobjs
 
 @libnover_frag@
 @libobj_frag@

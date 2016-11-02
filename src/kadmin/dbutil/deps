@@ -203,3 +203,4 @@ $(OUTPRE)tdumputil.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
   $(top_srcdir)/include/krb5.h $(top_srcdir)/include/krb5/authdata_plugin.h \
   $(top_srcdir)/include/krb5/plugin.h $(top_srcdir)/include/port-sockets.h \
   $(top_srcdir)/include/socket-utils.h tdumputil.c tdumputil.h
+$(OUTPRE)t_tdumputil.$(OBJEXT): t_tdumputil.c tdumputil.h

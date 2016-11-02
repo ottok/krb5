@@ -373,6 +373,11 @@ def fail(msg):
     """Print a message and exit with failure."""
     global _current_pass
     print "*** Failure:", msg
+    if _last_cmd:
+        print "*** Last command (#%d): %s" % (_cmd_index - 1, _last_cmd)
+    if _last_cmd_output:
+        print "*** Output of last command:"
+        sys.stdout.write(_last_cmd_output)
     if _current_pass:
         print "*** Failed in test pass:", _current_pass
     sys.exit(1)
@@ -423,7 +428,7 @@ def password(name):
 # Exit handler which ensures processes are cleaned up and, on failure,
 # prints messages to help developers debug the problem.
 def _onexit():
-    global _daemons, _success, verbose
+    global _daemons, _success, srctop, verbose
     global _debug, _stop_before, _stop_after, _shell_before, _shell_after
     if _daemons is None:
         # In Python 2.5, if we exit as a side-effect of importing
@@ -442,11 +447,25 @@ def _onexit():
     if not _success:
         print
         if not verbose:
-            print 'See testlog for details, or re-run with -v flag.'
+            testlogfile = os.path.join(os.getcwd(), 'testlog')
+            utildir = os.path.join(srctop, 'util')
+            print 'For details, see: %s' % testlogfile
+            print 'Or re-run this test script with the -v flag:'
+            print '    cd %s' % os.getcwd()
+            print '    PYTHONPATH=%s %s %s -v' % \
+                (utildir, sys.executable, sys.argv[0])
             print
         print 'Use --debug=NUM to run a command under a debugger.  Use'
         print '--stop-after=NUM to stop after a daemon is started in order to'
         print 'attach to it with a debugger.  Use --help to see other options.'
+
+
+def _onsigint(signum, frame):
+    # Exit without displaying a stack trace.  Suppress messages from _onexit.
+    global _success
+    _success = True
+    sys.exit(1)
+
 
 # Find the parent of dir which is at the root of a build or source directory.
 def _find_root(dir):
@@ -629,15 +648,16 @@ def _stop_or_shell(stop, shell, env, ind):
 
 
 def _run_cmd(args, env, input=None, expected_code=0):
-    global null_input, _cmd_index, _debug
+    global null_input, _cmd_index, _last_cmd, _last_cmd_output, _debug
     global _stop_before, _stop_after, _shell_before, _shell_after
 
     if (_match_cmdnum(_debug, _cmd_index)):
         return _debug_cmd(args, env, input)
 
     args = _valgrind(args)
+    _last_cmd = _shell_equiv(args)
 
-    output('*** [%d] Executing: %s\n' % (_cmd_index, _shell_equiv(args)))
+    output('*** [%d] Executing: %s\n' % (_cmd_index, _last_cmd))
     _stop_or_shell(_stop_before, _shell_before, env, _cmd_index)
 
     if input:
@@ -649,6 +669,7 @@ def _run_cmd(args, env, input=None, expected_code=0):
     proc = subprocess.Popen(args, stdin=infile, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, env=env)
     (outdata, dummy_errdata) = proc.communicate(input)
+    _last_cmd_output = outdata
     code = proc.returncode
     output(outdata)
     output('*** [%d] Completed with return code %d\n' % (_cmd_index, code))
@@ -683,7 +704,7 @@ def _debug_cmd(args, env, input):
 # we see sentinel as a substring of a line on either stdout or stderr.
 # Clean up the daemon process on exit.
 def _start_daemon(args, env, sentinel):
-    global null_input, _cmd_index, _debug
+    global null_input, _cmd_index, _last_cmd, _last_cmd_output, _debug
     global _stop_before, _stop_after, _shell_before, _shell_after
 
     if (_match_cmdnum(_debug, _cmd_index)):
@@ -694,15 +715,17 @@ def _start_daemon(args, env, sentinel):
         sys.exit(1)
 
     args = _valgrind(args)
-    output('*** [%d] Starting: %s\n' %
-           (_cmd_index, _shell_equiv(args)))
+    _last_cmd = _shell_equiv(args)
+    output('*** [%d] Starting: %s\n' % (_cmd_index, _last_cmd))
     _stop_or_shell(_stop_before, _shell_before, env, _cmd_index)
 
     # Start the daemon and look for the sentinel in stdout or stderr.
     proc = subprocess.Popen(args, stdin=null_input, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, env=env)
+    _last_cmd_output = ''
     while True:
         line = proc.stdout.readline()
+        _last_cmd_output += line
         if line == "":
             code = proc.wait()
             fail('%s failed to start with code %d.' % (args[0], code))
@@ -851,7 +874,7 @@ class K5Realm(object):
         global hostname
         filename = os.path.join(self.testdir, 'acl')
         file = open(filename, 'w')
-        file.write('%s *\n' % self.admin_princ)
+        file.write('%s *e\n' % self.admin_princ)
         file.write('kiprop/%s@%s p\n' % (hostname, self.realm))
         file.close()
 
@@ -1120,8 +1143,8 @@ _default_kdc_conf = {
             'dictfile': '$testdir/dictfile',
             'kadmind_port': '$port1',
             'kpasswd_port': '$port2',
-            'kdc_ports': '$port0',
-            'kdc_tcp_ports': '$port0'}},
+            'kdc_listen': '$port0',
+            'kdc_tcp_listen': '$port0'}},
     'dbmodules': {
         'db_module_dir': '$plugins/kdb',
         'db': {'db_library': 'db2', 'database_name' : '$testdir/db'}},
@@ -1187,6 +1210,26 @@ _passes = [
                     'supported_enctypes': 'camellia256-cts:normal',
                     'master_key_type': 'camellia256-cts'}}}),
 
+    # Exercise the aes128-sha2 enctype.
+    ('aes128-sha2', None,
+      {'libdefaults': {
+                'default_tgs_enctypes': 'aes128-sha2',
+                'default_tkt_enctypes': 'aes128-sha2',
+                'permitted_enctypes': 'aes128-sha2'}},
+      {'realms': {'$realm': {
+                    'supported_enctypes': 'aes128-sha2:normal',
+                    'master_key_type': 'aes128-sha2'}}}),
+
+    # Exercise the aes256-sha2 enctype.
+    ('aes256-sha2', None,
+      {'libdefaults': {
+                'default_tgs_enctypes': 'aes256-sha2',
+                'default_tkt_enctypes': 'aes256-sha2',
+                'permitted_enctypes': 'aes256-sha2'}},
+      {'realms': {'$realm': {
+                    'supported_enctypes': 'aes256-sha2:normal',
+                    'master_key_type': 'aes256-sha2'}}}),
+
     # Test a setup with modern principal keys but an old TGT key.
     ('aes256.destgt', 'des-cbc-crc:normal',
      {'libdefaults': {'allow_weak_crypto': 'true'}},
@@ -1198,8 +1241,11 @@ _current_pass = None
 _daemons = []
 _parse_args()
 atexit.register(_onexit)
+signal.signal(signal.SIGINT, _onsigint)
 _outfile = open('testlog', 'w')
 _cmd_index = 1
+_last_cmd = None
+_last_cmd_output = None
 buildtop = _find_buildtop()
 srctop = _find_srctop()
 plugins = os.path.join(buildtop, 'plugins')

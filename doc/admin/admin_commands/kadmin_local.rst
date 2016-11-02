@@ -260,11 +260,12 @@ Options:
     (:ref:`getdate` string) The password expiration date.
 
 **-maxlife** *maxlife*
-    (:ref:`getdate` string) The maximum ticket life for the principal.
+    (:ref:`duration` or :ref:`getdate` string) The maximum ticket life
+    for the principal.
 
 **-maxrenewlife** *maxrenewlife*
-    (:ref:`getdate` string) The maximum renewable life of tickets for
-    the principal.
+    (:ref:`duration` or :ref:`getdate` string) The maximum renewable
+    life of tickets for the principal.
 
 **-kvno** *kvno*
     The initial key version number.
@@ -352,6 +353,17 @@ Options:
 {-\|+}\ **no_auth_data_required**
     **+no_auth_data_required** prevents PAC or AD-SIGNEDPATH data from
     being added to service tickets for the principal.
+
+{-\|+}\ **lockdown_keys**
+    **+lockdown_keys** prevents keys for this principal from leaving
+    the KDC via kadmind.  The chpass and extract operations are denied
+    for a principal with this attribute.  The chrand operation is
+    allowed, but will not return the new keys.  The delete and rename
+    operations are also denied if this attribute is set, in order to
+    prevent a malicious administrator from replacing principals like
+    krbtgt/* or kadmin/* with new principals without the attribute.
+    This attribute can be set via the network protocol, but can only
+    be removed using kadmin.local.
 
 **-randkey**
     Sets the key of the principal to a random value.
@@ -656,7 +668,7 @@ Alias: **setstr**
 Example::
 
     set_string host/foo.mit.edu session_enctypes aes128-cts
-    set_string user@FOO.COM otp [{"type":"hotp","username":"custom"}]
+    set_string user@FOO.COM otp "[{""type"":""hotp"",""username"":""al""}]"
 
 .. _set_string_end:
 
@@ -691,10 +703,12 @@ Alias: **addpol**
 The following options are available:
 
 **-maxlife** *time*
-    (:ref:`getdate` string) Sets the maximum lifetime of a password.
+    (:ref:`duration` or :ref:`getdate` string) Sets the maximum
+    lifetime of a password.
 
 **-minlife** *time*
-    (:ref:`getdate` string) Sets the minimum lifetime of a password.
+    (:ref:`duration` or :ref:`getdate` string) Sets the minimum
+    lifetime of a password.
 
 **-minlength** *length*
     Sets the minimum length of a password.
@@ -720,21 +734,21 @@ The following options are available:
 .. _policy_failurecountinterval:
 
 **-failurecountinterval** *failuretime*
-    (:ref:`getdate` string) Sets the allowable time between
-    authentication failures.  If an authentication failure happens
-    after *failuretime* has elapsed since the previous failure,
-    the number of authentication failures is reset to 1.  A
+    (:ref:`duration` or :ref:`getdate` string) Sets the allowable time
+    between authentication failures.  If an authentication failure
+    happens after *failuretime* has elapsed since the previous
+    failure, the number of authentication failures is reset to 1.  A
     *failuretime* value of 0 (the default) means forever.
 
 .. _policy_lockoutduration:
 
 **-lockoutduration** *lockouttime*
-    (:ref:`getdate` string) Sets the duration for which the principal
-    is locked from authenticating if too many authentication failures
-    occur without the specified failure count interval elapsing.
-    A duration of 0 (the default) means the principal remains locked
-    out until it is administratively unlocked with ``modprinc
-    -unlock``.
+    (:ref:`duration` or :ref:`getdate` string) Sets the duration for
+    which the principal is locked from authenticating if too many
+    authentication failures occur without the specified failure count
+    interval elapsing.  A duration of 0 (the default) means the
+    principal remains locked out until it is administratively unlocked
+    with ``modprinc -unlock``.
 
 **-allowedkeysalts**
     Specifies the key/salt tuples supported for long-term keys when
@@ -891,8 +905,8 @@ The options are:
 
 **-norandkey**
     Do not randomize the keys. The keys and their version numbers stay
-    unchanged.  This option is only available in kadmin.local, and
-    cannot be specified in combination with the **-e** option.
+    unchanged.  This option cannot be specified in combination with the
+    **-e** option.
 
 An entry for each of the principal's unique encryption types is added,
 ignoring multiple keys with the same encryption type but different

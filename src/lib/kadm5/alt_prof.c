@@ -591,6 +591,14 @@ krb5_error_code kadm5_get_config_params(krb5_context context,
     GET_STRING_PARAM(dict_file, KADM5_CONFIG_DICT_FILE, KRB5_CONF_DICT_FILE,
                      NULL);
 
+    /* Get the kadmind listen addresses. */
+    GET_STRING_PARAM(kadmind_listen, KADM5_CONFIG_KADMIND_LISTEN,
+                     KRB5_CONF_KADMIND_LISTEN, NULL);
+    GET_STRING_PARAM(kpasswd_listen, KADM5_CONFIG_KPASSWD_LISTEN,
+                     KRB5_CONF_KPASSWD_LISTEN, NULL);
+    GET_STRING_PARAM(iprop_listen, KADM5_CONFIG_IPROP_LISTEN,
+                     KRB5_CONF_IPROP_LISTEN, NULL);
+
 #define GET_PORT_PARAM(FIELD, BIT, CONFTAG, DEFAULT)            \
     get_port_param(&params.FIELD, params_in->FIELD,             \
                    &params.mask, params_in->mask, BIT,          \
@@ -828,8 +836,7 @@ kadm5_get_admin_service_name(krb5_context ctx, char *realm_in,
 {
     krb5_error_code ret;
     kadm5_config_params params_in, params_out;
-    struct addrinfo hint, *ai = NULL;
-    int err;
+    char *canonhost = NULL;
 
     memset(&params_in, 0, sizeof(params_in));
     memset(&params_out, 0, sizeof(params_out));
@@ -845,25 +852,18 @@ kadm5_get_admin_service_name(krb5_context ctx, char *realm_in,
         goto err_params;
     }
 
-    memset(&hint, 0, sizeof(hint));
-    hint.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
-    err = getaddrinfo(params_out.admin_server, NULL, &hint, &ai);
-    if (err != 0) {
-        ret = KADM5_CANT_RESOLVE;
-        k5_setmsg(ctx, ret,
-                  _("Cannot resolve address of admin server \"%s\" for realm "
-                    "\"%s\""), params_out.admin_server, realm_in);
+    ret = krb5_expand_hostname(ctx, params_out.admin_server, &canonhost);
+    if (ret)
         goto err_params;
-    }
-    if (strlen(ai->ai_canonname) + sizeof("kadmin/") > maxlen) {
+
+    if (strlen(canonhost) + sizeof("kadmin/") > maxlen) {
         ret = ENOMEM;
         goto err_params;
     }
-    snprintf(admin_name, maxlen, "kadmin/%s", ai->ai_canonname);
+    snprintf(admin_name, maxlen, "kadmin/%s", canonhost);
 
 err_params:
-    if (ai != NULL)
-        freeaddrinfo(ai);
+    krb5_free_string(ctx, canonhost);
     kadm5_free_config_params(ctx, &params_out);
     return ret;
 }

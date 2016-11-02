@@ -802,13 +802,6 @@ cleanup:
     return retval;
 }
 
-/* Free an entry returned by krb5_db2_get_principal. */
-void
-krb5_db2_free_principal(krb5_context context, krb5_db_entry *entry)
-{
-    krb5_dbe_free(context, entry);
-}
-
 krb5_error_code
 krb5_db2_put_principal(krb5_context context, krb5_db_entry *entry,
                        char **db_args)
@@ -912,7 +905,7 @@ krb5_db2_delete_principal(krb5_context context, krb5_const_principal searchfor)
     }
 
     retval = krb5_encode_princ_entry(context, &contdata, entry);
-    krb5_dbe_free(context, entry);
+    krb5_db_free_principal(context, entry);
     if (retval)
         goto cleankey;
 
@@ -975,6 +968,10 @@ static krb5_error_code
 curs_init(iter_curs *curs, krb5_context ctx, krb5_db2_context *dbc,
           krb5_flags iterflags)
 {
+    int isrecurse = iterflags & KRB5_DB_ITER_RECURSE;
+    unsigned int prevflag = R_PREV;
+    unsigned int nextflag = R_NEXT;
+
     curs->keycopy.size = 0;
     curs->keycopy.data = NULL;
     curs->islocked = FALSE;
@@ -986,12 +983,27 @@ curs_init(iter_curs *curs, krb5_context ctx, krb5_db2_context *dbc,
     else
         curs->lockmode = KRB5_LOCKMODE_SHARED;
 
+    if (isrecurse) {
+#ifdef R_RNEXT
+        if (dbc->hashfirst) {
+            k5_setmsg(ctx, EINVAL, _("Recursive iteration is not supported "
+                                     "for hash databases"));
+            return EINVAL;
+        }
+        prevflag = R_RPREV;
+        nextflag = R_RNEXT;
+#else
+        k5_setmsg(ctx, EINVAL, _("Recursive iteration not supported "
+                                 "in this version of libdb"));
+        return EINVAL;
+#endif
+    }
     if (iterflags & KRB5_DB_ITER_REV) {
         curs->startflag = R_LAST;
-        curs->stepflag = R_PREV;
+        curs->stepflag = prevflag;
     } else {
         curs->startflag = R_FIRST;
-        curs->stepflag = R_NEXT;
+        curs->stepflag = nextflag;
     }
     return curs_lock(curs);
 }
@@ -1074,7 +1086,7 @@ curs_run_cb(iter_curs *curs, ctx_iterate_cb func, krb5_pointer func_arg)
 
     k5_mutex_unlock(krb5_db2_mutex);
     retval = (*func)(func_arg, entry);
-    krb5_dbe_free(ctx, entry);
+    krb5_db_free_principal(ctx, entry);
     k5_mutex_lock(krb5_db2_mutex);
     if (dbc->unlockiter) {
         lockerr = curs_lock(curs);
@@ -1102,6 +1114,8 @@ ctx_iterate(krb5_context context, krb5_db2_context *dbc,
     iter_curs curs;
 
     retval = curs_init(&curs, context, dbc, iterflags);
+    if (retval)
+        return retval;
     dbret = curs_start(&curs);
     while (dbret == 0) {
         retval = curs_run_cb(&curs, func, func_arg);
@@ -1256,18 +1270,6 @@ cleanup:
     return status;
 }
 
-void   *
-krb5_db2_alloc(krb5_context context, void *ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-void
-krb5_db2_free(krb5_context context, void *ptr)
-{
-    free(ptr);
-}
-
 /* policy functions */
 krb5_error_code
 krb5_db2_create_policy(krb5_context context, osa_policy_ent_t policy)
@@ -1396,6 +1398,7 @@ krb5_db2_merge_nra_iterator(krb5_pointer ptr, krb5_db_entry *entry)
         retval = 0;
     }
 
+    krb5_db_free_principal(nra->kcontext, s_entry);
     return retval;
 }
 

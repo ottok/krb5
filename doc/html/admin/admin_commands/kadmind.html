@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -77,6 +77,7 @@
 [<strong>-P</strong> <em>pid_file</em>]
 [<strong>-p</strong> <em>kdb5_util_path</em>]
 [<strong>-K</strong> <em>kprop_path</em>]
+[<strong>-k</strong> <em>kprop_port</em>]
 [<strong>-F</strong> <em>dump_file</em>]</p>
 </div>
 <div class="section" id="description">
@@ -149,6 +150,10 @@ KDB in response to full resync requests when iprop is enabled.</dd>
 <dt><strong>-K</strong> <em>kprop_path</em></dt>
 <dd>specifies the path to the kprop command to use to send full dumps
 to slaves in response to full resync requests.</dd>
+<dt><strong>-k</strong> <em>kprop_port</em></dt>
+<dd>specifies the port by which the kprop process that is spawned by kadmind
+connects to the slave kpropd, in order to transfer the dump file during
+an iprop full resync request.</dd>
 <dt><strong>-F</strong> <em>dump_file</em></dt>
 <dd>specifies the file path to be used for dumping the KDB in response
 to full resync requests when iprop is enabled.</dd>
@@ -248,7 +253,7 @@ to full resync requests when iprop is enabled.</dd>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

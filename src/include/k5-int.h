@@ -109,7 +109,6 @@
 #define INI_FILES       "Files"
 #define INI_KRB_CCACHE  "krb5cc"        /* Location of the ccache */
 #define INI_KRB5_CONF   "krb5.ini"      /* Location of krb5.conf file */
-#define ANSI_STDIO
 #endif
 
 #include "autoconf.h"
@@ -190,6 +189,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_CLOCKSKEW                    "clockskew"
 #define KRB5_CONF_DATABASE_NAME                "database_name"
 #define KRB5_CONF_DB_MODULE_DIR                "db_module_dir"
+#define KRB5_CONF_DEBUG                        "debug"
 #define KRB5_CONF_DEFAULT                      "default"
 #define KRB5_CONF_DEFAULT_CCACHE_NAME          "default_ccache_name"
 #define KRB5_CONF_DEFAULT_CLIENT_KEYTAB_NAME   "default_client_keytab_name"
@@ -209,6 +209,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_DNS_FALLBACK                 "dns_fallback"
 #define KRB5_CONF_DNS_LOOKUP_KDC               "dns_lookup_kdc"
 #define KRB5_CONF_DNS_LOOKUP_REALM             "dns_lookup_realm"
+#define KRB5_CONF_DNS_URI_LOOKUP               "dns_uri_lookup"
 #define KRB5_CONF_DOMAIN_REALM                 "domain_realm"
 #define KRB5_CONF_ENABLE_ONLY                  "enable_only"
 #define KRB5_CONF_ERR_FMT                      "err_fmt"
@@ -218,6 +219,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_HTTP_ANCHORS                 "http_anchors"
 #define KRB5_CONF_IGNORE_ACCEPTOR_HOSTNAME     "ignore_acceptor_hostname"
 #define KRB5_CONF_IPROP_ENABLE                 "iprop_enable"
+#define KRB5_CONF_IPROP_LISTEN                 "iprop_listen"
 #define KRB5_CONF_IPROP_LOGFILE                "iprop_logfile"
 #define KRB5_CONF_IPROP_MASTER_ULOGSIZE        "iprop_master_ulogsize"
 #define KRB5_CONF_IPROP_PORT                   "iprop_port"
@@ -225,18 +227,23 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_IPROP_SLAVE_POLL             "iprop_slave_poll"
 #define KRB5_CONF_K5LOGIN_AUTHORITATIVE        "k5login_authoritative"
 #define KRB5_CONF_K5LOGIN_DIRECTORY            "k5login_directory"
+#define KRB5_CONF_KADMIND_LISTEN               "kadmind_listen"
 #define KRB5_CONF_KADMIND_PORT                 "kadmind_port"
 #define KRB5_CONF_KCM_MACH_SERVICE             "kcm_mach_service"
 #define KRB5_CONF_KCM_SOCKET                   "kcm_socket"
 #define KRB5_CONF_KDC                          "kdc"
 #define KRB5_CONF_KDCDEFAULTS                  "kdcdefaults"
 #define KRB5_CONF_KDC_DEFAULT_OPTIONS          "kdc_default_options"
+#define KRB5_CONF_KDC_LISTEN                   "kdc_listen"
 #define KRB5_CONF_KDC_MAX_DGRAM_REPLY_SIZE     "kdc_max_dgram_reply_size"
 #define KRB5_CONF_KDC_PORTS                    "kdc_ports"
 #define KRB5_CONF_KDC_REQ_CHECKSUM_TYPE        "kdc_req_checksum_type"
 #define KRB5_CONF_KDC_TCP_PORTS                "kdc_tcp_ports"
+#define KRB5_CONF_KDC_TCP_LISTEN               "kdc_tcp_listen"
+#define KRB5_CONF_KDC_TCP_LISTEN_BACKLOG       "kdc_tcp_listen_backlog"
 #define KRB5_CONF_KDC_TIMESYNC                 "kdc_timesync"
 #define KRB5_CONF_KEY_STASH_FILE               "key_stash_file"
+#define KRB5_CONF_KPASSWD_LISTEN               "kpasswd_listen"
 #define KRB5_CONF_KPASSWD_PORT                 "kpasswd_port"
 #define KRB5_CONF_KPASSWD_SERVER               "kpasswd_server"
 #define KRB5_CONF_KRB524_SERVER                "krb524_server"
@@ -624,6 +631,12 @@ krb5int_arcfour_gsscrypt(const krb5_keyblock *keyblock, krb5_keyusage usage,
                          const krb5_data *kd_data, krb5_crypto_iov *data,
                          size_t num_data);
 
+#define K5_SHA256_HASHLEN (256 / 8)
+
+/* Write the SHA-256 hash of in to out. */
+krb5_error_code
+k5_sha256(const krb5_data *in, uint8_t out[K5_SHA256_HASHLEN]);
+
 /*
  * Attempt to zero memory in a way that compilers won't optimize out.
  *
@@ -950,6 +963,12 @@ void k5_free_kkdcp_message(krb5_context context, krb5_kkdcp_message *val);
 void k5_free_cammac(krb5_context context, krb5_cammac *val);
 void k5_free_secure_cookie(krb5_context context, krb5_secure_cookie *val);
 
+krb5_error_code
+k5_unwrap_cammac_svc(krb5_context context, const krb5_authdata *ad,
+                     const krb5_keyblock *key, krb5_authdata ***adata_out);
+krb5_error_code
+k5_authind_decode(const krb5_authdata *ad, krb5_data ***indicators);
+
 /* #include "krb5/wordsize.h" -- comes in through base-defs.h. */
 #include "com_err.h"
 #include "k5-plugin.h"
@@ -1236,6 +1255,12 @@ struct _krb5_context {
 
     krb5_trace_callback trace_callback;
     void *trace_callback_data;
+
+    krb5_pre_send_fn kdc_send_hook;
+    void *kdc_send_hook_data;
+
+    krb5_post_recv_fn kdc_recv_hook;
+    void *kdc_recv_hook_data;
 
     struct plugin_interface plugins[PLUGIN_NUM_INTERFACES];
     char *plugin_base_dir;
@@ -1734,6 +1759,14 @@ krb5_error_code
 krb5_encode_kdc_rep(krb5_context, krb5_msgtype, const krb5_enc_kdc_rep_part *,
                     int using_subkey, const krb5_keyblock *, krb5_kdc_rep *,
                     krb5_data ** );
+
+/* Return true if s is non-empty and composed solely of digits. */
+krb5_boolean
+k5_is_string_numeric(const char *s);
+
+krb5_error_code
+k5_parse_host_string(const char *address, int default_port, char **host_out,
+                     int *port_out);
 
 /*
  * [De]Serialization Handle and operations.

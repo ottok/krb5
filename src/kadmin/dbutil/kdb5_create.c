@@ -114,6 +114,7 @@ static krb5_error_code add_principal
 
 extern krb5_keyblock master_keyblock;
 extern krb5_principal master_princ;
+extern char *mkey_fullname;
 krb5_data master_salt;
 
 krb5_data tgt_princ_entries[] = {
@@ -155,7 +156,6 @@ void kdb5_create(argc, argv)
     int optchar;
 
     krb5_error_code retval;
-    char *mkey_fullname;
     char *pw_str = 0;
     unsigned int pw_size = 0;
     int do_stash = 0;
@@ -316,7 +316,6 @@ void kdb5_create(argc, argv)
 
     if ((retval = add_principal(util_context, master_princ, MASTER_KEY, &rblock)) ||
         (retval = add_principal(util_context, &tgt_princ, TGT_KEY, &rblock))) {
-        (void) krb5_db_fini(util_context);
         com_err(progname, retval, _("while adding entries to the database"));
         exit_status++; return;
     }
@@ -349,9 +348,6 @@ void kdb5_create(argc, argv)
         printf(_("Warning: couldn't stash master key.\n"));
     }
     /* clean up */
-    (void) krb5_db_fini(util_context);
-    memset(master_keyblock.contents, 0, master_keyblock.length);
-    free(master_keyblock.contents);
     if (pw_str) {
         memset(pw_str, 0, pw_size);
         free(pw_str);
@@ -423,10 +419,9 @@ add_principal(context, princ, op, pblock)
     struct iterate_args   iargs;
     krb5_actkvno_node     actkvno;
 
-    entry = krb5_db_alloc(context, NULL, sizeof(*entry));
+    entry = calloc(1, sizeof(*entry));
     if (entry == NULL)
         return ENOMEM;
-    memset(entry, 0, sizeof(*entry));
 
     entry->len = KRB5_KDB_V1_BASE_LENGTH;
     entry->attributes = pblock->flags;
@@ -500,6 +495,7 @@ add_principal(context, princ, op, pblock)
     entry->mask = (KADM5_KEY_DATA | KADM5_PRINCIPAL | KADM5_ATTRIBUTES |
                    KADM5_MAX_LIFE | KADM5_MAX_RLIFE | KADM5_TL_DATA |
                    KADM5_PRINC_EXPIRE_TIME);
+    entry->attributes |= KRB5_KDB_LOCKDOWN_KEYS;
 
     retval = krb5_db_put_principal(context, entry);
 

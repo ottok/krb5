@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -221,10 +221,11 @@ assignment can be suppressed with the <strong>-clearpolicy</strong> option.</p>
 <dt><strong>-pwexpire</strong> <em>pwexpdate</em></dt>
 <dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) The password expiration date.</dd>
 <dt><strong>-maxlife</strong> <em>maxlife</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) The maximum ticket life for the principal.</dd>
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) The maximum ticket life
+for the principal.</dd>
 <dt><strong>-maxrenewlife</strong> <em>maxrenewlife</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) The maximum renewable life of tickets for
-the principal.</dd>
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) The maximum renewable
+life of tickets for the principal.</dd>
 <dt><strong>-kvno</strong> <em>kvno</em></dt>
 <dd>The initial key version number.</dd>
 <dt><strong>-policy</strong> <em>policy</em></dt>
@@ -294,6 +295,16 @@ constrained delegation.</dd>
 <dt>{-|+}<strong>no_auth_data_required</strong></dt>
 <dd><strong>+no_auth_data_required</strong> prevents PAC or AD-SIGNEDPATH data from
 being added to service tickets for the principal.</dd>
+<dt>{-|+}<strong>lockdown_keys</strong></dt>
+<dd><strong>+lockdown_keys</strong> prevents keys for this principal from leaving
+the KDC via kadmind.  The chpass and extract operations are denied
+for a principal with this attribute.  The chrand operation is
+allowed, but will not return the new keys.  The delete and rename
+operations are also denied if this attribute is set, in order to
+prevent a malicious administrator from replacing principals like
+krbtgt/* or kadmin/* with new principals without the attribute.
+This attribute can be set via the network protocol, but can only
+be removed using kadmin.local.</dd>
 <dt><strong>-randkey</strong></dt>
 <dd>Sets the key of the principal to a random value.</dd>
 <dt><strong>-nokey</strong></dt>
@@ -566,9 +577,11 @@ command.</p>
 <p>The following options are available:</p>
 <dl class="docutils">
 <dt><strong>-maxlife</strong> <em>time</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the maximum lifetime of a password.</dd>
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the maximum
+lifetime of a password.</dd>
 <dt><strong>-minlife</strong> <em>time</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the minimum lifetime of a password.</dd>
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the minimum
+lifetime of a password.</dd>
 <dt><strong>-minlength</strong> <em>length</em></dt>
 <dd>Sets the minimum length of a password.</dd>
 <dt><strong>-minclasses</strong> <em>number</em></dt>
@@ -589,20 +602,20 @@ resets to 0 after a successful attempt to authenticate.  A
 </dl>
 <dl class="docutils" id="policy-failurecountinterval">
 <dt><strong>-failurecountinterval</strong> <em>failuretime</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the allowable time between
-authentication failures.  If an authentication failure happens
-after <em>failuretime</em> has elapsed since the previous failure,
-the number of authentication failures is reset to 1.  A
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the allowable time
+between authentication failures.  If an authentication failure
+happens after <em>failuretime</em> has elapsed since the previous
+failure, the number of authentication failures is reset to 1.  A
 <em>failuretime</em> value of 0 (the default) means forever.</dd>
 </dl>
 <dl class="docutils" id="policy-lockoutduration">
 <dt><strong>-lockoutduration</strong> <em>lockouttime</em></dt>
-<dd>(<a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the duration for which the principal
-is locked from authenticating if too many authentication failures
-occur without the specified failure count interval elapsing.
-A duration of 0 (the default) means the principal remains locked
-out until it is administratively unlocked with <tt class="docutils literal"><span class="pre">modprinc</span>
-<span class="pre">-unlock</span></tt>.</dd>
+<dd>(<a class="reference internal" href="../basic/date_format.html#duration"><em>Time duration</em></a> or <a class="reference internal" href="../basic/date_format.html#getdate"><em>getdate time</em></a> string) Sets the duration for
+which the principal is locked from authenticating if too many
+authentication failures occur without the specified failure count
+interval elapsing.  A duration of 0 (the default) means the
+principal remains locked out until it is administratively unlocked
+with <tt class="docutils literal"><span class="pre">modprinc</span> <span class="pre">-unlock</span></tt>.</dd>
 <dt><strong>-allowedkeysalts</strong></dt>
 <dd>Specifies the key/salt tuples supported for long-term keys when
 setting or changing a principal&#8217;s password/keys.  See
@@ -841,11 +854,20 @@ data in the database will not be changed.</dd>
 <dd>dumps in reverse order.  This may recover principals that do not
 dump normally, in cases where database corruption has occurred.</dd>
 <dt><strong>-recurse</strong></dt>
-<dd>causes the dump to walk the database recursively (btree only).
+<dd><p class="first">causes the dump to walk the database recursively (btree only).
 This may recover principals that do not dump normally, in cases
 where database corruption has occurred.  In cases of such
 corruption, this option will probably retrieve more principals
-than the <strong>-rev</strong> option will.</dd>
+than the <strong>-rev</strong> option will.</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 1.15: </span>Release 1.15 restored the functionality of the <strong>-recurse</strong>
+option.</p>
+</div>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 1.5: </span>The <strong>-recurse</strong> option ceased working until release 1.15,
+doing a normal dump instead of a recursive traversal.</p>
+</div>
+</dd>
 </dl>
 <div class="section" id="id3">
 <h4>Examples<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
@@ -1792,7 +1814,7 @@ config file, and the per-slave dump files are stored in
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

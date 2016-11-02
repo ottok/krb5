@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -236,6 +236,49 @@ using the <strong>kdc</strong>, <strong>master_kdc</strong>, <strong>admin_serve
 explicit server locations, providing SRV records will still benefit
 unconfigured clients, and be useful for other sites.</p>
 </div>
+<div class="section" id="kdc-discovery">
+<span id="id1"></span><h2>KDC Discovery<a class="headerlink" href="#kdc-discovery" title="Permalink to this headline">¶</a></h2>
+<p>As of MIT krb5 1.15, clients can also locate KDCs in DNS through URI
+records (<span class="target" id="index-1"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc7553.html"><strong>RFC 7553</strong></a>).  Limitations with the SRV record format may
+result in extra DNS queries in situations where a client must failover
+to other transport types, or find a master server.  The URI record can
+convey more information about a realm&#8217;s KDCs with a single query.</p>
+<p>The client performs a query for the following URI records:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">_kerberos.REALM</span></tt> for fiding KDCs.</li>
+<li><tt class="docutils literal"><span class="pre">_kerberos-adm.REALM</span></tt> for finding kadmin services.</li>
+<li><tt class="docutils literal"><span class="pre">_kpasswd.REALM</span></tt> for finding password services.</li>
+</ul>
+<p>The URI record includes a priority, weight, and a URI string that
+consists of case-insensitive colon separated fields, in the form
+<tt class="docutils literal"><span class="pre">scheme:[flags]:transport:residual</span></tt>.</p>
+<ul class="simple">
+<li><em>scheme</em> defines the registered URI type.  It should always be
+<tt class="docutils literal"><span class="pre">krb5srv</span></tt>.</li>
+<li><em>flags</em> contains zero or more flag characters.  Currently the only
+valid flag is <tt class="docutils literal"><span class="pre">m</span></tt>, which indicates that the record is for a master
+server.</li>
+<li><em>transport</em> defines the transport type of the residual URL or
+address.  Accepted values are <tt class="docutils literal"><span class="pre">tcp</span></tt>, <tt class="docutils literal"><span class="pre">udp</span></tt>, or <tt class="docutils literal"><span class="pre">kkdcp</span></tt> for the
+MS-KKDCP type.</li>
+<li><em>residual</em> contains the hostname, IP address, or URL to be
+contacted using the specified transport, with an optional port
+extension.  The MS-KKDCP transport type uses a HTTPS URL, and can
+include a port and/or path extension.</li>
+</ul>
+<p>An example of URI records in a zone file:</p>
+<div class="highlight-python"><div class="highlight"><pre>_kerberos.EXAMPLE.COM  URI  10 1 krb5srv:m:tcp:kdc1.example.com
+                       URI  20 1 krb5srv:m:udp:kdc2.example.com:89
+                       URI  40 1 krb5srv::udp:10.10.0.23
+                       URI  30 1 krb5srv::kkdcp:https://proxy:89/auth
+</pre></div>
+</div>
+<p>URI lookups are enabled by default, and can be disabled by setting
+<strong>dns_uri_lookup</strong> in the <a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><em>[libdefaults]</em></a> section of
+<a class="reference internal" href="conf_files/krb5_conf.html#krb5-conf-5"><em>krb5.conf</em></a> to False.  When enabled, URI lookups take
+precedence over SRV lookups, falling back to SRV lookups if no URI
+records are found.</p>
+</div>
 <div class="section" id="database-propagation">
 <span id="db-prop"></span><h2>Database propagation<a class="headerlink" href="#database-propagation" title="Permalink to this headline">¶</a></h2>
 <p>The Kerberos database resides on the master KDC, and must be
@@ -269,6 +312,7 @@ database to additional slaves.</p>
 <li><a class="reference internal" href="#ports-for-the-kdc-and-admin-services">Ports for the KDC and admin services</a></li>
 <li><a class="reference internal" href="#slave-kdcs">Slave KDCs</a></li>
 <li><a class="reference internal" href="#hostnames-for-kdcs">Hostnames for KDCs</a></li>
+<li><a class="reference internal" href="#kdc-discovery">KDC Discovery</a></li>
 <li><a class="reference internal" href="#database-propagation">Database propagation</a></li>
 </ul>
 </li>
@@ -331,7 +375,7 @@ database to additional slaves.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

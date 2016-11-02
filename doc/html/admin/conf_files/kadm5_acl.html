@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.14.3',
+        VERSION:     '1.15-beta1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -116,30 +116,46 @@ is permitted.</p>
 <tr class="row-odd"><td>d</td>
 <td>[Dis]allows the deletion of principals or policies</td>
 </tr>
-<tr class="row-even"><td>i</td>
+<tr class="row-even"><td>e</td>
+<td>[Dis]allows the extraction of principal keys</td>
+</tr>
+<tr class="row-odd"><td>i</td>
 <td>[Dis]allows inquiries about principals or policies</td>
 </tr>
-<tr class="row-odd"><td>l</td>
+<tr class="row-even"><td>l</td>
 <td>[Dis]allows the listing of all principals or policies</td>
 </tr>
-<tr class="row-even"><td>m</td>
+<tr class="row-odd"><td>m</td>
 <td>[Dis]allows the modification of principals or policies</td>
 </tr>
-<tr class="row-odd"><td>p</td>
+<tr class="row-even"><td>p</td>
 <td>[Dis]allows the propagation of the principal database (used in <a class="reference internal" href="../database.html#incr-db-prop"><em>Incremental database propagation</em></a>)</td>
 </tr>
-<tr class="row-even"><td>s</td>
+<tr class="row-odd"><td>s</td>
 <td>[Dis]allows the explicit setting of the key for a principal</td>
 </tr>
-<tr class="row-odd"><td>x</td>
-<td>Short for admcilsp. All privileges</td>
+<tr class="row-even"><td>x</td>
+<td>Short for admcilsp. All privileges (except <tt class="docutils literal"><span class="pre">e</span></tt>)</td>
 </tr>
-<tr class="row-even"><td>*</td>
+<tr class="row-odd"><td>*</td>
 <td>Same as x.</td>
 </tr>
 </tbody>
 </table>
 </dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">extract</span></tt> privilege is not included in the wildcard
+privilege; it must be explicitly assigned.  This privilege
+allows the user to extract keys from the database, and must be
+handled with great care to avoid disclosure of important keys
+like those of the kadmin/* or krbtgt/* principals.  The
+<strong>lockdown_keys</strong> principal attribute can be used to prevent
+key extraction from specific principals regardless of the
+granted privilege.</p>
+</div>
+<dl class="docutils">
 <dt><em>target_principal</em></dt>
 <dd><p class="first">(Optional. Partially or fully qualified Kerberos principal name.)
 Specifies the principal on which <em>permissions</em> may be applied.
@@ -293,7 +309,7 @@ tickets with a life of longer than 9 hours.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.14.3</i><br />
+            <div class="right" ><i>Release: 1.15-beta1</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

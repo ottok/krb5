@@ -54,9 +54,10 @@ following directives at the beginning of a line::
 *FILENAME* or *DIRNAME* should be an absolute path. The named file or
 directory must exist and be readable.  Including a directory includes
 all files within the directory whose names consist solely of
-alphanumeric characters, dashes, or underscores.  Included profile
-files are syntactically independent of their parents, so each included
-file must begin with a section header.
+alphanumeric characters, dashes, or underscores.  Starting in release
+1.15, files with names ending in ".conf" are also included.  Included
+profile files are syntactically independent of their parents, so each
+included file must begin with a section header.
 
 The krb5.conf file can specify that configuration should be obtained
 from a loadable module, rather than the file itself, using the
@@ -210,6 +211,13 @@ The libdefaults section may contain any of the following relations:
     it (besides the initial ticket request, which has no encrypted
     data), and anything the fake KDC sends will not be trusted without
     verification using some secret that it won't know.
+
+**dns_uri_lookup**
+    Indicate whether DNS URI records should be used to locate the KDCs
+    and other servers for a realm, if they are not listed in the
+    krb5.conf information for the realm.  SRV records are used as a
+    fallback if no URI records were found.  The default value is true.
+    New in release 1.15.
 
 **err_fmt**
     This relation allows for custom error message formatting.  If a
@@ -1130,7 +1138,7 @@ Here is an example of a generic krb5.conf file::
         ATHENA.MIT.EDU = {
             kdc = kerberos.mit.edu
             kdc = kerberos-1.mit.edu
-            kdc = kerberos-2.mit.edu:750
+            kdc = kerberos-2.mit.edu
             admin_server = kerberos.mit.edu
             master_kdc = kerberos.mit.edu
         }

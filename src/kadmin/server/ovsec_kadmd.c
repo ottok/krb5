@@ -72,6 +72,7 @@ int nofork = 0;
 char *kdb5_util = KPROPD_DEFAULT_KDB5_UTIL;
 char *kprop = KPROPD_DEFAULT_KPROP;
 char *dump_file = KPROP_DEFAULT_FILE;
+char *kprop_port = NULL;
 
 static krb5_context context;
 static char *progname;
@@ -86,7 +87,7 @@ usage()
     fprintf(stderr, _("Usage: kadmind [-x db_args]* [-r realm] [-m] [-nofork] "
                       "[-port port-number]\n"
                       "\t\t[-proponly] [-p path-to-kdb5_util] [-F dump-file]\n"
-                      "\t\t[-K path-to-kprop] [-P pid_file]\n"
+                      "\t\t[-K path-to-kprop] [-k kprop-port] [-P pid_file]\n"
                       "\nwhere,\n\t[-x db_args]* - any number of database "
                       "specific arguments.\n"
                       "\t\t\tLook at each database documentation for "
@@ -150,29 +151,32 @@ setup_loop(int proponly, verto_ctx **ctx_out)
     if (ret)
         return ret;
     if (!proponly) {
-        ret = loop_add_udp_port(handle->params.kpasswd_port);
+        ret = loop_add_udp_address(handle->params.kpasswd_port,
+                                   handle->params.kpasswd_listen);
         if (ret)
             return ret;
-        ret = loop_add_tcp_port(handle->params.kpasswd_port);
+        ret = loop_add_tcp_address(handle->params.kpasswd_port,
+                                   handle->params.kpasswd_listen);
         if (ret)
             return ret;
-        ret = loop_add_rpc_service(handle->params.kadmind_port, KADM, KADMVERS,
-                                   kadm_1);
+        ret = loop_add_rpc_service(handle->params.kadmind_port,
+                                   handle->params.kadmind_listen,
+                                   KADM, KADMVERS, kadm_1);
         if (ret)
             return ret;
     }
 #ifndef DISABLE_IPROP
     if (handle->params.iprop_enabled) {
-        ret = loop_add_rpc_service(handle->params.iprop_port, KRB5_IPROP_PROG,
-                                   KRB5_IPROP_VERS, krb5_iprop_prog_1);
+        ret = loop_add_rpc_service(handle->params.iprop_port,
+                                   handle->params.iprop_listen,
+                                   KRB5_IPROP_PROG, KRB5_IPROP_VERS,
+                                   krb5_iprop_prog_1);
         if (ret)
             return ret;
     }
 #endif
-    ret = loop_setup_routing_socket(ctx, global_server_handle, progname);
-    if (ret)
-        return ret;
-    return loop_setup_network(ctx, global_server_handle, progname);
+    return loop_setup_network(ctx, global_server_handle, progname,
+                              DEFAULT_TCP_LISTEN_BACKLOG);
 }
 
 /* Point GSSAPI at the KDB keytab so we don't need an actual file keytab. */
@@ -184,7 +188,7 @@ setup_kdb_keytab()
     ret = krb5_ktkdb_set_context(context);
     if (ret)
         return ret;
-    ret = krb5_kt_register(context, &krb5_kt_kdb_ops);
+    ret = krb5_db_register_keytab(context);
     if (ret)
         return ret;
     return krb5_gss_register_acceptor_identity("KDB:");
@@ -431,6 +435,11 @@ main(int argc, char *argv[])
             if (!argc)
                 usage();
             kprop = *argv;
+        } else if (strcmp(*argv, "-k") == 0) {
+            argc--, argv++;
+            if (!argc)
+                usage();
+            kprop_port = *argv;
         } else {
             break;
         }
@@ -526,6 +535,9 @@ main(int argc, char *argv[])
                     progname, KRB5_IPROP_PROG, KRB5_IPROP_VERS);
         }
     }
+
+    if (kprop_port == NULL)
+        kprop_port = getenv("KPROP_PORT");
 
     krb5_klog_syslog(LOG_INFO, _("starting"));
     if (nofork)

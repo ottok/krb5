@@ -414,10 +414,6 @@ ulog_replay(krb5_context context, kdb_incr_result_t *incr_ret, char **db_args)
             if (retval)
                 goto cleanup;
         } else {
-            entry = k5alloc(sizeof(krb5_db_entry), &retval);
-            if (entry == NULL)
-                goto cleanup;
-
             retval = ulog_conv_2dbentry(context, &entry, upd);
             if (retval)
                 goto cleanup;
@@ -675,4 +671,17 @@ ulog_set_last(krb5_context context, const kdb_last_t *last)
     sync_header(ulog);
     unlock_ulog(context);
     return 0;
+}
+
+void
+ulog_fini(krb5_context context)
+{
+    kdb_log_context *log_ctx = context->kdblog_context;
+
+    if (log_ctx == NULL)
+        return;
+    if (log_ctx->ulog != NULL)
+        munmap(log_ctx->ulog, MAXLOGLEN);
+    free(log_ctx);
+    context->kdblog_context = NULL;
 }

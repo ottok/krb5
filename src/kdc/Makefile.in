@@ -2,7 +2,7 @@ mydir=kdc
 BUILDTOP=$(REL)..
 DEFINES=-DLIBDIR=\"$(KRB5_LIBDIR)\"
 
-all:: krb5kdc rtest
+all: krb5kdc rtest
 
 # DEFINES = -DBACKWARD_COMPAT $(KRB4DEF)
 
@@ -27,7 +27,8 @@ SRCS= \
 	$(srcdir)/kdc_audit.c \
 	$(srcdir)/kdc_transit.c \
 	$(srcdir)/tgs_policy.c \
-	$(srcdir)/kdc_log.c
+	$(srcdir)/kdc_log.c \
+	$(srcdir)/t_replay.c
 
 OBJS= \
 	kdc5_err.o \
@@ -54,7 +55,7 @@ OBJS= \
 RT_OBJS= rtest.o \
 	kdc_transit.o
 
-depend:: kdc5_err.c kdc5_err.h
+depend: kdc5_err.c kdc5_err.h
 
 kdc5_err.c: kdc5_err.et
 
@@ -68,18 +69,26 @@ krb5kdc: $(OBJS) $(KADMSRV_DEPLIBS) $(KRB5_BASE_DEPLIBS) $(APPUTILS_DEPLIB) $(VE
 rtest: $(RT_OBJS) $(KDB5_DEPLIBS) $(KADM_COMM_DEPLIBS) $(KRB5_BASE_DEPLIBS)
 	$(CC_LINK) -o rtest $(RT_OBJS) $(KDB5_LIBS) $(KADM_COMM_LIBS) $(KRB5_BASE_LIBS)
 
-check-unix:: rtest
+check-unix: rtest
 	$(RUN_TEST) $(srcdir)/rtscript > test.out
 	cmp test.out $(srcdir)/rtest.good
 	$(RM) test.out
 
-check-pytests::
+T_REPLAY_OBJS=t_replay.o
+
+t_replay: $(T_REPLAY_OBJS) replay.o $(KRB5_BASE_DEPLIBS)
+	$(CC_LINK) -o $@ $(T_REPLAY_OBJS) $(CMOCKA_LIBS) $(KRB5_BASE_LIBS)
+
+check-cmocka: t_replay
+	$(RUN_TEST) ./t_replay > /dev/null
+
+check-pytests:
 	$(RUNPYTEST) $(srcdir)/t_workers.py $(PYTESTFLAGS)
 	$(RUNPYTEST) $(srcdir)/t_emptytgt.py $(PYTESTFLAGS)
 
-install::
+install:
 	$(INSTALL_PROGRAM) krb5kdc ${DESTDIR}$(SERVER_BINDIR)/krb5kdc
 
-clean::
-	$(RM) kdc5_err.h kdc5_err.c krb5kdc rtest.o rtest
+clean:
+	$(RM) kdc5_err.h kdc5_err.c krb5kdc rtest.o rtest t_replay.o t_replay
 
