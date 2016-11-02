@@ -42,6 +42,11 @@ libkrb5support.so.0 libkrb5support0 #MINVER#
  k5_json_string_create_len@krb5support_0_MIT 1.11+dfsg
  k5_json_string_unbase64@krb5support_0_MIT 1.11+dfsg
  k5_json_string_utf8@krb5support_0_MIT 1.11+dfsg
+ k5_once@krb5support_0_MIT 1.15~beta1
+ k5_os_mutex_destroy@krb5support_0_MIT 1.15~beta1
+ k5_os_mutex_init@krb5support_0_MIT 1.15~beta1
+ k5_os_mutex_lock@krb5support_0_MIT 1.15~beta1
+ k5_os_mutex_unlock@krb5support_0_MIT 1.15~beta1
  k5_path_isabs@krb5support_0_MIT 1.10+dfsg~alpha1
  k5_path_join@krb5support_0_MIT 1.10+dfsg~alpha1
  k5_path_split@krb5support_0_MIT 1.10+dfsg~alpha1

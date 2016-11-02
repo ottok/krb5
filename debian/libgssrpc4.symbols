@@ -46,7 +46,6 @@ libgssrpc.so.4 libgssrpc4 #MINVER#
  gssrpc_pmap_unset@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_registerrpc@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_rpc_createrr@gssrpc_4_MIT 1.6.dfsg.2
- gssrpc_svc_auth_gss_creds@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_svc_auth_gss_ops@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_svc_auth_gssapi_ops@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_svc_auth_none@gssrpc_4_MIT 1.6.dfsg.2

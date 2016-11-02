@@ -115,6 +115,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  initialize_krb5_error_table@krb5_3_MIT 1.6.dfsg.2
  initialize_kv5m_error_table@krb5_3_MIT 1.6.dfsg.2
  initialize_prof_error_table@krb5_3_MIT 1.6.dfsg.2
+ k5_authind_decode@krb5_3_MIT 1.15~beta1
  k5_build_conf_principals@krb5_3_MIT 1.12~alpha1+dfsg
  k5_ccselect_free_context@krb5_3_MIT 1.10+dfsg~alpha1
  k5_change_error_message_code@krb5_3_MIT 1.13~alpha1+dfsg
@@ -132,6 +133,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_free_serverlist@krb5_3_MIT 1.10+dfsg~alpha1
  k5_hostrealm_free_context@krb5_3_MIT 1.12~alpha1+dfsg
  k5_init_trace@krb5_3_MIT 1.12~alpha1+dfsg
+ k5_is_string_numeric@krb5_3_MIT 1.15~beta1
  k5_kt_get_principal@krb5_3_MIT 1.10+dfsg~alpha1
  k5_localauth_free_context@krb5_3_MIT 1.12~alpha1+dfsg
  k5_locate_kdc@krb5_3_MIT 1.10+dfsg~alpha1
@@ -139,6 +141,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_marshal_princ@krb5_3_MIT 1.13~alpha1+dfsg
  k5_os_free_context@krb5_3_MIT 1.12~alpha1+dfsg
  k5_os_init_context@krb5_3_MIT 1.12~alpha1+dfsg
+ k5_parse_host_string@krb5_3_MIT 1.15~beta1
  k5_plugin_free_modules@krb5_3_MIT 1.9+dfsg~beta1
  k5_plugin_load@krb5_3_MIT 1.9+dfsg~beta1
  k5_plugin_load_all@krb5_3_MIT 1.9+dfsg~beta1
@@ -146,6 +149,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_plugin_register_dyn@krb5_3_MIT 1.10+dfsg~alpha1
  k5_unmarshal_cred@krb5_3_MIT 1.13~alpha1+dfsg
  k5_unmarshal_princ@krb5_3_MIT 1.13~alpha1+dfsg
+ k5_unwrap_cammac_svc@krb5_3_MIT 1.15~beta1
  k5_zapfree_pa_data@krb5_3_MIT 1.14+dfsg
  krb524_convert_creds_kdc@krb5_3_MIT 1.6.dfsg.2
  krb524_init_ets@krb5_3_MIT 1.6.dfsg.2
@@ -281,6 +285,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  krb5_encode_kdc_rep@krb5_3_MIT 1.6.dfsg.2
  krb5_encrypt_helper@krb5_3_MIT 1.6.dfsg.2
  krb5_encrypt_tkt_part@krb5_3_MIT 1.6.dfsg.2
+ krb5_expand_hostname@krb5_3_MIT 1.15~beta1
  krb5_externalize_data@krb5_3_MIT 1.6.dfsg.2
  krb5_externalize_opaque@krb5_3_MIT 1.6.dfsg.2
  krb5_fcc_ops@krb5_3_MIT 1.6.dfsg.2
@@ -391,6 +396,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  krb5_get_init_creds_opt_set_in_ccache@krb5_3_MIT 1.11+dfsg
  krb5_get_init_creds_opt_set_out_ccache@krb5_3_MIT 1.8+dfsg
  krb5_get_init_creds_opt_set_pa@krb5_3_MIT 1.6.dfsg.2
+ krb5_get_init_creds_opt_set_pac_request@krb5_3_MIT 1.15~beta1
  krb5_get_init_creds_opt_set_preauth_list@krb5_3_MIT 1.6.dfsg.2
  krb5_get_init_creds_opt_set_proxiable@krb5_3_MIT 1.6.dfsg.2
  krb5_get_init_creds_opt_set_renew_life@krb5_3_MIT 1.6.dfsg.2
@@ -580,6 +586,8 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  krb5_set_default_tgs_enctypes@krb5_3_MIT 1.6.dfsg.2
  krb5_set_default_tgs_ktypes@krb5_3_MIT 1.6.dfsg.2
  krb5_set_error_message@krb5_3_MIT 1.6.dfsg.2
+ krb5_set_kdc_recv_hook@krb5_3_MIT 1.15~beta1
+ krb5_set_kdc_send_hook@krb5_3_MIT 1.15~beta1
  krb5_set_password@krb5_3_MIT 1.6.dfsg.2
  krb5_set_password_using_ccache@krb5_3_MIT 1.6.dfsg.2
  krb5_set_principal_realm@krb5_3_MIT 1.6.dfsg.2
