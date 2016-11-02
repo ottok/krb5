@@ -1,3 +1,19 @@
+krb5 (1.15~beta1-1) UNRELEASED; urgency=low
+
+  * New upstream version
+    - Upstream's tarball is now DFSG-free
+    - Builds against openssl 1.1.0, Closes: #828369
+    - Add support for the AES-SHA2 enctypes
+    - Add support to kadmin for remote extraction of current keys
+      and principal attributes to prevent such extraction
+    - Add DNS auto-discovery using URI records in addition to SRV records
+    - Improve LDAP backend to contain some features previously only
+      present in the BDB backend
+    - Use the getrandom system call on supported Linux kernels
+    - Use SHA256 instead of MD5 for hashing authenticators in the replay cache
+
+ -- Benjamin Kaduk <kaduk@mit.edu>  Wed, 02 Nov 2016 00:12:46 -0400
+
 krb5 (1.14.3+dfsg-2) unstable; urgency=medium
 
   * Fix gcc -O3, thanks Ben Kaduk/Steve Langasek, Closes: #833798
