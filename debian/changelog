@@ -15,8 +15,8 @@ krb5 (1.15~beta1-1) unstable; urgency=low
       * The symbol gssrpc_svcauth_gss_creds was removed upstream from
     libgssrpc; no soname bump because this is an internal API never in a
     public header
-
-
+  [ Sam Hartman ]
+  * Update standards version to 3.9.8
 
  -- Benjamin Kaduk <kaduk@mit.edu>  Wed, 02 Nov 2016 00:12:46 -0400
 
