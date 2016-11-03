@@ -1,5 +1,6 @@
-krb5 (1.15~beta1-1) UNRELEASED; urgency=low
+krb5 (1.15~beta1-1) unstable; urgency=low
 
+  [ Benjamin Kaduk ]
   * New upstream version
     - Upstream's tarball is now DFSG-free
     - Builds against openssl 1.1.0, Closes: #828369
@@ -11,6 +12,11 @@ krb5 (1.15~beta1-1) UNRELEASED; urgency=low
       present in the BDB backend
     - Use the getrandom system call on supported Linux kernels
     - Use SHA256 instead of MD5 for hashing authenticators in the replay cache
+      * The symbol gssrpc_svcauth_gss_creds was removed upstream from
+    libgssrpc; no soname bump because this is an internal API never in a
+    public header
+
+
 
  -- Benjamin Kaduk <kaduk@mit.edu>  Wed, 02 Nov 2016 00:12:46 -0400
 
