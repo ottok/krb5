@@ -1,14 +1,30 @@
-From e815a488abcc9de10ec67ed8e63d6ddb518cb164 Mon Sep 17 00:00:00 2001
+From bbc90361be6a3ca0378652eea103a881c8de6deb Mon Sep 17 00:00:00 2001
 From: Sam Hartman <hartmans@debian.org>
 Date: Mon, 30 May 2016 12:51:16 -0400
 Subject: Initial German translations
 
 Thanks, Chris Leick <c.leick@vollbio.de>
+
+modified 2016-11-04 to actually build the German catalogue.
 ---
- src/po/de.po | 9301 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 9301 insertions(+)
+ src/po/Makefile.in |    2 +-
+ src/po/de.po       | 9301 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 9302 insertions(+), 1 deletion(-)
  create mode 100644 src/po/de.po
 
+diff --git a/src/po/Makefile.in b/src/po/Makefile.in
+index fdaf872..6753447 100644
+--- a/src/po/Makefile.in
++++ b/src/po/Makefile.in
+@@ -18,7 +18,7 @@ ETSRCS=	$(BUILDTOP)/lib/gssapi/generic/gssapi_err_generic.c \
+ 	$(BUILDTOP)/lib/krb5/error_tables/kv5m_err.c \
+ 	$(BUILDTOP)/lib/krb5/error_tables/krb524_err.c
+ # This is a placeholder until we have an actual translation.
+-CATALOGS=en_US.mo
++CATALOGS=en_US.mo de.mo
+ 
+ .SUFFIXES: .po .mo
+ .po.mo:
 diff --git a/src/po/de.po b/src/po/de.po
 new file mode 100644
 index 0000000..fd199b3
