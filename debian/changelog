@@ -1,5 +1,12 @@
-krb5 (1.15~beta1-2) UNRELEASED; urgency=medium
+krb5 (1.15-1) UNRELEASED; urgency=medium
 
+  [ Benjamin Kaduk ]
+  * New upstream version
+    - Make zap() more reliable and use it more consistently; the
+      previous version could be optimized out by gcc 5.1 or later
+  * Update Debian-HURD-compatibility.patch, Closes: #845381
+
+  [ Sam Hartman ]
   * Actually build and ship German translations, Closes: #842497
 
  -- Sam Hartman <hartmans@debian.org>  Fri, 04 Nov 2016 16:00:55 -0400
