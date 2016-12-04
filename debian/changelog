@@ -7,6 +7,7 @@ krb5 (1.15-1) UNRELEASED; urgency=medium
     - Update license statement in ccapi/common/win/OldCC/autolock.hxx,
       Closes: #846088
   * Update Debian-HURD-compatibility.patch, Closes: #845381
+  * Bump debhelper compat level to 9
 
   [ Sam Hartman ]
   * Actually build and ship German translations, Closes: #842497
