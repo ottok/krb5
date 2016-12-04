@@ -96,7 +96,8 @@ Package: krb5-kpropd
 Architecture: any
 Priority: optional
 Depends: ${misc:Depends}, ${shlibs:Depends},
- krb5-kdc (= ${binary:Version})
+ krb5-kdc (= ${binary:Version}),
+ lsb-base
 Suggests: openbsd-inetd | inet-superserver
 Description: MIT Kerberos key server (KDC)
  Kerberos is a system for authenticating users and services on a network.
