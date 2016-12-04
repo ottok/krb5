@@ -15,7 +15,7 @@
 
 \title{Kerberos Application Developer Guide}
 \date{ }
-\release{1.15-beta1}
+\release{1.15}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -3112,11 +3112,13 @@ Kerberos error codes
 
 \end{description}\end{quote}
 
-Resolve the key table name \emph{name} and set \emph{ktid} to a handle identifying the key table. The key table is not opened.
+Resolve the key table name \emph{name} and set \emph{ktid} to a handle identifying the key table. Use {\hyperref[appdev/refs/api/krb5_kt_close:c.krb5_kt_close]{\code{krb5\_kt\_close()}}} to free \emph{ktid} when it is no longer needed.
+\begin{quote}
 
-\begin{notice}{note}{Note:}
-\emph{name} must be of the form \textbf{type:residual} , where \emph{type} must be a type known to the library and \emph{residual} portion should be specific to the particular keytab type.
-\end{notice}
+\emph{name} must be of the form \textbf{type:residual} , where \emph{type} must be a type known to the library and \emph{residual} portion should be specific to the particular keytab type. If no \emph{type} is given, the default is \textbf{FILE} .
+\end{quote}
+
+If \emph{name} is of type \textbf{FILE} , the keytab file is not opened by this call.
 
 
 \subsubsection{krb5\_kuserok -  Determine if a principal is authorized to log in as a local user.}
@@ -16036,12 +16038,14 @@ RFC 6803.
 \end{fulllineitems}
 
 
+RFC 4757.
+
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
 
 \code{CKSUMTYPE\_HMAC\_MD5\_ARCFOUR}
  & 
-\code{-138 /*Microsoft md5 hmac cksumtype*/}
+\code{-138}
 \\
 \hline\end{tabulary}
 
@@ -16101,6 +16105,8 @@ Used with ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96
 \end{fulllineitems}
 
 
+RFC 8009.
+
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
 
@@ -16119,6 +16125,8 @@ Used with ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96
 \phantomsection\label{appdev/refs/macros/CKSUMTYPE_HMAC_SHA384_192_AES256:CKSUMTYPE_HMAC_SHA384_192_AES256}\pysigline{\bfcode{CKSUMTYPE\_HMAC\_SHA384\_192\_AES256}}
 \end{fulllineitems}
 
+
+RFC 8009.
 
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
@@ -16163,7 +16171,7 @@ Used with ENCTYPE\_AES256\_CTS\_HMAC\_SHA1\_96
 
 \code{CKSUMTYPE\_MD5\_HMAC\_ARCFOUR}
  & 
-\code{-137 /*Microsoft netlogon cksumtype*/}
+\code{-137 /* Microsoft netlogon */}
 \\
 \hline\end{tabulary}
 
@@ -16293,6 +16301,8 @@ RFC 3962.
 \end{fulllineitems}
 
 
+RFC 8009.
+
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
 
@@ -16333,6 +16343,8 @@ RFC 3962.
 \end{fulllineitems}
 
 
+RFC 8009.
+
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
 
@@ -16352,6 +16364,8 @@ RFC 3962.
 \end{fulllineitems}
 
 
+RFC 4757.
+
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline
 
@@ -16370,6 +16384,8 @@ RFC 3962.
 \phantomsection\label{appdev/refs/macros/ENCTYPE_ARCFOUR_HMAC_EXP:ENCTYPE_ARCFOUR_HMAC_EXP}\pysigline{\bfcode{ENCTYPE\_ARCFOUR\_HMAC\_EXP}}
 \end{fulllineitems}
 
+
+RFC 4757.
 
 \begin{tabulary}{\linewidth}{|L|L|}
 \hline

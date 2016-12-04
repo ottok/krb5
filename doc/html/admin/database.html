@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.15-beta1',
+        VERSION:     '1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -1087,9 +1087,13 @@ restarted for this change to take full effect.</p>
 </li>
 <li><p class="first">On the master KDC, run <tt class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">update_princ_encryption</span></tt>.  This
 command will iterate over the database and re-encrypt all keys in
-the new master key.  If the database is large, the master KDC will
-become unavailable while this command runs, but clients should fail
-over to slave KDCs (if any are present) during this time period.</p>
+the new master key.  If the database is large and uses DB2, the
+master KDC will become unavailable while this command runs, but
+clients should fail over to slave KDCs (if any are present) during
+this time period.  In release 1.13 and later, you can instead run
+<tt class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">-x</span> <span class="pre">unlockiter</span> <span class="pre">update_princ_encryption</span></tt> to use unlocked
+iteration; this variant will take longer, but will keep the
+database available to the KDC and kadmind while it runs.</p>
 </li>
 <li><p class="first">On the master KDC, run <tt class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">purge_mkeys</span></tt> to clean up the
 old master key.</p>
@@ -1814,7 +1818,7 @@ config file, and the per-slave dump files are stored in
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15-beta1</i><br />
+            <div class="right" ><i>Release: 1.15</i><br />
                 &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.15-beta1',
+        VERSION:     '1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -97,11 +97,10 @@
 </tr>
 </tbody>
 </table>
-<p>Resolve the key table name <em>name</em> and set <em>ktid</em> to a handle identifying the key table. The key table is not opened.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last"><em>name</em> must be of the form <strong>type:residual</strong> , where <em>type</em> must be a type known to the library and <em>residual</em> portion should be specific to the particular keytab type.</p>
-</div>
+<p>Resolve the key table name <em>name</em> and set <em>ktid</em> to a handle identifying the key table. Use <a class="reference internal" href="krb5_kt_close.html#c.krb5_kt_close" title="krb5_kt_close"><tt class="xref c c-func docutils literal"><span class="pre">krb5_kt_close()</span></tt></a> to free <em>ktid</em> when it is no longer needed.</p>
+<blockquote>
+<div><em>name</em> must be of the form <strong>type:residual</strong> , where <em>type</em> must be a type known to the library and <em>residual</em> portion should be specific to the particular keytab type. If no <em>type</em> is given, the default is <strong>FILE</strong> .</div></blockquote>
+<p>If <em>name</em> is of type <strong>FILE</strong> , the keytab file is not opened by this call.</p>
 </div>
 
 
@@ -159,7 +158,7 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15-beta1</i><br />
+            <div class="right" ><i>Release: 1.15</i><br />
                 &copy; <a href="../../../copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">

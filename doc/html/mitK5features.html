@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.15-beta1',
+        VERSION:     '1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -73,8 +73,8 @@
 <dl class="docutils">
 <dt>Releases:</dt>
 <dd><ul class="first last simple">
-<li>Latest stable: <a class="reference external" href="http://web.mit.edu/kerberos/krb5-1.14/">http://web.mit.edu/kerberos/krb5-1.14/</a></li>
-<li>Supported: <a class="reference external" href="http://web.mit.edu/kerberos/krb5-1.13/">http://web.mit.edu/kerberos/krb5-1.13/</a></li>
+<li>Latest stable: <a class="reference external" href="http://web.mit.edu/kerberos/krb5-1.15/">http://web.mit.edu/kerberos/krb5-1.15/</a></li>
+<li>Supported: <a class="reference external" href="http://web.mit.edu/kerberos/krb5-1.14/">http://web.mit.edu/kerberos/krb5-1.14/</a></li>
 <li>Release cycle: 9 &#8211; 12 months</li>
 </ul>
 </dd>
@@ -127,7 +127,6 @@ permitted by KDC policy.</li>
 </ul>
 <p><cite>Heimdal</cite></p>
 <ul class="simple">
-<li>Support for reading Heimdal database starting from release 1.8</li>
 <li>Support for KCM credential cache starting from release 1.13</li>
 </ul>
 </div>
@@ -321,6 +320,49 @@ KDC&#8217;s log file is reset.</li>
 </li>
 </ul>
 </div></blockquote>
+<p>Release 1.15</p>
+<ul class="simple">
+<li>Administrator experience:<ul>
+<li>Add support to kadmin for remote extraction of current keys
+without changing them (requires a special kadmin permission that
+is excluded from the wildcard permission), with the exception of
+highly protected keys.</li>
+<li>Add a lockdown_keys principal attribute to prevent retrieval of
+the principal&#8217;s keys (old or new) via the kadmin protocol.  In
+newly created databases, this attribute is set on the krbtgt and
+kadmin principals.</li>
+<li>Restore recursive dump capability for DB2 back end, so sites can
+more easily recover from database corruption resulting from power
+failure events.</li>
+<li>Add DNS auto-discovery of KDC and kpasswd servers from URI
+records, in addition to SRV records.  URI records can convey TCP
+and UDP servers and master KDC status in a single DNS lookup, and
+can also point to HTTPS proxy servers.</li>
+<li>Add support for password history to the LDAP back end.</li>
+<li>Add support for principal renaming to the LDAP back end.</li>
+<li>Use the getrandom system call on supported Linux kernels to avoid
+blocking problems when getting entropy from the operating system.</li>
+</ul>
+</li>
+<li>Code quality:<ul>
+<li>Clean up numerous compilation warnings.</li>
+<li>Remove various infrequently built modules, including some preauth
+modules that were not built by default.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>Add support for building with OpenSSL 1.1.</li>
+<li>Use SHA-256 instead of MD5 for (non-cryptographic) hashing of
+authenticators in the replay cache.  This helps sites that must
+build with FIPS 140 conformant libraries that lack MD5.</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>Add support for the AES-SHA2 enctypes, which allows sites to
+conform to Suite B crypto requirements.</li>
+</ul>
+</li>
+</ul>
 <p><cite>Pre-authentication mechanisms</cite></p>
 <ul class="simple">
 <li>PW-SALT                                         <span class="target" id="index-11"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc4120.html#section-5.2.7.3"><strong>RFC 4120</strong></a></li>
@@ -393,7 +435,7 @@ KDC&#8217;s log file is reset.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15-beta1</i><br />
+            <div class="right" ><i>Release: 1.15</i><br />
                 &copy; <a href="copyright.html">Copyright</a> 1985-2016, MIT.
             </div>
             <div class="left">
