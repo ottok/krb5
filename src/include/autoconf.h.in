@@ -731,6 +731,9 @@
 /* Define to enable extensions in glibc */
 #undef _GNU_SOURCE
 
+/* Define to enable C11 extensions */
+#undef __STDC_WANT_LIB_EXT1__
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 

@@ -15,7 +15,7 @@
 
 \title{Kerberos Administration Guide}
 \date{ }
-\release{1.15-beta1}
+\release{1.15}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -5132,9 +5132,13 @@ restarted for this change to take full effect.
 \item {} 
 On the master KDC, run \code{kdb5\_util update\_princ\_encryption}.  This
 command will iterate over the database and re-encrypt all keys in
-the new master key.  If the database is large, the master KDC will
-become unavailable while this command runs, but clients should fail
-over to slave KDCs (if any are present) during this time period.
+the new master key.  If the database is large and uses DB2, the
+master KDC will become unavailable while this command runs, but
+clients should fail over to slave KDCs (if any are present) during
+this time period.  In release 1.13 and later, you can instead run
+\code{kdb5\_util -x unlockiter update\_princ\_encryption} to use unlocked
+iteration; this variant will take longer, but will keep the
+database available to the KDC and kadmind while it runs.
 
 \item {} 
 On the master KDC, run \code{kdb5\_util purge\_mkeys} to clean up the
