@@ -9,7 +9,7 @@ Patch-Category: debian-local
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/include/osconf.hin b/src/include/osconf.hin
-index 98a4674..2f51cc1 100644
+index 98a467454b..2f51cc13c7 100644
 --- a/src/include/osconf.hin
 +++ b/src/include/osconf.hin
 @@ -59,7 +59,7 @@

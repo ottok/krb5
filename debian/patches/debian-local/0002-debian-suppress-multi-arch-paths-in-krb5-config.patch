@@ -14,7 +14,7 @@ Patch-Category: debian-local
  1 file changed, 9 insertions(+), 5 deletions(-)
 
 diff --git a/src/build-tools/krb5-config.in b/src/build-tools/krb5-config.in
-index f6184da..637bad7 100755
+index f6184da3fb..637bad7c75 100755
 --- a/src/build-tools/krb5-config.in
 +++ b/src/build-tools/krb5-config.in
 @@ -138,6 +138,7 @@ if test -n "$do_help"; then

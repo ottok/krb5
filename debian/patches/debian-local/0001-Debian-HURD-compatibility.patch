@@ -18,7 +18,7 @@ Patch-Category: debian-local
  8 files changed, 30 insertions(+)
 
 diff --git a/src/clients/ksu/ksu.h b/src/clients/ksu/ksu.h
-index ee8e9d6..695305f 100644
+index ee8e9d6a0f..695305fe7d 100644
 --- a/src/clients/ksu/ksu.h
 +++ b/src/clients/ksu/ksu.h
 @@ -56,6 +56,10 @@
@@ -33,7 +33,7 @@ index ee8e9d6..695305f 100644
  extern int optind;
  extern char * optarg;
 diff --git a/src/include/k5-int.h b/src/include/k5-int.h
-index 6499173..63c509a 100644
+index 64991738a3..63c509a2a1 100644
 --- a/src/include/k5-int.h
 +++ b/src/include/k5-int.h
 @@ -580,6 +580,9 @@ extern char *strdup (const char *);
@@ -47,7 +47,7 @@ index 6499173..63c509a 100644
  #ifdef HAVE_SYS_FILE_H
  #include <sys/file.h>                   /* prototypes for file-related
 diff --git a/src/kadmin/ktutil/ktutil_funcs.c b/src/kadmin/ktutil/ktutil_funcs.c
-index 20a348c..b8b61ce 100644
+index 20a348c805..b8b61cef84 100644
 --- a/src/kadmin/ktutil/ktutil_funcs.c
 +++ b/src/kadmin/ktutil/ktutil_funcs.c
 @@ -33,6 +33,10 @@
@@ -62,7 +62,7 @@ index 20a348c..b8b61ce 100644
   * Free a kt_list
   */
 diff --git a/src/lib/gssapi/spnego/spnego_mech.c b/src/lib/gssapi/spnego/spnego_mech.c
-index 9d6027c..585d8a6 100644
+index 9d6027ce80..585d8a6581 100644
 --- a/src/lib/gssapi/spnego/spnego_mech.c
 +++ b/src/lib/gssapi/spnego/spnego_mech.c
 @@ -65,6 +65,9 @@
@@ -76,7 +76,7 @@ index 9d6027c..585d8a6 100644
  #undef g_token_size
  #undef g_verify_token_header
 diff --git a/src/lib/krb5/os/sn2princ.c b/src/lib/krb5/os/sn2princ.c
-index 5932fd9..187daa8 100644
+index 5932fd9b3f..187daa84d6 100644
 --- a/src/lib/krb5/os/sn2princ.c
 +++ b/src/lib/krb5/os/sn2princ.c
 @@ -126,6 +126,10 @@ find_trailer(const char *hostname)
@@ -91,7 +91,7 @@ index 5932fd9..187daa8 100644
  krb5_sname_to_principal(krb5_context context, const char *hostname,
                          const char *sname, krb5_int32 type,
 diff --git a/src/plugins/kdb/db2/libdb2/include/db-int.h b/src/plugins/kdb/db2/libdb2/include/db-int.h
-index 7e981d4..d83b3b6 100644
+index 7e981d4a5f..d83b3b6a6f 100644
 --- a/src/plugins/kdb/db2/libdb2/include/db-int.h
 +++ b/src/plugins/kdb/db2/libdb2/include/db-int.h
 @@ -280,4 +280,8 @@ void	 __dbpanic __P((DB *dbp));
@@ -104,7 +104,7 @@ index 7e981d4..d83b3b6 100644
 +#endif
  #endif /* _DB_INT_H_ */
 diff --git a/src/slave/kprop_util.c b/src/slave/kprop_util.c
-index f182554..0658390 100644
+index f182554e61..06583909ea 100644
 --- a/src/slave/kprop_util.c
 +++ b/src/slave/kprop_util.c
 @@ -32,6 +32,10 @@
@@ -119,7 +119,7 @@ index f182554..0658390 100644
   * Convert an IPv4 or IPv6 socket address to a newly allocated krb5_address.
   * There is similar code elsewhere in the tree, so this should possibly become
 diff --git a/src/tests/resolve/resolve.c b/src/tests/resolve/resolve.c
-index 7339d21..38f7253 100644
+index 7339d21bd9..38f725322b 100644
 --- a/src/tests/resolve/resolve.c
 +++ b/src/tests/resolve/resolve.c
 @@ -73,6 +73,10 @@ char *strchr();

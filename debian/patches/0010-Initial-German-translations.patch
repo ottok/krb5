@@ -13,7 +13,7 @@ modified 2016-11-04 to actually build the German catalogue.
  create mode 100644 src/po/de.po
 
 diff --git a/src/po/Makefile.in b/src/po/Makefile.in
-index fdaf872..6753447 100644
+index fdaf872a16..6753447dc7 100644
 --- a/src/po/Makefile.in
 +++ b/src/po/Makefile.in
 @@ -18,7 +18,7 @@ ETSRCS=	$(BUILDTOP)/lib/gssapi/generic/gssapi_err_generic.c \
@@ -27,7 +27,7 @@ index fdaf872..6753447 100644
  .po.mo:
 diff --git a/src/po/de.po b/src/po/de.po
 new file mode 100644
-index 0000000..fd199b3
+index 0000000000..fd199b372a
 --- /dev/null
 +++ b/src/po/de.po
 @@ -0,0 +1,9301 @@

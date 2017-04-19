@@ -8,3 +8,6 @@ debian-local/0007-Fix-pkg-config-library-include-paths.patch
 debian-local/0008-Use-isystem-for-include-paths.patch
 debian-local/0009-Fix-krb5-config-paths.patch
 0010-Initial-German-translations.patch
+upstream/0011-Fix-KDC-kadmind-startup-on-some-IPv4-only-systems.patch
+upstream/0012-Use-pktinfo-for-explicit-UDP-wildcard-listeners.patch
+upstream/0013-Fix-udp_preference_limit-with-SRV-records.patch
