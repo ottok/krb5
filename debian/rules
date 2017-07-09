@@ -51,6 +51,16 @@ EXCLUDE = -Xtmac.doc -Xexamples/krb5 -Xgnats/mit -Xkrb5-send-pr \
 LIB_PACKAGES = libkrb5-3 libgssapi-krb5-2 libkadm5clnt-mit11 libkadm5srv-mit11 libkdb5-8 libgssrpc4  \
 	libkrb5support0  libk5crypto3 libkrad0
 
+ifneq (,$(filter stage1,$(DEB_BUILD_PROFILES)))
+KRB5_SKIP_LDAP=        1
+endif
+
+ifeq (,$(KRB5_SKIP_LDAP))
+CONFIGURE_LDAP=        --with-ldap
+else
+CONFIGURE_LDAP=        --without-ldap
+endif
+
 # We touch each configure and Autoconf-related file so that we do not attempt
 # to use Autoconf.  The cache is used by the Embdebian project for cross
 # compiles.
@@ -66,7 +76,7 @@ configure-stamp:
 	cd build && $(FLAGS) ../src/configure  \
 		--prefix=/usr --localstatedir=/etc --mandir=/usr/share/man \
 		--with-system-et --with-system-ss --disable-rpath  \
-		--enable-shared --with-ldap --without-tcl \
+		--enable-shared $(CONFIGURE_LDAP) --without-tcl \
 	--with-system-verto \
 		--libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 		--sysconfdir=/etc \
@@ -114,11 +124,14 @@ install: build-arch
 
 	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
 	install -d $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/krb5 $(CURDIR)/debian/tmp/etc/insserv/overrides
+ifeq (,$(KRB5_SKIP_LDAP))
 	install -m644 debian/krb5-kdc-ldap.insserv-override debian/tmp/etc/insserv/overrides/krb5-kdc
-	install -m644 $(CURDIR)/debian/README.mech.d $(CURDIR)/debian/libgssapi-krb5-2/etc/gss/mech.d/README
 	mv $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libkdb_ldap* \
 	    $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/krb5/
 	rm -f $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/krb5/libkdb_ldap*.so
+else
+	rm -f $(CURDIR)/debian/tmp/usr/share/man/man8/kdb5_ldap_util.8
+endif
 	mv $(CURDIR)/debian/tmp/usr/bin/krb5-config \
 	    $(CURDIR)/debian/tmp/usr/bin/krb5-config.mit
 	mv $(CURDIR)/debian/tmp/usr/share/man/man1/krb5-config.1 \

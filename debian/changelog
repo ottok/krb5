@@ -4,6 +4,10 @@ krb5 (1.15.1-1) UNRELEASED; urgency=medium
       - Samba wants this, Closes: #861651
         * Include krb5-otp tmpfile for freeipa, Closes: #859243
   * Move doxygen to build-indep, Closes: #754139
+  * For stage1 builds, skip LDAP, based on patch by Johannes Schauer and
+    Peter Pentchev, Closes: #752407
+  * Annotate control file for stage1 without ldap, Closes: #752409
+  * Remove /etc/gss/mech.d/README, Closes: #861218
 
  -- Sam Hartman <hartmans@debian.org>  Sun, 09 Jul 2017 14:38:55 -0400
 
