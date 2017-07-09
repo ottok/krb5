@@ -15,7 +15,7 @@
 
 \title{Kerberos Administration Guide}
 \date{ }
-\release{1.15}
+\release{1.15.1}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -5712,6 +5712,24 @@ with older kvnos, ideally first making sure that all
 tickets issued with the old keys have expired.
 \end{notice}
 
+Only the first krbtgt key of the newest key version is used to encrypt
+ticket-granting tickets.  However, the set of encryption types present
+in the krbtgt keys is used by default to determine the session key
+types supported by the krbtgt service (see
+{\hyperref[admin/enctypes:session-key-selection]{\emph{Session key selection}}}).  Because non-MIT Kerberos clients
+sometimes send a limited set of encryption types when making AS
+requests, it can be important to for the krbtgt service to support
+multiple encryption types.  This can be accomplished by giving the
+krbtgt principal multiple keys, which is usually as simple as not
+specifying any \textbf{-e} option when changing the krbtgt key, or by
+setting the \textbf{session\_enctypes} string attribute on the krbtgt
+principal (see {\hyperref[admin/admin_commands/kadmin_local:set-string]{\emph{set\_string}}}).
+
+Due to a bug in releases 1.8 through 1.13, renewed and forwarded
+tickets may not work if the original ticket was obtained prior to a
+krbtgt key change and the modified ticket is obtained afterwards.
+Upgrading the KDC to release 1.14 or later will correct this bug.
+
 
 \section{Incremental database propagation}
 \label{admin/database:incremental-database-propagation}\label{admin/database:incr-db-prop}
@@ -6476,6 +6494,128 @@ application servers, or KDCs, can be configured using
 you might want to make.
 
 
+\section{Default realm}
+\label{admin/host_config:default-realm}
+In the {\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}} section, the \textbf{default\_realm} realm
+relation sets the default Kerberos realm.  For example:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+[libdefaults]
+    default\PYGZus{}realm = ATHENA.MIT.EDU
+\end{Verbatim}
+
+The default realm affects Kerberos behavior in the following ways:
+\begin{itemize}
+\item {} 
+When a principal name is parsed from text, the default realm is used
+if no \code{@REALM} component is specified.
+
+\item {} 
+The default realm affects login authorization as described below.
+
+\item {} 
+For programs which operate on a Kerberos database, the default realm
+is used to determine which database to operate on, unless the \textbf{-r}
+parameter is given to specify a realm.
+
+\item {} 
+A server program may use the default realm when looking up its key
+in a {\hyperref[admin/install_appl_srv:keytab-file]{\emph{keytab file}}}, if its realm is not
+determined by {\hyperref[admin/conf_files/krb5_conf:domain-realm]{\emph{{[}domain\_realm{]}}}} configuration or by the server
+program itself.
+
+\item {} 
+If \emph{kinit(1)} is passed the \textbf{-n} flag, it requests anonymous
+tickets from the default realm.
+
+\end{itemize}
+
+In some situations, these uses of the default realm might conflict.
+For example, it might be desirable for principal name parsing to use
+one realm by default, but for login authorization to use a second
+realm.  In this situation, the first realm can be configured as the
+default realm, and \textbf{auth\_to\_local} relations can be used as
+described below to use the second realm for login authorization.
+
+
+\section{Login authorization}
+\label{admin/host_config:login-authorization}\label{admin/host_config:id1}
+If a host runs a Kerberos-enabled login service such as OpenSSH with
+GSSAPIAuthentication enabled, login authorization rules determine
+whether a Kerberos principal is allowed to access a local account.
+
+By default, a Kerberos principal is allowed access to an account if
+its realm matches the default realm and its name matches the account
+name.  (For historical reasons, access is also granted by default if
+the name has two components and the second component matches the
+default realm; for instance, \code{alice/ATHENA.MIT.EDU@ATHENA.MIT.EDU}
+is granted access to the \code{alice} account if \code{ATHENA.MIT.EDU} is
+the default realm.)
+
+The simplest way to control local access is using \emph{.k5login(5)}
+files.  To use these, place a \code{.k5login} file in the home directory
+of each account listing the principal names which should have login
+access to that account.  If it is not desirable to use \code{.k5login}
+files located in account home directories, the \textbf{k5login\_directory}
+relation in the {\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}} section can specify a directory
+containing one file per account uname.
+
+By default, if a \code{.k5login} file is present, it controls
+authorization both positively and negatively--any principal name
+contained in the file is granted access and any other principal name
+is denied access, even if it would have had access if the \code{.k5login}
+file didn't exist.  The \textbf{k5login\_authoritative} relation in the
+{\hyperref[admin/conf_files/krb5_conf:libdefaults]{\emph{{[}libdefaults{]}}}} section can be set to false to make \code{.k5login}
+files provide positive authorization only.
+
+The \textbf{auth\_to\_local} relation in the {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section for the
+default realm can specify pattern-matching rules to control login
+authorization.  For example, the following configuration allows access
+to principals from a different realm than the default realm:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+[realms]
+    DEFAULT.REALM = \PYGZob{}
+        \PYGZsh{} Allow access to principals from OTHER.REALM.
+        \PYGZsh{}
+        \PYGZsh{} [1:\PYGZdl{}1@\PYGZdl{}0] matches single\PYGZhy{}component principal names and creates
+        \PYGZsh{} a selection string containing the principal name and realm.
+        \PYGZsh{}
+        \PYGZsh{} (.*@OTHER\PYGZbs{}.REALM) matches against the selection string, so that
+        \PYGZsh{} only principals in OTHER.REALM are matched.
+        \PYGZsh{}
+        \PYGZsh{} s/@OTHER\PYGZbs{}.REALM\PYGZdl{}// removes the realm name, leaving behind the
+        \PYGZsh{} principal name as the acount name.
+        auth\PYGZus{}to\PYGZus{}local = RULE:[1:\PYGZdl{}1@\PYGZdl{}0](.*@OTHER\PYGZbs{}.REALM)s/@OTHER\PYGZbs{}.REALM\PYGZdl{}//
+
+        \PYGZsh{} Also allow principals from the default realm.  Omit this line
+        \PYGZsh{} to only allow access to principals in OTHER.REALM.
+        auth\PYGZus{}to\PYGZus{}local = DEFAULT
+    \PYGZcb{}
+\end{Verbatim}
+
+The \textbf{auth\_to\_local\_names} subsection of the {\hyperref[admin/conf_files/krb5_conf:realms]{\emph{{[}realms{]}}}} section
+for the default realm can specify explicit mappings from principal
+names to local accounts.  The key used in this subsection is the
+principal name without realm, so it is only safe to use in a Kerberos
+environment with a single realm or a tightly controlled set of realms.
+An example use of \textbf{auth\_to\_local\_names} might be:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+[realms]
+    ATHENA.MIT.EDU = \PYGZob{}
+        auth\PYGZus{}to\PYGZus{}local\PYGZus{}names = \PYGZob{}
+            \PYGZsh{} Careful, these match principals in any realm!
+            host/example.com = hostaccount
+            fred = localfred
+        \PYGZcb{}
+    \PYGZcb{}
+\end{Verbatim}
+
+Local authorization behavior can also be modified using plugin
+modules; see \emph{hostrealm\_plugin} for details.
+
+
 \section{Plugin module configuration}
 \label{admin/host_config:plugin-config}\label{admin/host_config:plugin-module-configuration}
 Many aspects of Kerberos behavior, such as client preauthentication
@@ -6733,9 +6873,9 @@ anything is wrong with the KDC certificate.
 \subsection{Generating client certificates}
 \label{admin/pkinit:generating-client-certificates}
 PKINIT client certificates also must have some unusual certificate
-fields.  To generate a client certificate with OpenSSL, you will need
-an extensions file (different from the KDC extensions file above)
-containing:
+fields.  To generate a client certificate with OpenSSL for a
+single-component principal name, you will need an extensions file
+(different from the KDC extensions file above) containing:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 [client\PYGZus{}cert]
@@ -6789,6 +6929,23 @@ protected from access by others.
 As in the KDC certificate, OpenSSL will display the client principal
 name as \code{othername:\textless{}unsupported\textgreater{}} in the Subject Alternative Name
 extension of a PKINIT client certificate.
+
+If the client principal name contains more than one component
+(e.g. \code{host/example.com@REALM}), the \code{{[}principals{]}} section of
+\code{extensions.client} must be altered to contain multiple entries.
+(Simply setting \code{CLIENT} to \code{host/example.com} would generate a
+certificate for \code{host\textbackslash{}/example.com@REALM} which would not match the
+multi-component principal name.)  For a two-component principal, the
+section should read:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+[principals]
+princ1=GeneralString:\PYGZdl{}\PYGZob{}ENV::CLIENT1\PYGZcb{}
+princ2=GeneralString:\PYGZdl{}\PYGZob{}ENV::CLIENT2\PYGZcb{}
+\end{Verbatim}
+
+The environment variables \code{CLIENT1} and \code{CLIENT2} must then be set
+to the first and second components when running \code{openssl x509}.
 
 
 \section{Configuring the KDC}
@@ -7493,7 +7650,7 @@ kvno: KDC policy rejects request while getting credentials for
 \end{Verbatim}
 
 GSSAPI server applications can inspect authentication indicators
-through the \emph{auth-indicator} name
+through the \emph{auth-indicators} name
 attribute.
 
 
