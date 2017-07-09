@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.15',
+        VERSION:     '1.15.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -159,9 +159,9 @@ anything is wrong with the KDC certificate.</p>
 <div class="section" id="generating-client-certificates">
 <h3>Generating client certificates<a class="headerlink" href="#generating-client-certificates" title="Permalink to this headline">¶</a></h3>
 <p>PKINIT client certificates also must have some unusual certificate
-fields.  To generate a client certificate with OpenSSL, you will need
-an extensions file (different from the KDC extensions file above)
-containing:</p>
+fields.  To generate a client certificate with OpenSSL for a
+single-component principal name, you will need an extensions file
+(different from the KDC extensions file above) containing:</p>
 <div class="highlight-python"><div class="highlight"><pre>[client_cert]
 basicConstraints=CA:FALSE
 keyUsage=digitalSignature,keyEncipherment,keyAgreement
@@ -209,6 +209,20 @@ protected from access by others.</p>
 <p>As in the KDC certificate, OpenSSL will display the client principal
 name as <tt class="docutils literal"><span class="pre">othername:&lt;unsupported&gt;</span></tt> in the Subject Alternative Name
 extension of a PKINIT client certificate.</p>
+<p>If the client principal name contains more than one component
+(e.g. <tt class="docutils literal"><span class="pre">host/example.com&#64;REALM</span></tt>), the <tt class="docutils literal"><span class="pre">[principals]</span></tt> section of
+<tt class="docutils literal"><span class="pre">extensions.client</span></tt> must be altered to contain multiple entries.
+(Simply setting <tt class="docutils literal"><span class="pre">CLIENT</span></tt> to <tt class="docutils literal"><span class="pre">host/example.com</span></tt> would generate a
+certificate for <tt class="docutils literal"><span class="pre">host\/example.com&#64;REALM</span></tt> which would not match the
+multi-component principal name.)  For a two-component principal, the
+section should read:</p>
+<div class="highlight-python"><div class="highlight"><pre>[principals]
+princ1=GeneralString:${ENV::CLIENT1}
+princ2=GeneralString:${ENV::CLIENT2}
+</pre></div>
+</div>
+<p>The environment variables <tt class="docutils literal"><span class="pre">CLIENT1</span></tt> and <tt class="docutils literal"><span class="pre">CLIENT2</span></tt> must then be set
+to the first and second components when running <tt class="docutils literal"><span class="pre">openssl</span> <span class="pre">x509</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="configuring-the-kdc">
@@ -409,8 +423,8 @@ will have the client name <tt class="docutils literal"><span class="pre">WELLKNO
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
+            <div class="right" ><i>Release: 1.15.1</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2017, MIT.
             </div>
             <div class="left">
                 

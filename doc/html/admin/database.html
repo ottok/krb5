@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.15',
+        VERSION:     '1.15.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -1553,6 +1553,22 @@ type, run the kadmin <strong>purgekeys</strong> command to delete keys
 with older kvnos, ideally first making sure that all
 tickets issued with the old keys have expired.</p>
 </div>
+<p>Only the first krbtgt key of the newest key version is used to encrypt
+ticket-granting tickets.  However, the set of encryption types present
+in the krbtgt keys is used by default to determine the session key
+types supported by the krbtgt service (see
+<a class="reference internal" href="enctypes.html#session-key-selection"><em>Session key selection</em></a>).  Because non-MIT Kerberos clients
+sometimes send a limited set of encryption types when making AS
+requests, it can be important to for the krbtgt service to support
+multiple encryption types.  This can be accomplished by giving the
+krbtgt principal multiple keys, which is usually as simple as not
+specifying any <strong>-e</strong> option when changing the krbtgt key, or by
+setting the <strong>session_enctypes</strong> string attribute on the krbtgt
+principal (see <a class="reference internal" href="admin_commands/kadmin_local.html#set-string"><em>set_string</em></a>).</p>
+<p>Due to a bug in releases 1.8 through 1.13, renewed and forwarded
+tickets may not work if the original ticket was obtained prior to a
+krbtgt key change and the modified ticket is obtained afterwards.
+Upgrading the KDC to release 1.14 or later will correct this bug.</p>
 </div>
 <div class="section" id="incremental-database-propagation">
 <span id="incr-db-prop"></span><h2>Incremental database propagation<a class="headerlink" href="#incremental-database-propagation" title="Permalink to this headline">¶</a></h2>
@@ -1818,8 +1834,8 @@ config file, and the per-slave dump files are stored in
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2016, MIT.
+            <div class="right" ><i>Release: 1.15.1</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2017, MIT.
             </div>
             <div class="left">
                 
