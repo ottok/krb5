@@ -1,3 +1,11 @@
+krb5 (1.15.1-1) UNRELEASED; urgency=medium
+
+  *  New Upstream Version
+      - Samba wants this, Closes: #861651
+        * Include krb5-otp tmpfile for freeipa, Closes: #859243
+
+ -- Sam Hartman <hartmans@debian.org>  Sun, 09 Jul 2017 14:38:55 -0400
+
 krb5 (1.15-2) experimental; urgency=medium
 
 
