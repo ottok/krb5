@@ -3,7 +3,7 @@ Section: net
 Priority: standard
 Build-Depends: debhelper (>= 10), byacc | bison,
  comerr-dev, docbook-to-man, 
- libkeyutils-dev [linux-any], libldap2-dev <!profile.stage1>,
+ libkeyutils-dev [linux-any], libldap2-dev <!stage1>,
  libncurses5-dev, libssl-dev,  ss-dev, 
  libverto-dev (>= 0.2.4), pkg-config, dh-systemd
 Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen, doxygen-latex, texlive-generic-extra
