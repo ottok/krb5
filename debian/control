@@ -2,11 +2,11 @@ Source: krb5
 Section: net
 Priority: standard
 Build-Depends: debhelper (>= 9), byacc | bison,
- comerr-dev, docbook-to-man, doxygen,
+ comerr-dev, docbook-to-man, 
  libkeyutils-dev [linux-any], libldap2-dev,
  libncurses5-dev, libssl-dev,  ss-dev, 
  libverto-dev (>= 0.2.4), pkg-config, dh-systemd
-Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen-latex, texlive-generic-extra
+Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen, doxygen-latex, texlive-generic-extra
 Standards-Version: 3.9.8
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
