@@ -1,4 +1,4 @@
-From eb891f5577ef4a926a53ed9f8e855f1aded857bd Mon Sep 17 00:00:00 2001
+From 64a3030f041580e399042fbc8c52bc58d5bc72a8 Mon Sep 17 00:00:00 2001
 From: Benjamin Kaduk <kaduk@mit.edu>
 Date: Fri, 29 Mar 2013 17:18:40 -0400
 Subject: gssapi: never unload mechanisms
