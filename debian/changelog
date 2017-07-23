@@ -1,3 +1,15 @@
+krb5 (1.15.1-2) unstable; urgency=high
+
+  * Depend on libsasl2-dev for LDAP SASL authentication, Thanks Hideki
+    Yamane, Closes: #868035
+  * Remove /etc/gss/mech.d/README on libgssapi-krb5-2 purge, Closes: #868121
+  * CVE-2017-11368: Remote authenticated attackers can crash the KDC,
+    Closes: #869260
+  * Set Restart=on-abnormal in krb5-kdc.service and krb5-admind.service to
+    minimize the impact of future DOS bugs.
+
+ -- Sam Hartman <hartmans@debian.org>  Sun, 23 Jul 2017 14:16:38 -0400
+
 krb5 (1.15.1-1) unstable; urgency=medium
 
   *  New Upstream Version
