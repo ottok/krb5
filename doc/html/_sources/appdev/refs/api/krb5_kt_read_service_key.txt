@@ -45,7 +45,7 @@ Open and search the specified key table for the entry identified by *principal* 
 
 
 
-The default key table is used, unless *keyprocarg* is non-null. *keyprocarg* designates a specific key table.
+The default key table is used, unless *keyprocarg* is non-null. *keyprocarg* designates aspecific key table.
 
 
 

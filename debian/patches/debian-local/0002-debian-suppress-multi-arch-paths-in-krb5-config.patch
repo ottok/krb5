@@ -1,4 +1,4 @@
-From 866922c78cbb2f0fe4af962cc5913cdfac6b0cdf Mon Sep 17 00:00:00 2001
+From f946fbdf43b1e6d8442c533f367d20e21e112ab7 Mon Sep 17 00:00:00 2001
 From: Sam Hartman <hartmans@debian.org>
 Date: Mon, 26 Dec 2011 18:19:53 -0500
 Subject: debian: suppress multi-arch paths in krb5-config
@@ -14,7 +14,7 @@ Patch-Category: debian-local
  1 file changed, 9 insertions(+), 5 deletions(-)
 
 diff --git a/src/build-tools/krb5-config.in b/src/build-tools/krb5-config.in
-index f6184da3fb..637bad7c75 100755
+index f6184da3f..637bad7c7 100755
 --- a/src/build-tools/krb5-config.in
 +++ b/src/build-tools/krb5-config.in
 @@ -138,6 +138,7 @@ if test -n "$do_help"; then

@@ -1,4 +1,4 @@
-From 17e45d43658cac81c8008ea4f43e04e6fd093b5a Mon Sep 17 00:00:00 2001
+From ef8efe38e921db93d54d0f9c7e98e08fd5ec3f3e Mon Sep 17 00:00:00 2001
 From: Sam Hartman <hartmans@debian.org>
 Date: Mon, 30 May 2016 12:51:16 -0400
 Subject: Initial German translations
@@ -13,7 +13,7 @@ modified 2016-11-04 to actually build the German catalogue.
  create mode 100644 src/po/de.po
 
 diff --git a/src/po/Makefile.in b/src/po/Makefile.in
-index fdaf872a16..6753447dc7 100644
+index fdaf872a1..6753447dc 100644
 --- a/src/po/Makefile.in
 +++ b/src/po/Makefile.in
 @@ -18,7 +18,7 @@ ETSRCS=	$(BUILDTOP)/lib/gssapi/generic/gssapi_err_generic.c \
@@ -27,7 +27,7 @@ index fdaf872a16..6753447dc7 100644
  .po.mo:
 diff --git a/src/po/de.po b/src/po/de.po
 new file mode 100644
-index 0000000000..fd199b372a
+index 000000000..fd199b372
 --- /dev/null
 +++ b/src/po/de.po
 @@ -0,0 +1,9301 @@
