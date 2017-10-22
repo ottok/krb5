@@ -1,8 +1,18 @@
-krb5 (1.15.1-3) UNRELEASED; urgency=medium
+krb5 (1.15.2-1) UNRELEASED; urgency=medium
 
+  [ Sam Hartman ]
   * Fix plugins directory, thanks Andreas Hasenack, Closes: #872140
   * Move kpropd to krb5-kpropd since stretch is released
   * Mark krb5-kdc and krb5-addmin-server as multi-arch foreign
+
+  [ Benjamin Kaduk ]
+  * New Upstream Version
+    - Ignore files starting with '.' in profile include directories
+    - Use longer timeout for HTTPS (KKDCP) transport before switching to UDP
+    - Fix kadm5 setkey operations wit LDAP KDB
+    - Fix CVE-2017-11462: preserve GSS context on init/accept failure,
+      Closes: #873563
+    - Prevent NULL dereference with keyboard master key
 
  -- Sam Hartman <hartmans@debian.org>  Tue, 15 Aug 2017 12:26:20 -0400
 
