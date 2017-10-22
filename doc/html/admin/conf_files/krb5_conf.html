@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.15.1',
+        VERSION:     '1.15.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -112,9 +112,10 @@ includedir DIRNAME
 directory must exist and be readable.  Including a directory includes
 all files within the directory whose names consist solely of
 alphanumeric characters, dashes, or underscores.  Starting in release
-1.15, files with names ending in &#8221;.conf&#8221; are also included.  Included
-profile files are syntactically independent of their parents, so each
-included file must begin with a section header.</p>
+1.15, files with names ending in &#8221;.conf&#8221; are also included, unless the
+name begins with &#8221;.&#8221;.  Included profile files are syntactically
+independent of their parents, so each included file must begin with a
+section header.</p>
 <p>The krb5.conf file can specify that configuration should be obtained
 from a loadable module, rather than the file itself, using the
 following directive at the beginning of a line before any section
@@ -223,7 +224,7 @@ the client should request when making a TGS-REQ, in order of
 preference from highest to lowest.  The list may be delimited with
 commas or whitespace.  See <a class="reference internal" href="kdc_conf.html#encryption-types"><em>Encryption types</em></a> in
 <a class="reference internal" href="kdc_conf.html#kdc-conf-5"><em>kdc.conf</em></a> for a list of the accepted values for this tag.
-The default value is <tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types
+The default value is <tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types
 will be implicitly removed from this list if the value of
 <strong>allow_weak_crypto</strong> is false.</p>
 <p class="last">Do not set this unless required for specific backward
@@ -236,7 +237,7 @@ libraries are upgraded.</p>
 the client should request when making an AS-REQ, in order of
 preference from highest to lowest.  The format is the same as for
 default_tgs_enctypes.  The default value for this tag is
-<tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types will be implicitly
+<tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types will be implicitly
 removed from this list if the value of <strong>allow_weak_crypto</strong> is
 false.</p>
 <p class="last">Do not set this unless required for specific backward
@@ -379,7 +380,7 @@ used across NATs.  The default value is true.</dd>
 <dt><strong>permitted_enctypes</strong></dt>
 <dd>Identifies all encryption types that are permitted for use in
 session key encryption.  The default value for this tag is
-<tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types will be implicitly
+<tt class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></tt>, but single-DES encryption types will be implicitly
 removed from this list if the value of <strong>allow_weak_crypto</strong> is
 false.</dd>
 <dt><strong>plugin_base_dir</strong></dt>
@@ -1275,7 +1276,7 @@ Valid parameters are:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15.1</i><br />
+            <div class="right" ><i>Release: 1.15.2</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2017, MIT.
             </div>
             <div class="left">
