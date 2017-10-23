@@ -42,7 +42,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version}),
  libkdb5-8 (>= 1.13.1+dfsg-1)
 Suggests: krb5-kpropd, krb5-admin-server,
  krb5-kdc-ldap (= ${binary:Version})
- Multi-Arch: foreign
+Multi-Arch: foreign
 Description: MIT Kerberos key server (KDC)
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
@@ -103,7 +103,7 @@ Priority: optional
 Depends: ${misc:Depends}, ${shlibs:Depends},
  krb5-kdc (= ${binary:Version}),
  lsb-base
- Replaces: krb5-kdc (<< 1.15.1-3~)
+Replaces: krb5-kdc (<< 1.15.1-3~)
 Suggests: openbsd-inetd | inet-superserver
 Description: MIT Kerberos key server (Slave KDC Support)
  Kerberos is a system for authenticating users and services on a network.
