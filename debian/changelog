@@ -13,6 +13,10 @@ krb5 (1.15.2-1) UNRELEASED; urgency=medium
     - Fix CVE-2017-11462: preserve GSS context on init/accept failure,
       Closes: #873563
     - Prevent NULL dereference with keyboard master key
+  * Update to policy 4.1.1:
+    - Refer to service(8) instead of /etc/init.d/foo
+    - Support the 'nodoc' DEB_BUILD_OPTIONS entry
+    - Make all packages Priority: optional
 
  -- Sam Hartman <hartmans@debian.org>  Tue, 15 Aug 2017 12:26:20 -0400
 
