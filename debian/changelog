@@ -1,4 +1,4 @@
-krb5 (1.15.2-1) UNRELEASED; urgency=medium
+krb5 (1.15.2-1) unstable; urgency=medium
 
   [ Sam Hartman ]
   * Fix plugins directory, thanks Andreas Hasenack, Closes: #872140
@@ -18,7 +18,7 @@ krb5 (1.15.2-1) UNRELEASED; urgency=medium
     - Support the 'nodoc' DEB_BUILD_OPTIONS entry
     - Make all packages Priority: optional
 
- -- Sam Hartman <hartmans@debian.org>  Tue, 15 Aug 2017 12:26:20 -0400
+ -- Benjamin Kaduk <kaduk@mit.edu>  Tue, 24 Oct 2017 17:12:31 -0500
 
 krb5 (1.15.1-2) unstable; urgency=high
 
