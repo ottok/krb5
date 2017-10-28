@@ -1,3 +1,10 @@
+krb5 (1.15.2-2) unstable; urgency=medium
+
+  * Apply upstream patch removing a fixed-size buffer in PKINIT client code,
+    Closes: #871698
+
+ -- Benjamin Kaduk <kaduk@mit.edu>  Sat, 28 Oct 2017 18:09:28 -0500
+
 krb5 (1.15.2-1) unstable; urgency=medium
 
   [ Sam Hartman ]
