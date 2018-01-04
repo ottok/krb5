@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "KADM5.ACL" "5" " " "1.15.2" "MIT Kerberos"
+.TH "KADM5.ACL" "5" " " "1.16" "MIT Kerberos"
 .SH NAME
 kadm5.acl \- Kerberos ACL file
 .
@@ -257,6 +257,17 @@ principals.
 \fBsms@ATHENA.MIT.EDU\fP has all permissions except extracting keys, but
 any principal that it creates or modifies will not be able to get
 postdateable tickets or tickets with a life of longer than 9 hours.
+.SH MODULE BEHAVIOR
+.sp
+The ACL file can coexist with other authorization modules in release
+1.16 and later, as configured in the \fIkadm5_auth\fP section of
+\fIkrb5.conf(5)\fP\&.  The ACL file will positively authorize
+operations according to the rules above, but will never
+authoritatively deny an operation, so other modules can authorize
+operations in addition to those authorized by the ACL file.
+.sp
+To operate without an ACL file, set the \fIacl_file\fP variable in
+\fIkdc.conf(5)\fP to the empty string with \fBacl_file = ""\fP\&.
 .SH SEE ALSO
 .sp
 \fIkdc.conf(5)\fP, \fIkadmind(8)\fP

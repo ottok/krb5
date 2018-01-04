@@ -642,7 +642,6 @@ validate_as_request(kdc_realm_t *kdc_active_realm,
                     krb5_db_entry server, krb5_timestamp kdc_time,
                     const char **status, krb5_pa_data ***e_data)
 {
-    int errcode;
     krb5_error_code ret;
 
     /*
@@ -654,7 +653,7 @@ validate_as_request(kdc_realm_t *kdc_active_realm,
     }
 
     /* The client must not be expired */
-    if (client.expiration && client.expiration < kdc_time) {
+    if (client.expiration && ts_after(kdc_time, client.expiration)) {
         *status = "CLIENT EXPIRED";
         if (vague_errors)
             return(KRB_ERR_GENERIC);
@@ -664,7 +663,7 @@ validate_as_request(kdc_realm_t *kdc_active_realm,
 
     /* The client's password must not be expired, unless the server is
        a KRB5_KDC_PWCHANGE_SERVICE. */
-    if (client.pw_expiration && client.pw_expiration < kdc_time &&
+    if (client.pw_expiration && ts_after(kdc_time, client.pw_expiration) &&
         !isflagset(server.attributes, KRB5_KDB_PWCHANGE_SERVICE)) {
         *status = "CLIENT KEY EXPIRED";
         if (vague_errors)
@@ -674,7 +673,7 @@ validate_as_request(kdc_realm_t *kdc_active_realm,
     }
 
     /* The server must not be expired */
-    if (server.expiration && server.expiration < kdc_time) {
+    if (server.expiration && ts_after(kdc_time, server.expiration)) {
         *status = "SERVICE EXPIRED";
         return(KDC_ERR_SERVICE_EXP);
     }
@@ -749,12 +748,6 @@ validate_as_request(kdc_realm_t *kdc_active_realm,
                                   kdc_time, status, e_data);
     if (ret && ret != KRB5_PLUGIN_OP_NOTSUPP)
         return errcode_to_protocol(ret);
-
-    /* Check against local policy. */
-    errcode = against_local_policy_as(request, client, server,
-                                      kdc_time, status, e_data);
-    if (errcode)
-        return errcode;
 
     return 0;
 }
@@ -1766,14 +1759,19 @@ kdc_get_ticket_endtime(kdc_realm_t *kdc_active_realm,
                        krb5_db_entry *server,
                        krb5_timestamp *out_endtime)
 {
-    krb5_timestamp until, life;
+    krb5_timestamp until;
+    krb5_deltat life;
 
     if (till == 0)
         till = kdc_infinity;
 
-    until = min(till, endtime);
+    until = ts_min(till, endtime);
 
-    life = until - starttime;
+    /* Determine the requested lifetime, capped at the maximum valid time
+     * interval. */
+    life = ts_delta(until, starttime);
+    if (ts_after(until, starttime) && life < 0)
+        life = INT32_MAX;
 
     if (client != NULL && client->max_life != 0)
         life = min(life, client->max_life);
@@ -1782,7 +1780,7 @@ kdc_get_ticket_endtime(kdc_realm_t *kdc_active_realm,
     if (kdc_active_realm->realm_maxlife != 0)
         life = min(life, kdc_active_realm->realm_maxlife);
 
-    *out_endtime = starttime + life;
+    *out_endtime = ts_incr(starttime, life);
 }
 
 /*
@@ -1797,6 +1795,7 @@ kdc_get_ticket_renewtime(kdc_realm_t *realm, krb5_kdc_req *request,
 {
     krb5_timestamp rtime, max_rlife;
 
+    clear(tkt->flags, TKT_FLG_RENEWABLE);
     tkt->times.renew_till = 0;
 
     /* Don't issue renewable tickets if the client or server don't allow it,
@@ -1812,25 +1811,27 @@ kdc_get_ticket_renewtime(kdc_realm_t *realm, krb5_kdc_req *request,
     if (isflagset(request->kdc_options, KDC_OPT_RENEWABLE))
         rtime = request->rtime ? request->rtime : kdc_infinity;
     else if (isflagset(request->kdc_options, KDC_OPT_RENEWABLE_OK) &&
-             tkt->times.endtime < request->till)
+             ts_after(request->till, tkt->times.endtime))
         rtime = request->till;
     else
         return;
 
     /* Truncate it to the allowable renewable time. */
     if (tgt != NULL)
-        rtime = min(rtime, tgt->times.renew_till);
+        rtime = ts_min(rtime, tgt->times.renew_till);
     max_rlife = min(server->max_renewable_life, realm->realm_maxrlife);
     if (client != NULL)
         max_rlife = min(max_rlife, client->max_renewable_life);
-    rtime = min(rtime, tkt->times.starttime + max_rlife);
+    rtime = ts_min(rtime, ts_incr(tkt->times.starttime, max_rlife));
 
-    /* Make the ticket renewable if the truncated requested time is larger than
-     * the ticket end time. */
-    if (rtime > tkt->times.endtime) {
-        setflag(tkt->flags, TKT_FLG_RENEWABLE);
-        tkt->times.renew_till = rtime;
-    }
+    /* If the client only specified renewable-ok, don't issue a renewable
+     * ticket unless the truncated renew time exceeds the ticket end time. */
+    if (!isflagset(request->kdc_options, KDC_OPT_RENEWABLE) &&
+        !ts_after(rtime, tkt->times.endtime))
+        return;
+
+    setflag(tkt->flags, TKT_FLG_RENEWABLE);
+    tkt->times.renew_till = rtime;
 }
 
 /**

@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.15.2',
+        VERSION:     '1.16',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -227,6 +227,17 @@ principals.</p>
 any principal that it creates or modifies will not be able to get
 postdateable tickets or tickets with a life of longer than 9 hours.</p>
 </div>
+<div class="section" id="module-behavior">
+<h2>MODULE BEHAVIOR<a class="headerlink" href="#module-behavior" title="Permalink to this headline">¶</a></h2>
+<p>The ACL file can coexist with other authorization modules in release
+1.16 and later, as configured in the <a class="reference internal" href="krb5_conf.html#kadm5-auth"><em>kadm5_auth interface</em></a> section of
+<a class="reference internal" href="krb5_conf.html#krb5-conf-5"><em>krb5.conf</em></a>.  The ACL file will positively authorize
+operations according to the rules above, but will never
+authoritatively deny an operation, so other modules can authorize
+operations in addition to those authorized by the ACL file.</p>
+<p>To operate without an ACL file, set the <em>acl_file</em> variable in
+<a class="reference internal" href="kdc_conf.html#kdc-conf-5"><em>kdc.conf</em></a> to the empty string with <tt class="docutils literal"><span class="pre">acl_file</span> <span class="pre">=</span> <span class="pre">&quot;&quot;</span></tt>.</p>
+</div>
 <div class="section" id="see-also">
 <h2>SEE ALSO<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="kdc_conf.html#kdc-conf-5"><em>kdc.conf</em></a>, <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><em>kadmind</em></a></p>
@@ -245,6 +256,7 @@ postdateable tickets or tickets with a life of longer than 9 hours.</p>
 <li><a class="reference internal" href="#description">DESCRIPTION</a></li>
 <li><a class="reference internal" href="#syntax">SYNTAX</a></li>
 <li><a class="reference internal" href="#example">EXAMPLE</a></li>
+<li><a class="reference internal" href="#module-behavior">MODULE BEHAVIOR</a></li>
 <li><a class="reference internal" href="#see-also">SEE ALSO</a></li>
 </ul>
 </li>
@@ -310,7 +322,7 @@ postdateable tickets or tickets with a life of longer than 9 hours.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.15.2</i><br />
+            <div class="right" ><i>Release: 1.16</i><br />
                 &copy; <a href="../../copyright.html">Copyright</a> 1985-2017, MIT.
             </div>
             <div class="left">
