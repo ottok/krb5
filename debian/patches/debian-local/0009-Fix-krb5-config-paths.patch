@@ -1,4 +1,4 @@
-From d4823f57b87cda7600466162cee64f43b8a91079 Mon Sep 17 00:00:00 2001
+From 74bc0ca2e20f60fa0752bea7271006956261eef9 Mon Sep 17 00:00:00 2001
 From: Jelmer Vernooij <jelmer@debian.org>
 Date: Sun, 20 Apr 2014 15:59:08 +0200
 Subject: Fix krb5-config paths
@@ -14,7 +14,7 @@ Patch-Category: debian-local
  1 file changed, 3 insertions(+), 11 deletions(-)
 
 diff --git a/src/build-tools/krb5-config.in b/src/build-tools/krb5-config.in
-index 5a109b014..723d1ebac 100755
+index 5a109b0145..723d1ebac8 100755
 --- a/src/build-tools/krb5-config.in
 +++ b/src/build-tools/krb5-config.in
 @@ -29,8 +29,8 @@ version_string="Kerberos 5 release @KRB5_VERSION@"

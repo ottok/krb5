@@ -86,9 +86,10 @@ The following tags may be specified in a [realms] subsection:
 **acl_file**
     (String.)  Location of the access control list file that
     :ref:`kadmind(8)` uses to determine which principals are allowed
-    which permissions on the Kerberos database.  The default value is
-    |kdcdir|\ ``/kadm5.acl``.  For more information on Kerberos ACL
-    file see :ref:`kadm5.acl(5)`.
+    which permissions on the Kerberos database.  To operate without an
+    ACL file, set this relation to the empty string with ``acl_file =
+    ""``.  The default value is |kdcdir|\ ``/kadm5.acl``.  For more
+    information on Kerberos ACL file see :ref:`kadm5.acl(5)`.
 
 **database_module**
     (String.)  This relation indicates the name of the configuration
@@ -197,6 +198,11 @@ The following tags may be specified in a [realms] subsection:
     per line, with no additional whitespace.  If none is specified or
     if there is no policy assigned to the principal, no dictionary
     checks of passwords will be performed.
+
+**encrypted_challenge_indicator**
+    (String.)  Specifies the authentication indicator value that the KDC
+    asserts into tickets obtained using FAST encrypted challenge
+    pre-authentication.  New in 1.16.
 
 **host_based_services**
     (Whitespace- or comma-separated list.)  Lists services which will
@@ -764,9 +770,6 @@ For information about the syntax of some of these options, see
     Specifies an authentication indicator to include in the ticket if
     pkinit is used to authenticate.  This option may be specified
     multiple times.  (New in release 1.14.)
-
-**pkinit_kdc_ocsp**
-    Specifies the location of the KDC's OCSP.
 
 **pkinit_pool**
     Specifies the location of intermediate certificates which may be

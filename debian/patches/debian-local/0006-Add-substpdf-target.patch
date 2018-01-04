@@ -1,4 +1,4 @@
-From 485bb27db344e47fd96b3778b3383989a9d05974 Mon Sep 17 00:00:00 2001
+From 91a797c43563a1e9d42650ca1cb00b4cb2b2f506 Mon Sep 17 00:00:00 2001
 From: Ben Kaduk <kaduk@mit.edu>
 Date: Fri, 29 Mar 2013 20:53:37 -0400
 Subject: Add substpdf target
@@ -13,7 +13,7 @@ Patch-Category: debian-local
  1 file changed, 15 insertions(+)
 
 diff --git a/src/doc/Makefile.in b/src/doc/Makefile.in
-index 1fb5fea92..043de76fa 100644
+index 1fb5fea927..043de76fa5 100644
 --- a/src/doc/Makefile.in
 +++ b/src/doc/Makefile.in
 @@ -87,6 +87,21 @@ pdf: $(PDFDIR)

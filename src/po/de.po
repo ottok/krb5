@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: mit-krb5 13.2\n"
 "Report-Msgid-Bugs-To: krbdev@mit.edu\n"
 "POT-Creation-Date: 2015-05-06 14:59-0400\n"
-"PO-Revision-Date: 2016-04-05 23:20+0200\n"
+"PO-Revision-Date: 2016-04-07 08:15+0200\n"
 "Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -219,7 +219,7 @@ msgstr "falscher Wert für die Startzeit %s\n"
 #: ../../src/clients/kinit/kinit.c:362
 #, c-format
 msgid "Only one -t option allowed.\n"
-msgstr "Nur die Option -t ist erlaubt.\n"
+msgstr "Nur eine -t-Option ist erlaubt.\n"
 
 #: ../../src/clients/kinit/kinit.c:370
 #, c-format
@@ -229,7 +229,7 @@ msgstr "nur ein gehärteter Ccache\n"
 #: ../../src/clients/kinit/kinit.c:391
 #, c-format
 msgid "Only one -I option allowed\n"
-msgstr "Nur die Option -I ist erlaubt.\n"
+msgstr "Nur eine -I-Option ist erlaubt.\n"
 
 #: ../../src/clients/kinit/kinit.c:401
 msgid "while adding preauth option"
@@ -248,12 +248,12 @@ msgstr "Nur eine der Optionen -p und -P ist erlaubt.\n"
 #: ../../src/clients/kinit/kinit.c:435
 #, c-format
 msgid "Only one of -a and -A allowed\n"
-msgstr "Nur -a und -A ist erlaubt.\n"
+msgstr "Nur eine der Optionen -a und -A ist erlaubt.\n"
 
 #: ../../src/clients/kinit/kinit.c:440
 #, c-format
 msgid "Only one of -t and -i allowed\n"
-msgstr "Nur -t und-i ist erlaubt.\n"
+msgstr "Nur eine der Optionen -t und-i ist erlaubt.\n"
 
 #: ../../src/clients/kinit/kinit.c:447
 #, c-format
@@ -501,7 +501,7 @@ msgstr "\tOptionen für Anmeldedatenzwischenspeicher:\n"
 #: ../../src/clients/klist/klist.c:102
 #, c-format
 msgid "\t\t-d shows the submitted authorization data types\n"
-msgstr "\t\t-d zeigt die übertragenen Authorisierungsdatentypen.\n"
+msgstr "\t\t-d zeigt die übertragenen Autorisierungsdatentypen.\n"
 
 #: ../../src/clients/klist/klist.c:104
 #, c-format
@@ -970,7 +970,7 @@ msgstr ""
 #: ../../src/clients/ksu/main.c:417
 #, c-format
 msgid "account %s: authorization failed\n"
-msgstr "Konto %s: Authentifizierung fehlgeschlagen\n"
+msgstr "Konto %s: Autorisierung fehlgeschlagen\n"
 
 #: ../../src/clients/ksu/main.c:442
 msgid "while parsing temporary name"
@@ -4555,7 +4555,7 @@ msgstr "Protokollübergang mit Vertretung erlaubt"
 
 #: ../../src/lib/kadm5/str_conv.c:95
 msgid "No authorization data required"
-msgstr "keine Authentifizierungsdaten erforderlich"
+msgstr "keine Autorisierungsdaten erforderlich"
 
 #: ../../src/lib/kdb/kdb5.c:219
 msgid "No default realm set; cannot initialize KDB"
@@ -7042,15 +7042,15 @@ msgstr ""
 
 #: ../lib/gssapi/krb5/gssapi_err_krb5.c:31
 msgid "Bad magic number for krb5_gss_ctx_id_t"
-msgstr "falsche Magische Zahl für »krb5_gss_ctx_id_t«"
+msgstr "falsche magische Zahl für »krb5_gss_ctx_id_t«"
 
 #: ../lib/gssapi/krb5/gssapi_err_krb5.c:32
 msgid "Bad magic number for krb5_gss_cred_id_t"
-msgstr "falsche Magische Zahl für »krb5_gss_cred_id_t«"
+msgstr "falsche magische Zahl für »krb5_gss_cred_id_t«"
 
 #: ../lib/gssapi/krb5/gssapi_err_krb5.c:33
 msgid "Bad magic number for krb5_gss_enc_desc"
-msgstr "falsche Magische Zahl für »krb5_gss_enc_desc«"
+msgstr "falsche magische Zahl für »krb5_gss_enc_desc«"
 
 #: ../lib/gssapi/krb5/gssapi_err_krb5.c:34
 msgid "Sequence number in token is corrupt"
@@ -7075,7 +7075,7 @@ msgstr "PRF-Eingabe zu lang"
 
 #: ../lib/gssapi/krb5/gssapi_err_krb5.c:39
 msgid "Bad magic number for iakerb_ctx_id_t"
-msgstr "falsche Magische Zahl für »iakerb_ctx_id_t«"
+msgstr "falsche magische Zahl für »iakerb_ctx_id_t«"
 
 #: ../lib/kadm5/chpass_util_strings.c:23
 msgid "while getting policy info."
@@ -8775,7 +8775,7 @@ msgstr "ASN.1 beim Aufruf der Systemzeitbibliothek gescheitert"
 
 #: ../lib/krb5/error_tables/asn1_err.c:24
 msgid "ASN.1 structure is missing a required field"
-msgstr "ASN.1-Struktur fehlt in einem erforderlichen Feld"
+msgstr "ein erforderliches Feld fehlt in der ASN.1-Struktur"
 
 #: ../lib/krb5/error_tables/asn1_err.c:25
 msgid "ASN.1 unexpected field number"
@@ -8831,240 +8831,240 @@ msgstr "Tabelle magischer Zahlen von Kerberos V5"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:24
 msgid "Bad magic number for krb5_principal structure"
-msgstr "falsche Magische Zahl für Krb5_principal-Struktur"
+msgstr "falsche magische Zahl für Krb5_principal-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:25
 msgid "Bad magic number for krb5_data structure"
-msgstr "falsche Magische Zahl für Krb5_data-Struktur"
+msgstr "falsche magische Zahl für Krb5_data-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:26
 msgid "Bad magic number for krb5_keyblock structure"
-msgstr "falsche Magische Zahl für Krb5_krb5_keyblock-Struktur"
+msgstr "falsche magische Zahl für Krb5_krb5_keyblock-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:27
 msgid "Bad magic number for krb5_checksum structure"
-msgstr "falsche Magische Zahl für Krb5_krb5_checksum-Struktur"
+msgstr "falsche magische Zahl für Krb5_krb5_checksum-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:28
 msgid "Bad magic number for krb5_encrypt_block structure"
-msgstr "falsche Magische Zahl für Krb5_encrypt_bloc-Struktur"
+msgstr "falsche magische Zahl für Krb5_encrypt_bloc-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:29
 msgid "Bad magic number for krb5_enc_data structure"
-msgstr "falsche Magische Zahl für Krb5_enc_data-Struktur"
+msgstr "falsche magische Zahl für Krb5_enc_data-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:30
 msgid "Bad magic number for krb5_cryptosystem_entry structure"
-msgstr "falsche Magische Zahl für Krb5_cryptosystem_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_cryptosystem_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:31
 msgid "Bad magic number for krb5_cs_table_entry structure"
-msgstr "falsche Magische Zahl für Krb5_cs_table_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_cs_table_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:32
 msgid "Bad magic number for krb5_checksum_entry structure"
-msgstr "falsche Magische Zahl für Krb5_checksum_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_checksum_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:33
 msgid "Bad magic number for krb5_authdata structure"
-msgstr "falsche Magische Zahl für Krb5_authdata-Struktur"
+msgstr "falsche magische Zahl für Krb5_authdata-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:34
 msgid "Bad magic number for krb5_transited structure"
-msgstr "falsche Magische Zahl für Krb5_transited-Struktur"
+msgstr "falsche magische Zahl für Krb5_transited-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:35
 msgid "Bad magic number for krb5_enc_tkt_part structure"
-msgstr "falsche Magische Zahl für Krb5_enc_tkt_part-Struktur"
+msgstr "falsche magische Zahl für Krb5_enc_tkt_part-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:36
 msgid "Bad magic number for krb5_ticket structure"
-msgstr "falsche Magische Zahl für Krb5_ticket-Struktur"
+msgstr "falsche magische Zahl für Krb5_ticket-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:37
 msgid "Bad magic number for krb5_authenticator structure"
-msgstr "falsche Magische Zahl für Krb5_authenticator-Struktur"
+msgstr "falsche magische Zahl für Krb5_authenticator-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:38
 msgid "Bad magic number for krb5_tkt_authent structure"
-msgstr "falsche Magische Zahl für Krb5_tkt_authent-Struktur"
+msgstr "falsche magische Zahl für Krb5_tkt_authent-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:39
 msgid "Bad magic number for krb5_creds structure"
-msgstr "falsche Magische Zahl für Krb5_creds-Struktur"
+msgstr "falsche magische Zahl für Krb5_creds-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:40
 msgid "Bad magic number for krb5_last_req_entry structure"
-msgstr "falsche Magische Zahl für Krb5_last_req_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_last_req_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:41
 msgid "Bad magic number for krb5_pa_data structure"
-msgstr "falsche Magische Zahl für Krb5_pa_data-Struktur"
+msgstr "falsche magische Zahl für Krb5_pa_data-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:42
 msgid "Bad magic number for krb5_kdc_req structure"
-msgstr "falsche Magische Zahl für Krb5_kdc_req-Struktur"
+msgstr "falsche magische Zahl für Krb5_kdc_req-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:43
 msgid "Bad magic number for krb5_enc_kdc_rep_part structure"
-msgstr "falsche Magische Zahl für Krb5_enc_kdc_rep_part-Struktur"
+msgstr "falsche magische Zahl für Krb5_enc_kdc_rep_part-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:44
 msgid "Bad magic number for krb5_kdc_rep structure"
-msgstr "falsche Magische Zahl für Krb5_kdc_rep-Struktur"
+msgstr "falsche magische Zahl für Krb5_kdc_rep-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:45
 msgid "Bad magic number for krb5_error structure"
-msgstr "falsche Magische Zahl für Krb5_error-Struktur"
+msgstr "falsche magische Zahl für Krb5_error-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:46
 msgid "Bad magic number for krb5_ap_req structure"
-msgstr "falsche Magische Zahl für Krb5_ap_req-Struktur"
+msgstr "falsche magische Zahl für Krb5_ap_req-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:47
 msgid "Bad magic number for krb5_ap_rep structure"
-msgstr "falsche Magische Zahl für Krb5_ap_rep-Struktur"
+msgstr "falsche magische Zahl für Krb5_ap_rep-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:48
 msgid "Bad magic number for krb5_ap_rep_enc_part structure"
-msgstr "falsche Magische Zahl für Krb5_ap_rep_enc_part-Struktur"
+msgstr "falsche magische Zahl für Krb5_ap_rep_enc_part-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:49
 msgid "Bad magic number for krb5_response structure"
-msgstr "falsche Magische Zahl für Krb5_response-Struktur"
+msgstr "falsche magische Zahl für Krb5_response-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:50
 msgid "Bad magic number for krb5_safe structure"
-msgstr "falsche Magische Zahl für Krb5_safe-Struktur"
+msgstr "falsche magische Zahl für Krb5_safe-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:51
 msgid "Bad magic number for krb5_priv structure"
-msgstr "falsche Magische Zahl für Krb5_priv-Struktur"
+msgstr "falsche magische Zahl für Krb5_priv-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:52
 msgid "Bad magic number for krb5_priv_enc_part structure"
-msgstr "falsche Magische Zahl für Krb5_priv_enc_part-Struktur"
+msgstr "falsche magische Zahl für Krb5_priv_enc_part-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:53
 msgid "Bad magic number for krb5_cred structure"
-msgstr "falsche Magische Zahl für Krb5_cred-Struktur"
+msgstr "falsche magische Zahl für Krb5_cred-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:54
 msgid "Bad magic number for krb5_cred_info structure"
-msgstr "falsche Magische Zahl für Krb5_cred_info-Struktur"
+msgstr "falsche magische Zahl für Krb5_cred_info-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:55
 msgid "Bad magic number for krb5_cred_enc_part structure"
-msgstr "falsche Magische Zahl für Krb5_cred_enc_part-Struktur"
+msgstr "falsche magische Zahl für Krb5_cred_enc_part-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:56
 msgid "Bad magic number for krb5_pwd_data structure"
-msgstr "falsche Magische Zahl für Krb5_pwd_data-Struktur"
+msgstr "falsche magische Zahl für Krb5_pwd_data-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:57
 msgid "Bad magic number for krb5_address structure"
-msgstr "falsche Magische Zahl für Krb5_address-Struktur"
+msgstr "falsche magische Zahl für Krb5_address-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:58
 msgid "Bad magic number for krb5_keytab_entry structure"
-msgstr "falsche Magische Zahl für Krb5_keytab_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_keytab_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:59
 msgid "Bad magic number for krb5_context structure"
-msgstr "falsche Magische Zahl für Krb5_context-Struktur"
+msgstr "falsche magische Zahl für Krb5_context-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:60
 msgid "Bad magic number for krb5_os_context structure"
-msgstr "falsche Magische Zahl für Krb5_os_context-Struktur"
+msgstr "falsche magische Zahl für Krb5_os_context-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:61
 msgid "Bad magic number for krb5_alt_method structure"
-msgstr "falsche Magische Zahl für Krb5_alt_method-Struktur"
+msgstr "falsche magische Zahl für Krb5_alt_method-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:62
 msgid "Bad magic number for krb5_etype_info_entry structure"
-msgstr "falsche Magische Zahl für Krb5_etype_info_entry-Struktur"
+msgstr "falsche magische Zahl für Krb5_etype_info_entry-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:63
 msgid "Bad magic number for krb5_db_context structure"
-msgstr "falsche Magische Zahl für Krb5_db_context-Struktur"
+msgstr "falsche magische Zahl für Krb5_db_context-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:64
 msgid "Bad magic number for krb5_auth_context structure"
-msgstr "falsche Magische Zahl für Krb5_auth_context-Struktur"
+msgstr "falsche magische Zahl für Krb5_auth_context-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:65
 msgid "Bad magic number for krb5_keytab structure"
-msgstr "falsche Magische Zahl für Krb5_keytab-Struktur"
+msgstr "falsche magische Zahl für Krb5_keytab-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:66
 msgid "Bad magic number for krb5_rcache structure"
-msgstr "falsche Magische Zahl für Krb5_rcache-Struktur"
+msgstr "falsche magische Zahl für Krb5_rcache-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:67
 msgid "Bad magic number for krb5_ccache structure"
-msgstr "falsche Magische Zahl für Krb5_ccache-Struktur"
+msgstr "falsche magische Zahl für Krb5_ccache-Struktur"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:68
 msgid "Bad magic number for krb5_preauth_ops"
-msgstr "falsche Magische Zahl für Krb5_preauth_ops"
+msgstr "falsche magische Zahl für Krb5_preauth_ops"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:69
 msgid "Bad magic number for krb5_sam_challenge"
-msgstr "falsche Magische Zahl für Krb5_sam_challenge"
+msgstr "falsche magische Zahl für Krb5_sam_challenge"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:70
 msgid "Bad magic number for krb5_sam_challenge_2"
-msgstr "falsche Magische Zahl für Krb5_sam_challenge_2"
+msgstr "falsche magische Zahl für Krb5_sam_challenge_2"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:71
 msgid "Bad magic number for krb5_sam_key"
-msgstr "falsche Magische Zahl für Krb5_sam_key"
+msgstr "falsche magische Zahl für Krb5_sam_key"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:72
 #: ../lib/krb5/error_tables/kv5m_err.c:73
 msgid "Bad magic number for krb5_enc_sam_response_enc"
-msgstr "falsche Magische Zahl für Krb5_enc_sam_response_enc"
+msgstr "falsche magische Zahl für Krb5_enc_sam_response_enc"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:74
 msgid "Bad magic number for krb5_sam_response"
-msgstr "falsche Magische Zahl für Krb5_sam_response"
+msgstr "falsche magische Zahl für Krb5_sam_response"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:75
 msgid "Bad magic number for krb5_sam_response 2"
-msgstr "falsche Magische Zahl für Krb5_sam_response 2"
+msgstr "falsche magische Zahl für Krb5_sam_response 2"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:76
 msgid "Bad magic number for krb5_predicted_sam_response"
-msgstr "falsche Magische Zahl für Krb5_predicted_sam_response"
+msgstr "falsche magische Zahl für Krb5_predicted_sam_response"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:77
 msgid "Bad magic number for passwd_phrase_element"
-msgstr "falsche Magische Zahl für Passwd_phrase_element"
+msgstr "falsche magische Zahl für Passwd_phrase_element"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:78
 msgid "Bad magic number for GSSAPI OID"
-msgstr "falsche Magische Zahl für GSSAPI OID"
+msgstr "falsche magische Zahl für GSSAPI OID"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:79
 msgid "Bad magic number for GSSAPI QUEUE"
-msgstr "falsche Magische Zahl für GSSAPI QUEUE"
+msgstr "falsche magische Zahl für GSSAPI QUEUE"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:80
 msgid "Bad magic number for fast armored request"
-msgstr "falsche Magische Zahl für per FAST geschützte Anfrage"
+msgstr "falsche magische Zahl für per FAST geschützte Anfrage"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:81
 msgid "Bad magic number for FAST request"
-msgstr "falsche Magische Zahl für FAST-Anfrage"
+msgstr "falsche magische Zahl für FAST-Anfrage"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:82
 msgid "Bad magic number for FAST response"
-msgstr "falsche Magische Zahl für FAST-Antwort"
+msgstr "falsche magische Zahl für FAST-Antwort"
 
 #: ../lib/krb5/error_tables/kv5m_err.c:83
 msgid "Bad magic number for krb5_authdata_context"
-msgstr "falsche Magische Zahl für Krb5_authdata_context"
+msgstr "falsche magische Zahl für Krb5_authdata_context"
 
 #: ../lib/krb5/error_tables/krb524_err.c:23
 msgid "Cannot convert V5 keyblock"
