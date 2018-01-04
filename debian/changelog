@@ -1,3 +1,12 @@
+krb5 (1.16-1) UNRELEASED; urgency=medium
+
+  * New Upstream Version, Closes: #884490
+  * Note that we break moonshot-gss-eap less than 1.0.1.  In particular
+    because /etc/gss/mech.d/README is no longer installed,
+    moonshot-gss-eap will drop a stray file in /usr/etc.
+
+ -- Sam Hartman <hartmans@debian.org>  Thu, 04 Jan 2018 10:29:06 -0500
+
 krb5 (1.15.2-2) unstable; urgency=medium
 
   * Apply upstream patch removing a fixed-size buffer in PKINIT client code,

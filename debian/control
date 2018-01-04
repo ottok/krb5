@@ -270,10 +270,10 @@ Package: libgssapi-krb5-2
 Section: libs
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version})
+Breaks: moonshot-gss-eap (<= 1.0)
 Suggests: krb5-doc, krb5-user
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
-Breaks: libgssglue1 (<< 0.2-2)
 Description: MIT Kerberos runtime libraries - krb5 GSS-API Mechanism
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
