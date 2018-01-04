@@ -187,7 +187,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  krb5_auth_con_getsendsubkey@krb5_3_MIT 1.6.dfsg.2
  krb5_auth_con_getsendsubkey_k@krb5_3_MIT 1.8+dfsg
  krb5_auth_con_init@krb5_3_MIT 1.6.dfsg.2
- krb5_auth_con_initivector@krb5_3_MIT 1.6.dfsg.2
+ krb5_auth_con_initivector@krb5_3_MIT 1.16
  krb5_auth_con_set_authdata_context@krb5_3_MIT 1.8+dfsg
  krb5_auth_con_set_checksum_func@krb5_3_MIT 1.6.dfsg.2
  krb5_auth_con_set_req_cksumtype@krb5_3_MIT 1.6.dfsg.2
