@@ -121,7 +121,9 @@ Depends: ${misc:Depends}, libkrb5-3 (= ${binary:Version}),
  libgssrpc4 (= ${binary:Version}),
  libkadm5srv-mit11  (= ${binary:Version}),
  libkadm5clnt-mit11 (= ${binary:Version}),
- comerr-dev, 
+ comerr-dev
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
 Suggests: krb5-doc
 Description: development files for MIT Kerberos without Heimdal conflict
  Kerberos is a system for authenticating users and services on a network.
@@ -140,9 +142,11 @@ Description: development files for MIT Kerberos without Heimdal conflict
 Package: libkrb5-dev
 Section: libdevel
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends}, krb5-multidev (= ${binary:Version})
 Replaces: krb5-multidev (<< 1.8+dfsg~alpha1-3)
 Conflicts: heimdal-dev
+Multi-Arch: same
 Suggests: krb5-doc
 Description: headers and development libraries for MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
