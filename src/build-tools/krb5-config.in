@@ -26,11 +26,18 @@
 
 # Configurable parameters set by autoconf
 version_string="Kerberos 5 release @KRB5_VERSION@"
+CC=${CC-cc}
+tripple=`$CC -print-multiarch 2>/dev/null|| ( $CC -dumpmachine | sed 's/-pc//' )`
+if [ x$tripple = x ]; then
+    echo >&2 Failed to find installation architecture
+    exit 2
+fi
+
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-includedir=@includedir@/mit-krb5
-libdir=@libdir@/mit-krb5
+includedir=@prefix@/include/${tripple}/mit-krb5
+libdir=@prefix@/lib/${tripple}/mit-krb5
 CC_LINK='@CC_LINK@'
 KDB5_DB_LIB=@KDB5_DB_LIB@
 LDFLAGS='@LDFLAGS@'
