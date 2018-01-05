@@ -1,6 +1,7 @@
 krb5 (1.16-1) unstable; urgency=medium
 
   * New Upstream Version, Closes: #884490
+      - libkdb5 soname is now 9
   * Note that we break moonshot-gss-eap less than 1.0.1.  In particular
     because /etc/gss/mech.d/README is no longer installed,
     moonshot-gss-eap will drop a stray file in /usr/etc.
