@@ -1,6 +1,10 @@
-krb5 (1.16-2) UNRELEASED; urgency=medium
+krb5 (1.16-2) unstable; urgency=medium
 
   * Update location of packaging GIT repository
+  * krb5-config was incorrectly changed to include the multiarch tripple
+    in include paths.  However, our include files are not architecture
+    specific; fix krb5-config to not include a multiarch tripple in
+    include paths, Closes: #887810
 
  -- Sam Hartman <hartmans@debian.org>  Sat, 20 Jan 2018 11:02:57 -0500
 
