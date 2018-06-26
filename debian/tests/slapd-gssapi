@@ -40,13 +40,13 @@ EOF
 # moment of truth
 # first, authenticate ourselves
 echo secret | kinit ${principal}
-klist | grep krbtgt/EXAMPLE.INTERNAL@EXAMPLE.INTERNAL
+klist | grep krbtgt/${TEST_REALM}@${TEST_REALM}
 
 # now let's see if ldap thinks we are authenticated with gssapi
 ldapwhoami -Y GSSAPI -Q | grep -E "^dn:uid=${principal},cn=gssapi,cn=auth" 
 
 # and we should have an ldap ticket
-klist | grep ldap/${MYHOSTNAME}@EXAMPLE.INTERNAL
+klist | grep ldap/${MYHOSTNAME}@${TEST_REALM}
 
 # remove tickets
 kdestroy

@@ -2,7 +2,6 @@
 
 set -ex
 
-TEST_REALM="EXAMPLE.INTERNAL"
 adjust_hostname() {
     local myhostname="$1"
 
