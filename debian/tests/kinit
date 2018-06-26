@@ -5,7 +5,6 @@ set -ex
 . debian/tests/util
 
 TEST_REALM="EXAMPLE.INTERNAL"
-TEST_REALM="EXAMPLE.INTERNAL"
 MYHOSTNAME="krb5-dep8.internal"
 adjust_hostname "${MYHOSTNAME}"
 
