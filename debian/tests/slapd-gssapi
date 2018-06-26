@@ -1,0 +1,98 @@
+#!/bin/sh
+
+set -ex
+
+TEST_REALM="EXAMPLE.INTERNAL"
+MYHOSTNAME="krb5-dep8.internal"
+echo "${MYHOSTNAME}" > /etc/hostname
+hostname "${MYHOSTNAME}"
+if ! grep -qE "${MYHOSTNAME}" /etc/hosts; then
+    # just so it's resolvable
+    echo "127.0.1.10 ${MYHOSTNAME}" >> /etc/hosts
+fi
+
+# start fresh
+rm -rf /var/lib/krb5kdc/*
+rm -rf /etc/krb5kdc/*
+rm -f /etc/krb5.keytab
+
+# setup some defaults
+cat > /etc/krb5kdc/kdc.conf <<EOF
+[kdcdefaults]
+    kdc_ports = 750,88
+[realms]
+    ${TEST_REALM} = {
+	    database_name = /var/lib/krb5kdc/principal
+	    admin_keytab = FILE:/etc/krb5kdc/kadm5.keytab
+	    acl_file = /etc/krb5kdc/kadm5.acl
+	    key_stash_file = /etc/krb5kdc/stash
+	    kdc_ports = 750,88
+	    max_life = 10h 0m 0s
+	    max_renewable_life = 7d 0h 0m 0s
+	    master_key_type = des3-hmac-sha1
+	    #supported_enctypes = aes256-cts:normal aes128-cts:normal
+	    default_principal_flags = +preauth
+    }
+EOF
+
+cat > /etc/krb5.conf <<EOF
+[libdefaults]
+    default_realm = ${TEST_REALM}
+    kdc_timesync = 1
+    ccache_type = 4
+    forwardable = true
+    proxiable = true
+    fcc-mit-ticketflags = true
+[realms]
+	EXAMPLE.INTERNAL = {
+		kdc = ${MYHOSTNAME}
+		admin_server = ${MYHOSTNAME}
+	}
+EOF
+cat > /etc/krb5kdc/kadm5.acl <<EOF
+# */admin *
+EOF
+
+# create the realm
+kdb5_util create -s -P secretpassword
+
+# restart services
+systemctl restart krb5-kdc.service krb5-admin-server.service slapd.service
+
+# create a random-enough principal
+principal="testuser$$"
+kadmin.local -q "addprinc -pw secret ${principal}"
+
+# create an ldap service principal
+kadmin.local -q "addprinc -randkey ldap/${MYHOSTNAME}"
+
+# extract the key into the system keytab
+kadmin.local -q "ktadd -k /etc/krb5.keytab ldap/${MYHOSTNAME}"
+
+# make sure the user under which the service runs can read that keytab
+chown root:openldap /etc/krb5.keytab
+chmod 0640 /etc/krb5.keytab
+
+# Prepare some LDAP defaults
+# The LDAP base doesn't matter for this test
+cat > /etc/ldap/ldap.conf <<EOF
+BASE dc=example,dc=internal
+URI ldap://${MYHOSTNAME}/
+SASL_REALM ${TEST_REALM}
+# Do not perform reverse DNS lookups to canonicalize SASL host names.
+SASL_NOCANON yes
+EOF
+
+# moment of truth
+# first, authenticate ourselves
+echo secret | kinit ${principal}
+klist | grep krbtgt/EXAMPLE.INTERNAL@EXAMPLE.INTERNAL
+
+# now let's see if ldap thinks we are authenticated with gssapi
+ldapwhoami -Y GSSAPI -Q | grep -E "^dn:uid=${principal},cn=gssapi,cn=auth" 
+
+# and we should have an ldap ticket
+klist | grep ldap/${MYHOSTNAME}@EXAMPLE.INTERNAL
+
+# remove tickets
+kdestroy
