@@ -18,7 +18,7 @@ kadmin.local -q "addprinc -pw secret ${principal}"
 echo secret | kinit ${principal}
 
 # did we really get a ticket?
-klist | grep krbtgt/EXAMPLE.INTERNAL@EXAMPLE.INTERNAL
+klist | grep krbtgt/${TEST_REALM}@${TEST_REALM}
 
 # destroy it
 kdestroy
