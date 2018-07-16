@@ -15,7 +15,7 @@
 
 \title{Kerberos Administration Guide}
 \date{ }
-\release{1.16}
+\release{1.16.1}
 \author{MIT}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
@@ -897,8 +897,10 @@ underscores will be read.
 \subsubsection{Structure}
 \label{admin/conf_files/krb5_conf:structure}
 The krb5.conf file is set up in the style of a Windows INI file.
-Sections are headed by the section name, in square brackets.  Each
-section may contain zero or more relations, of the form:
+Lines beginning with `\#' or `;' (possibly after initial whitespace)
+are ignored as comments.  Sections are headed by the section name, in
+square brackets.  Each section may contain zero or more relations, of
+the form:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 \PYG{n}{foo} \PYG{o}{=} \PYG{n}{bar}

@@ -721,12 +721,18 @@ kcm_get_princ(krb5_context context, krb5_ccache cache,
 {
     krb5_error_code ret;
     struct kcmreq req;
+    struct kcm_cache_data *data = cache->data;
 
     kcmreq_init(&req, KCM_OP_GET_PRINCIPAL, cache);
     ret = cache_call(context, cache, &req, FALSE);
     /* Heimdal KCM can respond with code 0 and no principal. */
     if (!ret && req.reply.len == 0)
         ret = KRB5_FCC_NOFILE;
+    if (ret == KRB5_FCC_NOFILE) {
+        k5_setmsg(context, ret, _("Credentials cache 'KCM:%s' not found"),
+                  data->residual);
+    }
+
     if (!ret)
         ret = k5_unmarshal_princ(req.reply.ptr, req.reply.len, 4, princ_out);
     kcmreq_free(&req);
@@ -966,6 +972,9 @@ kcm_ptcursor_next(krb5_context context, krb5_cc_ptcursor cursor,
         kcmreq_init(&req, KCM_OP_GET_CACHE_BY_UUID, NULL);
         k5_buf_add_len(&req.reqbuf, id, KCM_UUID_LEN);
         ret = kcmio_call(context, data->io, &req);
+        /* Continue if the cache has been deleted. */
+        if (ret == KRB5_CC_END)
+            continue;
         if (ret)
             goto cleanup;
         ret = kcmreq_get_name(&req, &name);
