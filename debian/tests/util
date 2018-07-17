@@ -1,6 +1,12 @@
 #!/bin/sh
 
-set -ex
+# It is my understanding based on discussion at
+# https://salsa.debian.org/debian/krb5/merge_requests/2 that this code
+# is licensed under the same terms as MIT Kerberos.  I expect this
+# header to be replaced by a statement to that effect from the
+# original author; Sam Hartman 2018-07-18.
+
+Set-ex
 
 adjust_hostname() {
     local myhostname="$1"
