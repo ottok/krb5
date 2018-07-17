@@ -1,6 +1,9 @@
 krb5 (1.16.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - Fix flaws in LDAP DN checking, including a null dereference KDC
+    crash which could be triggered by kadmin clients with administrative
+    privileges [CVE-2018-5729, CVE-2018-5730], Closes: #891869
   * Install kerberos.openldap.ldif, which is probably more useful than
     kerberos.ldif if you're hoping to use the Kerberos schema on Debian.
     Also, the bugs in kerberos.ldif have been corrected; Closes: #660767 
