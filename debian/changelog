@@ -1,7 +1,12 @@
 krb5 (1.16.1-1) UNRELEASED; urgency=medium
 
-  * Install kerberos.openldap.ldif, which is probably more useful than kerberos.ldif if you're hoping to use the Kerberos schema on Debian.  Also, the bugs in kerberos.ldif have been corrected; Closes: #660767
+  * New upstream release
+  * Install kerberos.openldap.ldif, which is probably more useful than
+    kerberos.ldif if you're hoping to use the Kerberos schema on Debian.
+    Also, the bugs in kerberos.ldif have been corrected; Closes: #660767 
   * Suggest krb5-k5tls from krb5-user, Closes: #887937
+  * Merge dep8 tests, thanks Canonical  and Andreas Hasenack (LP:
+    #1677881)
 
  -- Sam Hartman <hartmans@debian.org>  Mon, 16 Jul 2018 20:09:54 -0400
 
