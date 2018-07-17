@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.16',
+        VERSION:     '1.16.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -80,8 +80,10 @@ underscores will be read.</p>
 <div class="section" id="structure">
 <h2>Structure<a class="headerlink" href="#structure" title="Permalink to this headline">¶</a></h2>
 <p>The krb5.conf file is set up in the style of a Windows INI file.
-Sections are headed by the section name, in square brackets.  Each
-section may contain zero or more relations, of the form:</p>
+Lines beginning with &#8216;#&#8217; or &#8216;;&#8217; (possibly after initial whitespace)
+are ignored as comments.  Sections are headed by the section name, in
+square brackets.  Each section may contain zero or more relations, of
+the form:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">foo</span> <span class="o">=</span> <span class="n">bar</span>
 </pre></div>
 </div>
@@ -1320,8 +1322,8 @@ Valid parameters are:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2017, MIT.
+            <div class="right" ><i>Release: 1.16.1</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2018, MIT.
             </div>
             <div class="left">
                 
