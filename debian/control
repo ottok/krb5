@@ -2,9 +2,9 @@ Source: krb5
 Section: net
 Priority: optional
 Build-Depends: debhelper (>= 10), byacc | bison,
- comerr-dev, docbook-to-man, 
+ comerr-dev, docbook-to-man,
  libkeyutils-dev [linux-any], libldap2-dev <!stage1>, libsasl2-dev <!stage1>,
- libncurses5-dev, libssl-dev,  ss-dev, 
+ libncurses5-dev, libssl-dev,  ss-dev,
  libverto-dev (>= 0.2.4), pkg-config
 Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen, doxygen-latex, texlive-generic-extra
 Standards-Version: 4.1.1
@@ -196,7 +196,7 @@ Description: PKINIT plugin for MIT Kerberos
  This package contains a plugin for the PKINIT protocol, which allows
  Kerberos tickets to be obtained using public-key credentials such as
  X.509 certificates or a smart card.  This plugin can be used by the
- client libraries and the KDC.  
+ client libraries and the KDC.
 
 Package: krb5-otp
 Architecture: any
@@ -439,7 +439,7 @@ Description: MIT Kerberos GSS Sample applications
 Package: krb5-locales
 Section: localization
 Architecture: all
-Depends: ${misc:Depends}, ${shlibs:Depends}, 
+Depends: ${misc:Depends}, ${shlibs:Depends},
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: foreign
 Description: internationalization support for MIT Kerberos
