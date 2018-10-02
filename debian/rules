@@ -1,8 +1,8 @@
 #!/usr/bin/make -f
-# Based on sample debian/rules that uses debhelper. 
+# Based on sample debian/rules that uses debhelper.
 # GNU copyright 1997 by Joey Hess.
 
-# Uncomment this to turn on verbose mode. 
+# Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
 # This has to be exported to make some magic below work.
@@ -200,9 +200,9 @@ binary-arch: build-arch install
 	dh_installchangelogs
 	dh_installdocs
 	dh_installdebconf
-	DH_OPTIONS= dh_installinit -pkrb5-kdc --error-handler=init_error -- defaults 18 18 
+	DH_OPTIONS= dh_installinit -pkrb5-kdc --error-handler=init_error -- defaults 18 18
 	DH_OPTIONS= dh_installinit -pkrb5-kpropd -- defaults 18 18
-		DH_OPTIONS= dh_installinit -pkrb5-admin-server -- defaults 18 18 
+		DH_OPTIONS= dh_installinit -pkrb5-admin-server -- defaults 18 18
 	dh_systemd_enable
 	dh_lintian
 	set -e ; for pkg in $(LIB_PACKAGES) ; do \
