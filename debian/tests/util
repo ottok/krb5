@@ -3,7 +3,7 @@
 # Copyright 2018 Canonical Ltd.
 # This code is licensed under the same terms as MIT Kerberos.
 
-Set-ex
+set -ex
 
 adjust_hostname() {
     local myhostname="$1"
