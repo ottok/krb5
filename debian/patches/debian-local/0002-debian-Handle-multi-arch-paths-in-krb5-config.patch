@@ -1,4 +1,4 @@
-From 10b35fd48040926898a33523248402a6e61597ff Mon Sep 17 00:00:00 2001
+From b1f73c56bbac5e2dceed23f2904ffc983c6d6b24 Mon Sep 17 00:00:00 2001
 From: Sam Hartman <hartmans@debian.org>
 Date: Mon, 26 Dec 2011 18:19:53 -0500
 Subject: debian: Handle multi-arch paths in krb5-config
