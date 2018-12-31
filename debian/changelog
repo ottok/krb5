@@ -1,6 +1,6 @@
 krb5 (1.16.2-1) unstable; urgency=medium
 
-[ Ondřej Nový ]
+  [ Ondřej Nový ]
   * d/changelog: Remove trailing whitespaces
   * d/control: Remove trailing whitespaces
   * d/rules: Remove trailing whitespaces
