@@ -6,15 +6,26 @@ libkrb5support.so.0 libkrb5support0 #MINVER#
  k5_buf_add@krb5support_0_MIT 1.12~alpha1+dfsg
  k5_buf_add_fmt@krb5support_0_MIT 1.12~alpha1+dfsg
  k5_buf_add_len@krb5support_0_MIT 1.12~alpha1+dfsg
+ k5_buf_add_vfmt@krb5support_0_MIT 1.17
  k5_buf_free@krb5support_0_MIT 1.13~alpha1+dfsg
  k5_buf_get_space@krb5support_0_MIT 1.13~alpha1+dfsg
  k5_buf_init_dynamic@krb5support_0_MIT 1.12~alpha1+dfsg
+ k5_buf_init_dynamic_zap@krb5support_0_MIT 1.17
  k5_buf_init_fixed@krb5support_0_MIT 1.12~alpha1+dfsg
  k5_buf_status@krb5support_0_MIT 1.13~alpha1+dfsg
  k5_buf_truncate@krb5support_0_MIT 1.12~alpha1+dfsg
  k5_clear_error@krb5support_0_MIT 1.12~alpha1+dfsg
+ k5_dir_filenames@krb5support_0_MIT 1.17
  k5_free_error@krb5support_0_MIT 1.12~alpha1+dfsg
+ k5_free_filenames@krb5support_0_MIT 1.17
  k5_get_error@krb5support_0_MIT 1.12~alpha1+dfsg
+ k5_hashtab_add@krb5support_0_MIT 1.17
+ k5_hashtab_create@krb5support_0_MIT 1.17
+ k5_hashtab_free@krb5support_0_MIT 1.17
+ k5_hashtab_get@krb5support_0_MIT 1.17
+ k5_hashtab_remove@krb5support_0_MIT 1.17
+ k5_hex_decode@krb5support_0_MIT 1.17
+ k5_hex_encode@krb5support_0_MIT 1.17
  k5_json_array_add@krb5support_0_MIT 1.11+dfsg
  k5_json_array_create@krb5support_0_MIT 1.11+dfsg
  k5_json_array_fmt@krb5support_0_MIT 1.12~alpha1+dfsg
