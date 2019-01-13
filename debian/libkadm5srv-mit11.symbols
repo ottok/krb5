@@ -75,6 +75,7 @@ libkadm5srv_mit.so.11 libkadm5srv-mit11 #MINVER#
  krb5_klog_close@kadm5srv_mit_11_MIT 1.15~beta1
  krb5_klog_init@kadm5srv_mit_11_MIT 1.15~beta1
  krb5_klog_reopen@kadm5srv_mit_11_MIT 1.15~beta1
+ krb5_klog_set_context@kadm5srv_mit_11_MIT 1.17
  krb5_klog_syslog@kadm5srv_mit_11_MIT 1.15~beta1
  krb5_string_to_keysalts@kadm5srv_mit_11_MIT 1.15~beta1
  master_db@kadm5srv_mit_11_MIT 1.15~beta1
