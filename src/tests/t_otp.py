@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Author: Nathaniel McCallum <npmccallum@redhat.com>
 #
 # Copyright (c) 2013 Red Hat, Inc.
@@ -31,8 +29,8 @@
 #
 
 from k5test import *
-from Queue import Empty
-import StringIO
+from queue import Empty
+from io import StringIO
 import struct
 
 try:
@@ -122,7 +120,8 @@ class UnixRadiusDaemon(RadiusDaemon):
         sock.listen(1)
         return (sock, addr)
 
-    def recvRequest(self, (sock, addr)):
+    def recvRequest(self, sock_and_addr):
+        sock, addr = sock_and_addr
         conn = sock.accept()[0]
         sock.close()
         os.remove(addr)
@@ -189,6 +188,7 @@ flags = ['-T', realm.ccache]
 server_addr = '127.0.0.1:' + str(realm.portbase + 9)
 
 ## Test UDP fail / custom username
+mark('UDP fail / custom username')
 daemon = UDPRadiusDaemon(args=(server_addr, secret_file, 'accept', queue))
 daemon.start()
 queue.get()
@@ -198,6 +198,7 @@ realm.kinit(realm.user_princ, 'reject', flags=flags, expected_code=1)
 verify(daemon, queue, False, 'custom', 'reject')
 
 ## Test UDP success / standard username
+mark('UDP success / standard username')
 daemon = UDPRadiusDaemon(args=(server_addr, secret_file, 'accept', queue))
 daemon.start()
 queue.get()
@@ -209,6 +210,7 @@ realm.run(['./adata', realm.krbtgt_princ],
           expected_msg='+97: [indotp1, indotp2]')
 
 # Repeat with an indicators override in the string attribute.
+mark('auth indicator override')
 daemon = UDPRadiusDaemon(args=(server_addr, secret_file, 'accept', queue))
 daemon.start()
 queue.get()
@@ -229,6 +231,7 @@ except AssertionError:
     skip_rest('OTP UNIX domain socket tests', 'pyrad assertion bug detected')
 
 ## Test Unix fail / custom username
+mark('Unix socket fail / custom username')
 daemon = UnixRadiusDaemon(args=(socket_file, '', 'accept', queue))
 daemon.start()
 queue.get()
@@ -238,6 +241,7 @@ realm.kinit(realm.user_princ, 'reject', flags=flags, expected_code=1)
 verify(daemon, queue, False, 'custom', 'reject')
 
 ## Test Unix success / standard username
+mark('Unix socket success / standard username')
 daemon = UnixRadiusDaemon(args=(socket_file, '', 'accept', queue))
 daemon.start()
 queue.get()

@@ -138,7 +138,7 @@ strdur(time_t duration)
     return out;
 }
 
-static char *
+static const char *
 strdate(krb5_timestamp when)
 {
     struct tm *tm;
@@ -146,7 +146,9 @@ strdate(krb5_timestamp when)
     time_t lcltim = ts2tt(when);
 
     tm = localtime(&lcltim);
-    strftime(out, sizeof(out), "%a %b %d %H:%M:%S %Z %Y", tm);
+    if (tm == NULL ||
+        strftime(out, sizeof(out), "%a %b %d %H:%M:%S %Z %Y", tm) == 0)
+        strlcpy(out, "(error)", sizeof(out));
     return out;
 }
 
@@ -972,7 +974,7 @@ unlock_princ(kadm5_principal_ent_t princ, long *mask, const char *caller)
     princ->fail_auth_count = 0;
     *mask |= KADM5_FAIL_AUTH_COUNT;
 
-    /* Record the timestamp of this unlock operation so that slave KDCs will
+    /* Record the timestamp of this unlock operation so that replica KDCs will
      * see it, since fail_auth_count is unreplicated. */
     retval = krb5_timeofday(context, &now);
     if (retval) {

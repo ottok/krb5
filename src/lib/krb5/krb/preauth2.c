@@ -132,6 +132,8 @@ k5_init_preauth_context(krb5_context context)
     /* Auto-register built-in modules. */
     k5_plugin_register_dyn(context, PLUGIN_INTERFACE_CLPREAUTH, "pkinit",
                            "preauth");
+    k5_plugin_register_dyn(context, PLUGIN_INTERFACE_CLPREAUTH, "spake",
+                           "preauth");
     k5_plugin_register(context, PLUGIN_INTERFACE_CLPREAUTH,
                        "encrypted_challenge",
                        clpreauth_encrypted_challenge_initvt);
@@ -199,18 +201,6 @@ k5_init_preauth_context(krb5_context context)
 cleanup:
     k5_plugin_free_modules(context, modules);
     free_handles(context, list);
-}
-
-/* Reset the memory of which preauth types we have already tried. */
-void
-k5_reset_preauth_types_tried(krb5_init_creds_context ctx)
-{
-    krb5_preauth_req_context reqctx = ctx->preauth_reqctx;
-
-    if (reqctx == NULL)
-        return;
-    free(reqctx->failed);
-    reqctx->failed = NULL;
 }
 
 /* Add pa_type to the list of types which has previously failed. */
@@ -428,7 +418,11 @@ grow_pa_list(krb5_pa_data ***out_pa_list, int *out_pa_list_size,
 static krb5_enctype
 get_etype(krb5_context context, krb5_clpreauth_rock rock)
 {
-    return ((krb5_init_creds_context)rock)->etype;
+    krb5_init_creds_context ctx = (krb5_init_creds_context)rock;
+
+    if (ctx->reply != NULL)
+        return ctx->reply->enc_part.enctype;
+    return ctx->etype;
 }
 
 static krb5_keyblock *
@@ -551,8 +545,14 @@ set_cc_config(krb5_context context, krb5_clpreauth_rock rock,
     return ret;
 }
 
+static void
+disable_fallback(krb5_context context, krb5_clpreauth_rock rock)
+{
+    ((krb5_init_creds_context)rock)->fallback_disabled = TRUE;
+}
+
 static struct krb5_clpreauth_callbacks_st callbacks = {
-    2,
+    3,
     get_etype,
     fast_armor,
     get_as_key,
@@ -562,7 +562,8 @@ static struct krb5_clpreauth_callbacks_st callbacks = {
     responder_get_answer,
     need_as_key,
     get_cc_config,
-    set_cc_config
+    set_cc_config,
+    disable_fallback
 };
 
 /* Tweak the request body, for now adding any enctypes which the module claims
@@ -781,9 +782,9 @@ get_salt(krb5_context context, krb5_init_creds_context ctx,
 }
 
 /* Set etype info parameters in rock based on padata. */
-static krb5_error_code
-get_etype_info(krb5_context context, krb5_init_creds_context ctx,
-               krb5_pa_data **padata)
+krb5_error_code
+k5_get_etype_info(krb5_context context, krb5_init_creds_context ctx,
+                  krb5_pa_data **padata)
 {
     krb5_error_code ret = 0;
     krb5_pa_data *pa;
@@ -1022,7 +1023,7 @@ k5_preauth(krb5_context context, krb5_init_creds_context ctx,
     TRACE_PREAUTH_INPUT(context, in_padata);
 
     /* Scan the padata list and process etype-info or salt elements. */
-    ret = get_etype_info(context, ctx, in_padata);
+    ret = k5_get_etype_info(context, ctx, in_padata);
     if (ret)
         return ret;
 

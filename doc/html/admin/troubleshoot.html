@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -136,27 +136,27 @@ properly on the client if the principal entry has no long-term keys.</p>
 </div>
 <div class="section" id="kprop-no-route-to-host-while-connecting-to-server">
 <span id="kprop-no-route"></span><h4>kprop: No route to host while connecting to server<a class="headerlink" href="#kprop-no-route-to-host-while-connecting-to-server" title="Permalink to this headline">¶</a></h4>
-<p>Make sure that the hostname of the slave (as given to kprop) is
-correct, and that any firewalls between the master and the slave allow
-a connection on port 754.</p>
+<p>Make sure that the hostname of the replica KDC (as given to kprop) is
+correct, and that any firewalls between the master and the replica
+allow a connection on port 754.</p>
 </div>
 <div class="section" id="kprop-connection-refused-while-connecting-to-server">
 <span id="kprop-con-refused"></span><h4>kprop: Connection refused while connecting to server<a class="headerlink" href="#kprop-connection-refused-while-connecting-to-server" title="Permalink to this headline">¶</a></h4>
-<p>If the slave is intended to run kpropd out of inetd, make sure that
-inetd is configured to accept krb5_prop connections.  inetd may need
-to be restarted or sent a SIGHUP to recognize the new configuration.
-If the slave is intended to run kpropd in standalone mode, make sure
-that it is running.</p>
+<p>If the replica KDC is intended to run kpropd out of inetd, make sure
+that inetd is configured to accept krb5_prop connections.  inetd may
+need to be restarted or sent a SIGHUP to recognize the new
+configuration.  If the replica is intended to run kpropd in standalone
+mode, make sure that it is running.</p>
 </div>
 <div class="section" id="kprop-server-rejected-authentication-during-sendauth-exchange-while-authenticating-to-server">
 <span id="kprop-sendauth-exchange"></span><h4>kprop: Server rejected authentication (during sendauth exchange) while authenticating to server<a class="headerlink" href="#kprop-server-rejected-authentication-during-sendauth-exchange-while-authenticating-to-server" title="Permalink to this headline">¶</a></h4>
 <p>Make sure that:</p>
 <ol class="arabic simple">
-<li>The time is synchronized between the master and slave KDCs.</li>
+<li>The time is synchronized between the master and replica KDCs.</li>
 <li>The master stash file was copied from the master to the expected
-location on the slave.</li>
-<li>The slave has a keytab file in the default location containing a
-<code class="docutils literal"><span class="pre">host</span></code> principal for the slave’s hostname.</li>
+location on the replica.</li>
+<li>The replica has a keytab file in the default location containing a
+<code class="docutils literal"><span class="pre">host</span></code> principal for the replica’s hostname.</li>
 </ol>
 </div>
 </div>
@@ -199,6 +199,7 @@ location on the slave.</li>
 <li class="toctree-l2"><a class="reference internal" href="conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appl_servers.html">Application servers</a></li>
@@ -206,6 +207,8 @@ location on the slave.</li>
 <li class="toctree-l2"><a class="reference internal" href="backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="https.html">HTTPS proxy configuration</a></li>
@@ -245,8 +248,8 @@ location on the slave.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

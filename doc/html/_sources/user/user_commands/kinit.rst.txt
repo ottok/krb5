@@ -197,6 +197,8 @@ OPTIONS
         specify use of RSA, rather than the default Diffie-Hellman
         protocol
 
+    **disable_freshness**\ [**=yes**]
+        disable sending freshness tokens (for testing purposes only)
 
 ENVIRONMENT
 -----------

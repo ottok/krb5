@@ -203,6 +203,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_DES_CRC_SESSION_SUPPORTED    "des_crc_session_supported"
 #define KRB5_CONF_DICT_FILE                    "dict_file"
 #define KRB5_CONF_DISABLE                      "disable"
+#define KRB5_CONF_DISABLE_ENCRYPTED_TIMESTAMP  "disable_encrypted_timestamp"
 #define KRB5_CONF_DISABLE_LAST_SUCCESS         "disable_last_success"
 #define KRB5_CONF_DISABLE_LOCKOUT              "disable_lockout"
 #define KRB5_CONF_DNS_CANONICALIZE_HOSTNAME    "dns_canonicalize_hostname"
@@ -225,6 +226,7 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_IPROP_MASTER_ULOGSIZE        "iprop_master_ulogsize"
 #define KRB5_CONF_IPROP_PORT                   "iprop_port"
 #define KRB5_CONF_IPROP_RESYNC_TIMEOUT         "iprop_resync_timeout"
+#define KRB5_CONF_IPROP_REPLICA_POLL           "iprop_replica_poll"
 #define KRB5_CONF_IPROP_SLAVE_POLL             "iprop_slave_poll"
 #define KRB5_CONF_K5LOGIN_AUTHORITATIVE        "k5login_authoritative"
 #define KRB5_CONF_K5LOGIN_DIRECTORY            "k5login_directory"
@@ -264,13 +266,16 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_LDAP_SERVICE_PASSWORD_FILE   "ldap_service_password_file"
 #define KRB5_CONF_LIBDEFAULTS                  "libdefaults"
 #define KRB5_CONF_LOGGING                      "logging"
+#define KRB5_CONF_MAPSIZE                      "mapsize"
 #define KRB5_CONF_MASTER_KDC                   "master_kdc"
 #define KRB5_CONF_MASTER_KEY_NAME              "master_key_name"
 #define KRB5_CONF_MASTER_KEY_TYPE              "master_key_type"
 #define KRB5_CONF_MAX_LIFE                     "max_life"
+#define KRB5_CONF_MAX_READERS                  "max_readers"
 #define KRB5_CONF_MAX_RENEWABLE_LIFE           "max_renewable_life"
 #define KRB5_CONF_MODULE                       "module"
 #define KRB5_CONF_NOADDRESSES                  "noaddresses"
+#define KRB5_CONF_NOSYNC                       "nosync"
 #define KRB5_CONF_NO_HOST_REFERRAL             "no_host_referral"
 #define KRB5_CONF_PERMITTED_ENCTYPES           "permitted_enctypes"
 #define KRB5_CONF_PLUGINS                      "plugins"
@@ -285,6 +290,9 @@ typedef unsigned char   u_char;
 #define KRB5_CONF_RESTRICT_ANONYMOUS_TO_TGT    "restrict_anonymous_to_tgt"
 #define KRB5_CONF_SAFE_CHECKSUM_TYPE           "safe_checksum_type"
 #define KRB5_CONF_SUPPORTED_ENCTYPES           "supported_enctypes"
+#define KRB5_CONF_SPAKE_PREAUTH_INDICATOR      "spake_preauth_indicator"
+#define KRB5_CONF_SPAKE_PREAUTH_KDC_CHALLENGE  "spake_preauth_kdc_challenge"
+#define KRB5_CONF_SPAKE_PREAUTH_GROUPS         "spake_preauth_groups"
 #define KRB5_CONF_TICKET_LIFETIME              "ticket_lifetime"
 #define KRB5_CONF_UDP_PREFERENCE_LIMIT         "udp_preference_limit"
 #define KRB5_CONF_UNLOCKITER                   "unlockiter"
@@ -637,54 +645,9 @@ krb5int_arcfour_gsscrypt(const krb5_keyblock *keyblock, krb5_keyusage usage,
 
 #define K5_SHA256_HASHLEN (256 / 8)
 
-/* Write the SHA-256 hash of in to out. */
+/* Write the SHA-256 hash of in (containing n elements) to out. */
 krb5_error_code
-k5_sha256(const krb5_data *in, uint8_t out[K5_SHA256_HASHLEN]);
-
-/*
- * Attempt to zero memory in a way that compilers won't optimize out.
- *
- * This mechanism should work even for heap storage about to be freed,
- * or automatic storage right before we return from a function.
- *
- * Then, even if we leak uninitialized memory someplace, or UNIX
- * "core" files get created with world-read access, some of the most
- * sensitive data in the process memory will already be safely wiped.
- *
- * We're not going so far -- yet -- as to try to protect key data that
- * may have been written into swap space....
- */
-#ifdef _WIN32
-# define zap(ptr, len) SecureZeroMemory(ptr, len)
-#elif defined(__STDC_LIB_EXT1__)
-/*
- * Use memset_s() which cannot be optimized out.  Avoid memset_s(NULL, 0, 0, 0)
- * which would cause a runtime constraint violation.
- */
-static inline void zap(void *ptr, size_t len)
-{
-    if (len > 0)
-        memset_s(ptr, len, 0, len);
-}
-#elif defined(__GNUC__) || defined(__clang__)
-/*
- * Use an asm statement which declares a memory clobber to force the memset to
- * be carried out.  Avoid memset(NULL, 0, 0) which has undefined behavior.
- */
-static inline void zap(void *ptr, size_t len)
-{
-    if (len > 0)
-        memset(ptr, 0, len);
-    __asm__ __volatile__("" : : "r" (ptr) : "memory");
-}
-#else
-/*
- * Use a function from libkrb5support to defeat inlining unless link-time
- * optimization is used.  The function uses a volatile pointer, which prevents
- * current compilers from optimizing out the memset.
- */
-# define zap(ptr, len) krb5int_zap(ptr, len)
-#endif
+k5_sha256(const krb5_data *in, size_t n, uint8_t out[K5_SHA256_HASHLEN]);
 
 /* Convenience function: zap and free ptr if it is non-NULL. */
 static inline void
@@ -1873,15 +1836,12 @@ krb5int_random_string(krb5_context, char *string, unsigned int length);
 /* To keep happy libraries which are (for now) accessing internal stuff */
 
 /* Make sure to increment by one when changing the struct */
-#define KRB5INT_ACCESS_STRUCT_VERSION 21
+#define KRB5INT_ACCESS_STRUCT_VERSION 22
 
 typedef struct _krb5int_access {
     krb5_error_code (*auth_con_get_subkey_enctype)(krb5_context,
                                                    krb5_auth_context,
                                                    krb5_enctype *);
-
-    krb5_error_code (*clean_hostname)(krb5_context, const char *, char *,
-                                      size_t);
 
     krb5_error_code (*mandatory_cksumtype)(krb5_context, krb5_enctype,
                                            krb5_cksumtype *);

@@ -441,9 +441,6 @@
 /* Define to 1 if you have the `strerror_r' function. */
 #undef HAVE_STRERROR_R
 
-/* Define to 1 if you have the `strftime' function. */
-#undef HAVE_STRFTIME
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -575,6 +572,12 @@
 /* Define to 1 if you have the `vsprintf' function. */
 #undef HAVE_VSPRINTF
 
+/* Define to 1 if the system has the type `__int128_t'. */
+#undef HAVE___INT128_T
+
+/* Define to 1 if the system has the type `__uint128_t'. */
+#undef HAVE___UINT128_T
+
 /* Define if errno.h declares perror */
 #undef HDR_HAS_PERROR
 
@@ -664,8 +667,14 @@
 /* Define as return type of setrpcent */
 #undef SETRPCENT_TYPE
 
+/* The size of `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
+
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
+
+/* Define to use OpenSSL for SPAKE preauth */
+#undef SPAKE_OPENSSL
 
 /* Define for static plugin linkage */
 #undef STATIC_PLUGINS

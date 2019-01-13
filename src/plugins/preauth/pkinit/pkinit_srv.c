@@ -161,6 +161,10 @@ pkinit_server_get_edata(krb5_context context,
     if (plgctx == NULL)
         retval = EINVAL;
 
+    /* Send a freshness token if the client requested one. */
+    if (!retval)
+        cb->send_freshness_token(context, rock);
+
     (*respond)(arg, retval, NULL);
 }
 
@@ -199,24 +203,6 @@ verify_client_san(krb5_context context,
         retval = ENOENT;
         goto out;
     }
-
-    /* XXX Verify this is consistent with client side XXX */
-#if 0
-    retval = call_san_checking_plugins(context, plgctx, reqctx, princs,
-                                       upns, NULL, &plugin_decision, &ignore);
-    pkiDebug("%s: call_san_checking_plugins() returned retval %d\n",
-             __FUNCTION__);
-    if (retval) {
-        retval = KRB5KDC_ERR_CLIENT_NAME_MISMATCH;
-        goto cleanup;
-    }
-    pkiDebug("%s: call_san_checking_plugins() returned decision %d\n",
-             __FUNCTION__, plugin_decision);
-    if (plugin_decision != NO_DECISION) {
-        retval = plugin_decision;
-        goto out;
-    }
-#endif
 
 #ifdef DEBUG_SAN_INFO
     krb5_unparse_name(context, client, &client_string);
@@ -403,6 +389,31 @@ cleanup:
     return ret;
 }
 
+/* Return an error if freshness tokens are required and one was not received.
+ * Log an appropriate message indicating whether a valid token was received. */
+static krb5_error_code
+check_log_freshness(krb5_context context, pkinit_kdc_context plgctx,
+                    krb5_kdc_req *request, krb5_boolean valid_freshness_token)
+{
+    krb5_error_code ret;
+    char *name = NULL;
+
+    ret = krb5_unparse_name(context, request->client, &name);
+    if (ret)
+        return ret;
+    if (plgctx->opts->require_freshness && !valid_freshness_token) {
+        com_err("", 0, _("PKINIT: no freshness token, rejecting auth from %s"),
+                name);
+        ret = KRB5KDC_ERR_PREAUTH_FAILED;
+    } else if (valid_freshness_token) {
+        com_err("", 0, _("PKINIT: freshness token received from %s"), name);
+    } else {
+        com_err("", 0, _("PKINIT: no freshness token received from %s"), name);
+    }
+    krb5_free_unparsed_name(context, name);
+    return ret;
+}
+
 static void
 pkinit_server_verify_padata(krb5_context context,
                             krb5_data *req_pkt,
@@ -425,10 +436,11 @@ pkinit_server_verify_padata(krb5_context context,
     pkinit_kdc_req_context reqctx = NULL;
     krb5_checksum cksum = {0, 0, 0, NULL};
     krb5_data *der_req = NULL;
-    krb5_data k5data;
+    krb5_data k5data, *ftoken;
     int is_signed = 1;
     krb5_pa_data **e_data = NULL;
     krb5_kdcpreauth_modreq modreq = NULL;
+    krb5_boolean valid_freshness_token = FALSE;
     char **sp;
 
     pkiDebug("pkinit_verify_padata: entered!\n");
@@ -599,6 +611,14 @@ pkinit_server_verify_padata(krb5_context context,
             goto cleanup;
         }
 
+        ftoken = auth_pack->pkAuthenticator.freshnessToken;
+        if (ftoken != NULL) {
+            retval = cb->check_freshness_token(context, rock, ftoken);
+            if (retval)
+                goto cleanup;
+            valid_freshness_token = TRUE;
+        }
+
         /* check if kdcPkId present and match KDC's subjectIdentifier */
         if (reqp->kdcPkId.data != NULL) {
             int valid_kdcPkId = 0;
@@ -639,6 +659,13 @@ pkinit_server_verify_padata(krb5_context context,
         reqctx->rcv_auth_pack9 = auth_pack9;
         auth_pack9 = NULL;
         break;
+    }
+
+    if (is_signed) {
+        retval = check_log_freshness(context, plgctx, request,
+                                     valid_freshness_token);
+        if (retval)
+            goto cleanup;
     }
 
     if (is_signed && plgctx->auth_indicators != NULL) {
@@ -1329,6 +1356,10 @@ pkinit_init_kdc_profile(krb5_context context, pkinit_kdc_context plgctx)
     pkinit_kdcdefault_boolean(context, plgctx->realmname,
                               KRB5_CONF_PKINIT_REQUIRE_CRL_CHECKING,
                               0, &plgctx->opts->require_crl_checking);
+
+    pkinit_kdcdefault_boolean(context, plgctx->realmname,
+                              KRB5_CONF_PKINIT_REQUIRE_FRESHNESS,
+                              0, &plgctx->opts->require_freshness);
 
     pkinit_kdcdefault_string(context, plgctx->realmname,
                              KRB5_CONF_PKINIT_EKU_CHECKING,

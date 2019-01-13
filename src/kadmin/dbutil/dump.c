@@ -181,34 +181,44 @@ finish_ofile(char *ofile, char **tmpname)
 }
 
 /* Create the .dump_ok file. */
-static int
-prep_ok_file(krb5_context context, char *file_name, int *fd)
+static krb5_boolean
+prep_ok_file(krb5_context context, char *file_name, int *fd_out)
 {
     static char ok[] = ".dump_ok";
     krb5_error_code retval;
-    char *file_ok;
+    char *file_ok = NULL;
+    int fd = -1;
+    krb5_boolean success = FALSE;
+
+    *fd_out = -1;
 
     if (asprintf(&file_ok, "%s%s", file_name, ok) < 0) {
         com_err(progname, ENOMEM, _("while allocating dump_ok filename"));
-        exit_status++;
-        return 0;
+        goto cleanup;
     }
 
-    *fd = open(file_ok, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-    if (*fd == -1) {
+    fd = open(file_ok, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    if (fd == -1) {
         com_err(progname, errno, _("while creating 'ok' file, '%s'"), file_ok);
-        exit_status++;
-        free(file_ok);
-        return 0;
+        goto cleanup;
     }
-    retval = krb5_lock_file(context, *fd, KRB5_LOCKMODE_EXCLUSIVE);
+    retval = krb5_lock_file(context, fd, KRB5_LOCKMODE_EXCLUSIVE);
     if (retval) {
         com_err(progname, retval, _("while locking 'ok' file, '%s'"), file_ok);
-        free(file_ok);
-        return 0;
+        goto cleanup;
     }
+
+    *fd_out = fd;
+    fd = -1;
+    success = TRUE;
+
+cleanup:
     free(file_ok);
-    return 1;
+    if (fd != -1)
+        close(fd);
+    if (!success)
+        exit_status++;
+    return success;
 }
 
 /*
@@ -1227,16 +1237,17 @@ current_dump_sno_in_ulog(krb5_context context, const char *ifile)
     update_status_t status;
     dump_version *junk;
     kdb_last_t last;
-    char buf[BUFSIZ];
+    char buf[BUFSIZ], *r;
     FILE *f;
 
     f = fopen(ifile, "r");
     if (f == NULL)
         return 0;              /* aliasing other errors to ENOENT here is OK */
 
-    if (fgets(buf, sizeof(buf), f) == NULL)
-        return errno ? -1 : 0;
+    r = fgets(buf, sizeof(buf), f);
     fclose(f);
+    if (r == NULL)
+        return errno ? -1 : 0;
 
     if (!parse_iprop_header(buf, &junk, &last))
         return 0;
@@ -1295,7 +1306,7 @@ dump_db(int argc, char **argv)
                 /*
                  * dump_sno is used to indicate if the serial number should be
                  * populated in the output file to be used later by iprop for
-                 * updating the slave's update log when loading.
+                 * updating the replica's update log when loading.
                  */
                 dump_sno = TRUE;
                 /* FLAG_OMIT_NRA is set to indicate that non-replicated
@@ -1453,7 +1464,8 @@ dump_db(int argc, char **argv)
         goto error;
     }
 
-    if (dump->dump_policy != NULL) {
+    /* Don't dump policies if specific principal entries were requested. */
+    if (dump->dump_policy != NULL && args.nnames == 0) {
         ret = krb5_db_iter_policy(util_context, "*", dump->dump_policy, &args);
         if (ret) {
             com_err(progname, ret, _("performing %s dump"), dump->name);
@@ -1649,7 +1661,7 @@ load_db(int argc, char **argv)
     if (log_ctx != NULL && log_ctx->iproprole && !update) {
         /* Don't record updates we are making to the temporary DB.  We will
          * reinitialize or update the ulog header after promoting it. */
-        log_ctx->iproprole = IPROP_SLAVE;
+        log_ctx->iproprole = IPROP_REPLICA;
         if (iprop_load) {
             /* Parse the iprop header information. */
             if (!parse_iprop_header(buf, &load, &last))

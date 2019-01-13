@@ -8,6 +8,7 @@ For administrators
    conf_files/index.rst
    realm_config.rst
    database.rst
+   dbtypes.rst
    lockout.rst
    conf_ldap.rst
    appl_servers.rst
@@ -15,6 +16,8 @@ For administrators
    backup_host.rst
    pkinit.rst
    otp.rst
+   spake.rst
+   dictionary.rst
    princ_dns.rst
    enctypes.rst
    https.rst

@@ -60,7 +60,9 @@ alphanumeric characters, dashes, or underscores.  Starting in release
 1.15, files with names ending in ".conf" are also included, unless the
 name begins with ".".  Included profile files are syntactically
 independent of their parents, so each included file must begin with a
-section header.
+section header.  Starting in release 1.17, files are read in
+alphanumeric order; in previous releases, they may be read in any
+order.
 
 The krb5.conf file can specify that configuration should be obtained
 from a loadable module, rather than the file itself, using the
@@ -326,7 +328,8 @@ The libdefaults section may contain any of the following relations:
 **plugin_base_dir**
     If set, determines the base directory where krb5 plugins are
     located.  The default value is the ``krb5/plugins`` subdirectory
-    of the krb5 library directory.
+    of the krb5 library directory.  This relation is subject to
+    parameter expansion (see below) in release 1.17 and later.
 
 **preferred_preauth_types**
     This allows you to set the preferred preauthentication types which
@@ -366,6 +369,21 @@ The libdefaults section may contain any of the following relations:
     DES instead.  This field is ignored when its value is incompatible
     with the session key type.  See the **kdc_req_checksum_type**
     configuration option for the possible values and their meanings.
+
+**spake_preauth_groups**
+    A whitespace or comma-separated list of words which specifies the
+    groups allowed for SPAKE preauthentication.  The possible values
+    are:
+
+    ============ ================================
+    edwards25519 Edwards25519 curve (:rfc:`7748`)
+    P-256        NIST P-256 curve (:rfc:`5480`)
+    P-384        NIST P-384 curve (:rfc:`5480`)
+    P-521        NIST P-521 curve (:rfc:`5480`)
+    ============ ================================
+
+    The default value for the client is ``edwards25519``.  The default
+    value for the KDC is empty.  New in release 1.17.
 
 **ticket_lifetime**
     (:ref:`duration` string.)  Sets the default lifetime for initial
@@ -436,7 +454,7 @@ following tags may be specified in the realm's subsection:
                 auth_to_local = RULE:[2:$1](johndoe)s/^.*$/guest/
                 auth_to_local = RULE:[2:$1;$2](^.*;admin$)s/;admin$//
                 auth_to_local = RULE:[2:$2](^.*;root)s/^.*$/root/
-                auto_to_local = DEFAULT
+                auth_to_local = DEFAULT
             }
 
     would result in any principal without ``root`` or ``admin`` as the
@@ -457,6 +475,16 @@ following tags may be specified in the realm's subsection:
     translating Kerberos 4 service principals to Kerberos 5 principals
     (for example, when converting ``rcmd.hostname`` to
     ``host/hostname.domain``).
+
+**disable_encrypted_timestamp**
+    If this flag is true, the client will not perform encrypted
+    timestamp preauthentication if requested by the KDC.  Setting this
+    flag can help to prevent dictionary attacks by active attackers,
+    if the realm's KDCs support SPAKE preauthentication or if initial
+    authentication always uses another mechanism or always uses FAST.
+    This flag persists across client referrals during initial
+    authentication.  This flag does not prevent the KDC from offering
+    encrypted timestamp.  New in release 1.17.
 
 **http_anchors**
     When KDCs and kpasswd servers are accessed through HTTPS proxies, this tag
@@ -505,8 +533,8 @@ following tags may be specified in the realm's subsection:
     one case: If an attempt to get credentials fails because of an
     invalid password, the client software will attempt to contact the
     master KDC, in case the user's password has just been changed, and
-    the updated database has not been propagated to the slave servers
-    yet.
+    the updated database has not been propagated to the replica
+    servers yet.
 
 **v4_instance_convert**
     This subsection allows the administrator to configure exceptions

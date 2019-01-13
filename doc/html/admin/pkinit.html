@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -359,6 +359,28 @@ appropriate <a class="reference internal" href="conf_files/kdc_conf.html#kdc-rea
 <code class="docutils literal"><span class="pre">kinit</span> <span class="pre">-n</span> <span class="pre">&#64;REALMNAME</span></code> to specify a realm.  The resulting tickets
 will have the client name <code class="docutils literal"><span class="pre">WELLKNOWN/ANONYMOUS&#64;WELLKNOWN:ANONYMOUS</span></code>.</p>
 </div>
+<div class="section" id="freshness-tokens">
+<h2>Freshness tokens<a class="headerlink" href="#freshness-tokens" title="Permalink to this headline">¶</a></h2>
+<p>Freshness tokens can ensure that the client has recently had access to
+its certificate private key.  If freshness tokens are not required by
+the KDC, a client program with temporary possession of the private key
+can compose requests for future timestamps and use them later.</p>
+<p>In release 1.17 and later, freshness tokens are supported by the
+client and are sent by the KDC when the client indicates support for
+them.  Because not all clients support freshness tokens yet, they are
+not required by default.  To check if freshness tokens are supported
+by a realm’s clients, look in the KDC logs for the lines:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">PKINIT</span><span class="p">:</span> <span class="n">freshness</span> <span class="n">token</span> <span class="n">received</span> <span class="kn">from</span> <span class="o">&lt;</span><span class="n">client</span> <span class="n">principal</span><span class="o">&gt;</span>
+<span class="n">PKINIT</span><span class="p">:</span> <span class="n">no</span> <span class="n">freshness</span> <span class="n">token</span> <span class="n">received</span> <span class="kn">from</span> <span class="o">&lt;</span><span class="n">client</span> <span class="n">principal</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>To require freshness tokens for all clients in a realm (except for
+clients authenticating anonymously), set the
+<strong>pkinit_require_freshness</strong> variable to <code class="docutils literal"><span class="pre">true</span></code> in the appropriate
+<a class="reference internal" href="conf_files/kdc_conf.html#kdc-realms"><span class="std std-ref">[realms]</span></a> subsection of the KDC’s <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> file.  To
+test that this option is in effect, run <code class="docutils literal"><span class="pre">kinit</span> <span class="pre">-X</span> <span class="pre">disable_freshness</span></code>
+and verify that authentication is unsuccessful.</p>
+</div>
 </div>
 
 
@@ -379,6 +401,7 @@ will have the client name <code class="docutils literal"><span class="pre">WELLK
 <li><a class="reference internal" href="#configuring-the-kdc">Configuring the KDC</a></li>
 <li><a class="reference internal" href="#configuring-the-clients">Configuring the clients</a></li>
 <li><a class="reference internal" href="#anonymous-pkinit">Anonymous PKINIT</a></li>
+<li><a class="reference internal" href="#freshness-tokens">Freshness tokens</a></li>
 </ul>
 </li>
 </ul>
@@ -392,6 +415,7 @@ will have the client name <code class="docutils literal"><span class="pre">WELLK
 <li class="toctree-l2"><a class="reference internal" href="conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appl_servers.html">Application servers</a></li>
@@ -399,6 +423,8 @@ will have the client name <code class="docutils literal"><span class="pre">WELLK
 <li class="toctree-l2"><a class="reference internal" href="backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="https.html">HTTPS proxy configuration</a></li>
@@ -438,8 +464,8 @@ will have the client name <code class="docutils literal"><span class="pre">WELLK
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

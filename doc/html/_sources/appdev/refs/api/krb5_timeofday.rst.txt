@@ -3,7 +3,7 @@ krb5_timeofday -  Retrieve the current time with context specific time offset ad
 
 ..
 
-.. c:function:: krb5_error_code krb5_timeofday(krb5_context context, register krb5_timestamp * timeret)
+.. c:function:: krb5_error_code krb5_timeofday(krb5_context context, krb5_timestamp * timeret)
 
 ..
 

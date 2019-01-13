@@ -3,7 +3,7 @@ krb5_free_keyblock -  Free a krb5_keyblock structure.
 
 ..
 
-.. c:function:: void krb5_free_keyblock(krb5_context context, register krb5_keyblock * val)
+.. c:function:: void krb5_free_keyblock(krb5_context context, krb5_keyblock * val)
 
 ..
 
