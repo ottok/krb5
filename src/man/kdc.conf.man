@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "KDC.CONF" "5" " " "1.16.2" "MIT Kerberos"
+.TH "KDC.CONF" "5" " " "1.17" "MIT Kerberos"
 .SH NAME
 kdc.conf \- Kerberos V5 KDC configuration file
 .
@@ -88,10 +88,10 @@ _
 .TE
 .SS [kdcdefaults]
 .sp
-With two exceptions, relations in the [kdcdefaults] section specify
-default values for realm variables, to be used if the [realms]
-subsection does not contain a relation for the tag.  See the
-\fI\%[realms]\fP section for the definitions of these relations.
+Some relations in the [kdcdefaults] section specify default values for
+realm variables, to be used if the [realms] subsection does not
+contain a relation for the tag.  See the \fI\%[realms]\fP section for
+the definitions of these relations.
 .INDENT 0.0
 .IP \(bu 2
 \fBhost_based_services\fP
@@ -108,6 +108,8 @@ subsection does not contain a relation for the tag.  See the
 .IP \(bu 2
 \fBrestrict_anonymous_to_tgt\fP
 .UNINDENT
+.sp
+The following [kdcdefaults] variables have no per\-realm equivalent:
 .INDENT 0.0
 .TP
 \fBkdc_max_dgram_reply_size\fP
@@ -118,6 +120,12 @@ default value is 4096 bytes.
 (Integer.)  Set the size of the listen queue length for the KDC
 daemon.  The value may be limited by OS settings.  The default
 value is 5.
+.TP
+\fBspake_preauth_kdc_challenge\fP
+(String.)  Specifies the group for a SPAKE optimistic challenge.
+See the \fBspake_preauth_groups\fP variable in libdefaults
+for possible values.  The default is not to issue an optimistic
+challenge.  (New in release 1.17.)
 .UNINDENT
 .SS [realms]
 .sp
@@ -186,9 +194,8 @@ this principal.  Disabling this flag essentially deactivates
 the principal within this realm.
 .TP
 \fBdup\-skey\fP
-Enabling this flag allows the principal to obtain a session
-key for another user, permitting user\-to\-user authentication
-for this principal.
+Enabling this flag allows the KDC to issue user\-to\-user
+service tickets for this principal.
 .TP
 \fBforwardable\fP
 Enabling this flag allows the principal to obtain forwardable
@@ -245,7 +252,9 @@ tickets.
 .TP
 \fBservice\fP
 Enabling this flag allows the the KDC to issue service tickets
-for this principal.
+for this principal.  In release 1.17 and later, user\-to\-user
+service tickets are still allowed if the \fBdup\-skey\fP flag is
+set.
 .TP
 \fBtgt\-based\fP
 Enabling this flag allows a principal to obtain tickets based
@@ -279,10 +288,15 @@ propagation is enabled.  The default value is false.
 retained for incremental propagation.  The default value is 1000.
 Prior to release 1.11, the maximum value was 2500.
 .TP
+\fBiprop_replica_poll\fP
+(Delta time string.)  Specifies how often the replica KDC polls
+for new updates from the master.  The default value is \fB2m\fP
+(that is, two minutes).  New in release 1.17.
+.TP
 \fBiprop_slave_poll\fP
-(Delta time string.)  Specifies how often the slave KDC polls for
-new updates from the master.  The default value is \fB2m\fP (that
-is, two minutes).
+(Delta time string.)  The name for \fBiprop_replica_poll\fP prior to
+release 1.17.  Its value is used as a fallback if
+\fBiprop_replica_poll\fP is not specified.
 .TP
 \fBiprop_listen\fP
 (Whitespace\- or comma\-separated list.)  Specifies the iprop RPC
@@ -299,8 +313,8 @@ address at the port specified in \fBiprop_port\fP\&.  New in release
 \fBiprop_port\fP
 (Port number.)  Specifies the port number to be used for
 incremental propagation.  When \fBiprop_enable\fP is true, this
-relation is required in the slave configuration file, and this
-relation or \fBiprop_listen\fP is required in the master
+relation is required in the replica KDC configuration file, and
+this relation or \fBiprop_listen\fP is required in the master
 configuration file, as there is no default port number.  Port
 numbers specified in \fBiprop_listen\fP entries will override this
 port number for the kadmind(8) daemon.
@@ -308,7 +322,7 @@ port number for the kadmind(8) daemon.
 \fBiprop_resync_timeout\fP
 (Delta time string.)  Specifies the amount of time to wait for a
 full propagation to complete.  This is optional in configuration
-files, and is used by slave KDCs only.  The default value is 5
+files, and is used by replica KDCs only.  The default value is 5
 minutes (\fB5m\fP).  New in release 1.11.
 .TP
 \fBiprop_logfile\fP
@@ -463,6 +477,12 @@ anonymous PKINIT to be enabled for use as FAST armor tickets
 without allowing anonymous authentication to services.  The
 default value is false.  New in release 1.9.
 .TP
+\fBspake_preauth_indicator\fP
+(String.)  Specifies an authentication indicator value that the
+KDC asserts into tickets obtained using SPAKE pre\-authentication.
+The default is not to add any indicators.  This option may be
+specified multiple times.  New in release 1.17.
+.TP
 \fBsupported_enctypes\fP
 (List of \fIkey\fP:\fIsalt\fP strings.)  Specifies the default key/salt
 combinations of principals for this realm.  Any principals created
@@ -536,8 +556,8 @@ the filesystem.  The default is \fB@LOCALSTATEDIR@\fP\fB/krb5kdc\fP\fB/principal
 .TP
 \fBdb_library\fP
 This tag indicates the name of the loadable database module.  The
-value should be \fBdb2\fP for the DB2 module and \fBkldap\fP for the
-LDAP module.
+value should be \fBdb2\fP for the DB2 module, \fBklmdb\fP for the LMDB
+module, or \fBkldap\fP for the LDAP module.
 .TP
 \fBdisable_last_success\fP
 If set to \fBtrue\fP, suppresses KDC updates to the "Last successful
@@ -612,6 +632,24 @@ passwords (created by \fBkdb5_ldap_util stashsrvpw\fP) for the
 \fBldap_kdc_sasl_authcid\fP or \fBldap_kadmind_sasl_authcid\fP names
 for SASL authentication.  This file must be kept secure.
 .TP
+\fBmapsize\fP
+This LMDB\-specific tag indicates the maximum size of the two
+database environments in megabytes.  The default value is 128.
+Increase this value to address "Environment mapsize limit reached"
+errors.  New in release 1.17.
+.TP
+\fBmax_readers\fP
+This LMDB\-specific tag indicates the maximum number of concurrent
+reading processes for the databases.  The default value is 128.
+New in release 1.17.
+.TP
+\fBnosync\fP
+This LMDB\-specific tag can be set to improve the throughput of
+kadmind and other administrative agents, at the expense of
+durability (recent database changes may not survive a power outage
+or other sudden reboot).  It does not affect the throughput of the
+KDC.  The default value is false.  New in release 1.17.
+.TP
 \fBunlockiter\fP
 If set to \fBtrue\fP, this DB2\-specific tag causes iteration
 operations to release the database lock while processing each
@@ -676,19 +714,15 @@ device.
 \fBSYSLOG\fP[\fB:\fP\fIseverity\fP[\fB:\fP\fIfacility\fP]]
 This causes the daemon\(aqs logging messages to go to the system log.
 .sp
-The severity argument specifies the default severity of system log
-messages.  This may be any of the following severities supported
-by the syslog(3) call, minus the \fBLOG_\fP prefix: \fBEMERG\fP,
-\fBALERT\fP, \fBCRIT\fP, \fBERR\fP, \fBWARNING\fP, \fBNOTICE\fP, \fBINFO\fP,
-and \fBDEBUG\fP\&.
+For backward compatibility, a severity argument may be specified,
+and must be specified in order to specify a facility.  This
+argument will be ignored.
 .sp
 The facility argument specifies the facility under which the
 messages are logged.  This may be any of the following facilities
 supported by the syslog(3) call minus the LOG_ prefix: \fBKERN\fP,
 \fBUSER\fP, \fBMAIL\fP, \fBDAEMON\fP, \fBAUTH\fP, \fBLPR\fP, \fBNEWS\fP,
-\fBUUCP\fP, \fBCRON\fP, and \fBLOCAL0\fP through \fBLOCAL7\fP\&.
-.sp
-If no severity is specified, the default is \fBERR\fP\&.  If no
+\fBUUCP\fP, \fBCRON\fP, and \fBLOCAL0\fP through \fBLOCAL7\fP\&.  If no
 facility is specified, the default is \fBAUTH\fP\&.
 .UNINDENT
 .sp
@@ -918,6 +952,11 @@ fails.
 .sp
 \fBpkinit_require_crl_checking\fP should be set to true if the
 policy is such that up\-to\-date CRLs must be present for every CA.
+.TP
+\fBpkinit_require_freshness\fP
+Specifies whether to require clients to include a freshness token
+in PKINIT requests.  The default value is false.  (New in release
+1.17.)
 .UNINDENT
 .SH ENCRYPTION TYPES
 .sp
@@ -1194,6 +1233,6 @@ krb5.conf(5), krb5kdc(8), kadm5.acl(5)
 .SH AUTHOR
 MIT
 .SH COPYRIGHT
-1985-2018, MIT
+1985-2019, MIT
 .\" Generated by docutils manpage writer.
 .

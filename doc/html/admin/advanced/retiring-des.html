@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -182,11 +182,11 @@ existing tickets will still function until their scheduled expiry
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The new <code class="docutils literal"><span class="pre">krbtgt&#64;REALM</span></code> key should be propagated to slave KDCs
+<p class="last">The new <code class="docutils literal"><span class="pre">krbtgt&#64;REALM</span></code> key should be propagated to replica KDCs
 immediately so that TGTs issued by the master KDC can be used to
-issue service tickets on slave KDCs.  Slave KDCs will refuse requests
-using the new TGT kvno until the new krbtgt entry has been propagated
-to them.</p>
+issue service tickets on replica KDCs.  Replica KDCs will refuse
+requests using the new TGT kvno until the new krbtgt entry has
+been propagated to them.</p>
 </div>
 <p>It is necessary to explicitly specify the enctypes for the new database
 entry, since <strong>supported_enctypes</strong> has not been changed.  Leaving
@@ -352,8 +352,8 @@ this flag on a service principal is not always advisable; see the entry in
 <p class="first admonition-title">Note</p>
 <p class="last">As before, the KDC process must be restarted for this change to take
 effect.  It is best practice to update kdc.conf on all KDCs, not just the
-master, to avoid unpleasant surprises should the master fail and a slave
-need to be promoted.</p>
+master, to avoid unpleasant surprises should the master fail and a
+replica need to be promoted.</p>
 </div>
 <p>It is now appropriate to remove the legacy single-DES key from the
 <code class="docutils literal"><span class="pre">krbtgt/REALM</span></code> entry:</p>
@@ -474,6 +474,7 @@ converted to the new master key.</p>
 <li class="toctree-l2"><a class="reference internal" href="../conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../appl_servers.html">Application servers</a></li>
@@ -481,6 +482,8 @@ converted to the new master key.</p>
 <li class="toctree-l2"><a class="reference internal" href="../backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../https.html">HTTPS proxy configuration</a></li>
@@ -524,8 +527,8 @@ converted to the new master key.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from k5test import *
 
 realm = K5Realm(create_host=False, get_creds=False)
@@ -19,6 +18,14 @@ pservice2 = 'p:' + service2
 
 # Get forwardable creds for service1 in the default cache.
 realm.kinit(service1, None, ['-f', '-k'])
+
+# Try S4U2Self for user with a restricted password.
+realm.run([kadminl, 'modprinc', '+needchange', realm.user_princ])
+realm.run(['./t_s4u', 'e:user', '-'])
+realm.run([kadminl, 'modprinc', '-needchange',
+          '-pwexpire', '1/1/2000', realm.user_princ])
+realm.run(['./t_s4u', 'e:user', '-'])
+realm.run([kadminl, 'modprinc', '-pwexpire', 'never', realm.user_princ])
 
 # Try krb5 -> S4U2Proxy with forwardable user creds.  This should fail
 # at the S4U2Proxy step since the DB2 back end currently has no
@@ -140,21 +147,71 @@ if 'auth1: user@' not in out or 'auth2: user@' not in out:
 
 realm.stop()
 
-# Exercise cross-realm S4U2Self.  The query in the foreign realm will
-# fail, but we can check that the right server principal was used.
+mark('S4U2Self with various enctypes')
+for realm in multipass_realms(create_host=False, get_creds=False):
+    service1 = 'service/1@%s' % realm.realm
+    realm.addprinc(service1)
+    realm.extract_keytab(service1, realm.keytab)
+    realm.kinit(service1, None, ['-k'])
+    realm.run(['./t_s4u', 'e:user', '-'])
+
+# Test cross realm S4U2Self using server referrals.
+mark('cross-realm S4U2Self')
+testprincs = {'krbtgt/SREALM': {'keys': 'aes128-cts'},
+              'krbtgt/UREALM': {'keys': 'aes128-cts'},
+              'user': {'keys': 'aes128-cts', 'flags': '+preauth'}}
+kdcconf1 = {'realms': {'$realm': {'database_module': 'test'}},
+            'dbmodules': {'test': {'db_library': 'test',
+                                   'princs': testprincs,
+                                   'alias': {'enterprise@abc': '@UREALM'}}}}
+kdcconf2 = {'realms': {'$realm': {'database_module': 'test'}},
+            'dbmodules': {'test': {'db_library': 'test',
+                                   'princs': testprincs,
+                                   'alias': {'user@SREALM': '@SREALM',
+                                             'enterprise@abc': 'user'}}}}
+r1, r2 = cross_realms(2, xtgts=(),
+                      args=({'realm': 'SREALM', 'kdc_conf': kdcconf1},
+                            {'realm': 'UREALM', 'kdc_conf': kdcconf2}),
+                      create_kdb=False)
+
+r1.start_kdc()
+r2.start_kdc()
+r1.extract_keytab(r1.user_princ, r1.keytab)
+r1.kinit(r1.user_princ, None, ['-k', '-t', r1.keytab])
+
 # Include a regression test for #8741 by unsetting the default realm.
-r1, r2 = cross_realms(2, create_user=False)
-r1.run([kinit, '-k', r1.host_princ])
 remove_default = {'libdefaults': {'default_realm': None}}
 no_default = r1.special_env('no_default', False, krb5_conf=remove_default)
-r1.run(['./t_s4u', 'p:' + r2.host_princ], env=no_default, expected_code=1,
-       expected_msg='Server not found in Kerberos database')
+msgs = ('Getting credentials user@UREALM -> user@SREALM',
+        '/Matching credential not found',
+        'Getting credentials user@SREALM -> krbtgt/UREALM@SREALM',
+        'Received creds for desired service krbtgt/UREALM@SREALM',
+        'via TGT krbtgt/UREALM@SREALM after requesting user\\@SREALM@UREALM',
+        'krbtgt/SREALM@UREALM differs from requested user\\@SREALM@UREALM',
+        'via TGT krbtgt/SREALM@UREALM after requesting user@SREALM',
+        'TGS reply is for user@UREALM -> user@SREALM')
+r1.run(['./t_s4u', 'p:' + r2.user_princ, '-', r1.keytab], env=no_default,
+       expected_trace=msgs)
+
+# Test realm identification of enterprise principal names ([MS-S4U]
+# 3.1.5.1.1.1).  Attach a bogus realm to the enterprise name to verify
+# that we start at the server realm.
+mark('cross-realm S4U2Self with enterprise name')
+msgs = ('Getting initial credentials for enterprise\\@abc@SREALM',
+        'Processing preauth types: PA-FOR-X509-USER (130)',
+        'Sending unauthenticated request',
+        '/Realm not local to KDC',
+        'Following referral to realm UREALM',
+        'Processing preauth types: PA-FOR-X509-USER (130)',
+        'Sending unauthenticated request',
+        '/Additional pre-authentication required',
+        '/Generic preauthentication failure',
+        'Getting credentials enterprise\\@abc@UREALM -> user@SREALM',
+        'TGS reply is for enterprise\@abc@UREALM -> user@SREALM')
+r1.run(['./t_s4u', 'e:enterprise@abc@NOREALM', '-', r1.keytab],
+       expected_trace=msgs)
+
 r1.stop()
 r2.stop()
-with open(os.path.join(r2.testdir, 'kdc.log')) as f:
-    kdclog = f.read()
-exp_princ = r1.host_princ.replace('/', '\\/').replace('@', '\\@')
-if ('for %s@%s, Server not found' % (exp_princ, r2.realm)) not in kdclog:
-    fail('cross-realm s4u2self (kdc log)')
 
 success('S4U test cases')

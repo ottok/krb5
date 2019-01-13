@@ -113,7 +113,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
     krb5_enc_tkt_part enc_tkt_reply;
     int newtransited = 0;
     krb5_error_code retval = 0;
-    krb5_keyblock encrypting_key;
+    krb5_keyblock server_keyblock, *encrypting_key;
     krb5_timestamp kdc_time, authtime = 0;
     krb5_keyblock session_key;
     krb5_keyblock *reply_key = NULL;
@@ -143,7 +143,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
     memset(&reply_encpart, 0, sizeof(reply_encpart));
     memset(&ticket_reply, 0, sizeof(ticket_reply));
     memset(&enc_tkt_reply, 0, sizeof(enc_tkt_reply));
-    memset(&encrypting_key, 0, sizeof(encrypting_key));
+    memset(&server_keyblock, 0, sizeof(server_keyblock));
     session_key.contents = NULL;
 
     /* Save pointer to client-requested service principal, in case of
@@ -269,6 +269,8 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
     errcode = kdc_process_s4u2self_req(kdc_active_realm,
                                        request,
                                        header_enc_tkt->client,
+                                       header_ticket->server,
+                                       is_referral,
                                        server,
                                        subkey,
                                        header_enc_tkt->session,
@@ -288,16 +290,8 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
 
     if (errcode)
         goto cleanup;
-    if (s4u_x509_user != NULL) {
+    if (s4u_x509_user != NULL)
         setflag(c_flags, KRB5_KDB_FLAG_PROTOCOL_TRANSITION);
-        if (is_referral) {
-            /* The requesting server appears to no longer exist, and we found
-             * a referral instead.  Treat this as a server lookup failure. */
-            errcode = KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN;
-            status = "LOOKING_UP_SERVER";
-            goto cleanup;
-        }
-    }
 
     /* Deal with user-to-user and constrained delegation */
     errcode = decrypt_2ndtkt(kdc_active_realm, request, c_flags,
@@ -524,7 +518,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
     }
     if (isflagset(request->kdc_options, KDC_OPT_ENC_TKT_IN_SKEY)) {
         krb5_enc_tkt_part *t2enc = request->second_ticket[st_idx]->enc_part2;
-        encrypting_key = *(t2enc->session);
+        encrypting_key = t2enc->session;
     } else {
         /*
          * Find the server key
@@ -543,11 +537,12 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
          * (it may be encrypted in the database)
          */
         if ((errcode = krb5_dbe_decrypt_key_data(kdc_context, NULL,
-                                                 server_key, &encrypting_key,
+                                                 server_key, &server_keyblock,
                                                  NULL))) {
             status = "DECRYPT_SERVER_KEY";
             goto cleanup;
         }
+        encrypting_key = &server_keyblock;
     }
 
     if (isflagset(c_flags, KRB5_KDB_FLAG_CONSTRAINED_DELEGATION)) {
@@ -658,7 +653,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
                               header_server, local_tgt,
                               subkey != NULL ? subkey :
                               header_ticket->enc_part2->session,
-                              &encrypting_key, /* U2U or server key */
+                              encrypting_key, /* U2U or server key */
                               header_key,
                               pkt,
                               request,
@@ -706,7 +701,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
         ticket_kvno = server_key->key_data_kvno;
     }
 
-    errcode = krb5_encrypt_tkt_part(kdc_context, &encrypting_key,
+    errcode = krb5_encrypt_tkt_part(kdc_context, encrypting_key,
                                     &ticket_reply);
     if (errcode)
         goto cleanup;
@@ -797,8 +792,7 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
 cleanup:
     if (status == NULL)
         status = "UNKNOWN_REASON";
-    if (!isflagset(request->kdc_options, KDC_OPT_ENC_TKT_IN_SKEY))
-        krb5_free_keyblock_contents(kdc_context, &encrypting_key);
+    krb5_free_keyblock_contents(kdc_context, &server_keyblock);
     if (reply_key)
         krb5_free_keyblock(kdc_context, reply_key);
     if (errcode)

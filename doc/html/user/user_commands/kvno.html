@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -73,6 +73,7 @@
 [<strong>-P</strong>]
 [<strong>-S</strong> <em>sname</em>]
 [<strong>-U</strong> <em>for_user</em>]
+[<strong>–u2u</strong> <em>ccache</em>]
 <em>service1 service2</em> …</p>
 </div>
 <div class="section" id="description">
@@ -112,6 +113,11 @@ rules for constructing service principals.</dd>
 acquire a ticket on behalf of <em>for_user</em>.  If constrained
 delegation is not requested, the service name must match the
 credentials cache client principal.</dd>
+<dt><strong>–u2u</strong> <em>ccache</em></dt>
+<dd>Requests a user-to-user ticket.  <em>ccache</em> must contain a local
+krbtgt ticket for the server principal.  The reported version
+number will typically be 0, as the resulting ticket is not
+encrypted in the server’s long-term key.</dd>
 </dl>
 </div>
 <div class="section" id="environment">
@@ -200,8 +206,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

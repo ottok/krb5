@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -145,14 +145,14 @@
 </tbody>
 </table>
 </div>
-<div class="section" id="slave-kdc-propagation-defaults">
-<h2>Slave KDC propagation defaults<a class="headerlink" href="#slave-kdc-propagation-defaults" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="replica-kdc-propagation-defaults">
+<h2>Replica KDC propagation defaults<a class="headerlink" href="#replica-kdc-propagation-defaults" title="Permalink to this headline">¶</a></h2>
 <p>This table shows defaults used by the <a class="reference internal" href="admin/admin_commands/kprop.html#kprop-8"><span class="std std-ref">kprop</span></a> and
 <a class="reference internal" href="admin/admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> programs.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="39%" />
-<col width="45%" />
+<col width="38%" />
+<col width="46%" />
 <col width="16%" />
 </colgroup>
 <thead valign="bottom">
@@ -163,7 +163,7 @@
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>kprop database dump file</td>
-<td><a class="reference internal" href="#paths"><span class="std std-ref">LOCALSTATEDIR</span></a><code class="docutils literal"><span class="pre">/krb5kdc</span></code><code class="docutils literal"><span class="pre">/slave_datatrans</span></code></td>
+<td><a class="reference internal" href="#paths"><span class="std std-ref">LOCALSTATEDIR</span></a><code class="docutils literal"><span class="pre">/krb5kdc</span></code><code class="docutils literal"><span class="pre">/replica_datatrans</span></code></td>
 <td>&#160;</td>
 </tr>
 <tr class="row-odd"><td>kpropd temporary dump file</td>
@@ -270,7 +270,7 @@ according to the operating system’s layout of <code class="docutils literal"><
     <ul>
 <li><a class="reference internal" href="#">MIT Kerberos defaults</a><ul>
 <li><a class="reference internal" href="#general-defaults">General defaults</a></li>
-<li><a class="reference internal" href="#slave-kdc-propagation-defaults">Slave KDC propagation defaults</a></li>
+<li><a class="reference internal" href="#replica-kdc-propagation-defaults">Replica KDC propagation defaults</a></li>
 <li><a class="reference internal" href="#default-paths-for-unix-like-systems">Default paths for Unix-like systems</a></li>
 </ul>
 </li>
@@ -285,6 +285,7 @@ according to the operating system’s layout of <code class="docutils literal"><
 <li class="toctree-l2"><a class="reference internal" href="admin/conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="admin/dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/appl_servers.html">Application servers</a></li>
@@ -292,6 +293,8 @@ according to the operating system’s layout of <code class="docutils literal"><
 <li class="toctree-l2"><a class="reference internal" href="admin/backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="admin/spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="admin/dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="admin/https.html">HTTPS proxy configuration</a></li>
@@ -331,8 +334,8 @@ according to the operating system’s layout of <code class="docutils literal"><
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

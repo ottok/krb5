@@ -801,6 +801,24 @@ read_allowed_preauth_type(krb5_context context, krb5_init_creds_context ctx)
     free(tmp);
 }
 
+/* Return true if encrypted timestamp is disabled for realm. */
+static krb5_boolean
+encts_disabled(profile_t profile, const krb5_data *realm)
+{
+    krb5_error_code ret;
+    char *realmstr;
+    int bval;
+
+    realmstr = k5memdup0(realm->data, realm->length, &ret);
+    if (realmstr == NULL)
+        return FALSE;
+    ret = profile_get_boolean(profile, KRB5_CONF_REALMS, realmstr,
+                              KRB5_CONF_DISABLE_ENCRYPTED_TIMESTAMP, FALSE,
+                              &bval);
+    free(realmstr);
+    return (ret == 0) ? bval : FALSE;
+}
+
 /**
  * Throw away any pre-authentication realm state and begin with a
  * unauthenticated or optimistically authenticated request.  If fast_upgrade is
@@ -841,6 +859,11 @@ restart_init_creds_loop(krb5_context context, krb5_init_creds_context ctx,
         if (code)
             goto cleanup;
     }
+
+    /* Never set encts_disabled back to false, so it can't be circumvented with
+     * client realm referrals. */
+    if (encts_disabled(context->profile, &ctx->request->client->realm))
+        ctx->encts_disabled = TRUE;
 
     krb5_free_principal(context, ctx->request->server);
     ctx->request->server = NULL;
@@ -895,7 +918,7 @@ krb5_init_creds_init(krb5_context context,
     ctx->request = k5alloc(sizeof(krb5_kdc_req), &code);
     if (code != 0)
         goto cleanup;
-    ctx->enc_pa_rep_permitted = TRUE;
+    ctx->info_pa_permitted = TRUE;
     code = krb5_copy_principal(context, client, &ctx->request->client);
     if (code != 0)
         goto cleanup;
@@ -1331,9 +1354,7 @@ init_creds_step_request(krb5_context context,
         krb5_free_pa_data(context, ctx->optimistic_padata);
         ctx->optimistic_padata = NULL;
         if (code) {
-            /* Make an unauthenticated request, and possibly try again using
-             * the same mechanisms as we tried optimistically. */
-            k5_reset_preauth_types_tried(ctx);
+            /* Make an unauthenticated request. */
             krb5_clear_error_message(context);
             code = 0;
         }
@@ -1360,6 +1381,9 @@ init_creds_step_request(krb5_context context,
     }
     /* Don't continue after a keyboard interrupt. */
     if (code == KRB5_LIBOS_PWDINTR)
+        goto cleanup;
+    /* Don't continue if fallback is disabled. */
+    if (code && ctx->fallback_disabled)
         goto cleanup;
     if (code) {
         /* See if we can try a different preauth mech before giving up. */
@@ -1389,7 +1413,11 @@ init_creds_step_request(krb5_context context,
         krb5_free_data(context, ctx->encoded_previous_request);
         ctx->encoded_previous_request = NULL;
     }
-    if (ctx->enc_pa_rep_permitted) {
+    if (ctx->info_pa_permitted) {
+        code = add_padata(&ctx->request->padata, KRB5_PADATA_AS_FRESHNESS,
+                          NULL, 0);
+        if (code)
+            goto cleanup;
         code = add_padata(&ctx->request->padata, KRB5_ENCPADATA_REQ_ENC_PA_REP,
                           NULL, 0);
     }
@@ -1530,7 +1558,7 @@ init_creds_step_reply(krb5_context context,
                    ctx->selected_preauth_type == KRB5_PADATA_NONE) {
             /* The KDC didn't like our informational padata (probably a pre-1.7
              * MIT krb5 KDC).  Retry without it. */
-            ctx->enc_pa_rep_permitted = FALSE;
+            ctx->info_pa_permitted = FALSE;
             ctx->restarted = TRUE;
             code = restart_init_creds_loop(context, ctx, FALSE);
         } else if (reply_code == KDC_ERR_PREAUTH_EXPIRED) {
@@ -1545,16 +1573,10 @@ init_creds_step_reply(krb5_context context,
         } else if (reply_code == KDC_ERR_PREAUTH_FAILED && retry) {
             note_req_timestamp(context, ctx, ctx->err_reply->stime,
                                ctx->err_reply->susec);
-            if (ctx->method_padata == NULL) {
-                /* Optimistic preauth failed on the KDC.  Allow all mechanisms
-                 * to be tried again using method data. */
-                k5_reset_preauth_types_tried(ctx);
-            } else {
-                /* Don't try again with the mechanism that failed. */
-                code = k5_preauth_note_failed(ctx, ctx->selected_preauth_type);
-                if (code)
-                    goto cleanup;
-            }
+            /* Don't try again with the mechanism that failed. */
+            code = k5_preauth_note_failed(ctx, ctx->selected_preauth_type);
+            if (code)
+                goto cleanup;
             ctx->selected_preauth_type = KRB5_PADATA_NONE;
             /* Accept or update method data if the KDC sent it. */
             if (ctx->err_padata != NULL)
@@ -1574,7 +1596,7 @@ init_creds_step_reply(krb5_context context,
                 goto cleanup;
             /* Reset per-realm negotiation state. */
             ctx->restarted = FALSE;
-            ctx->enc_pa_rep_permitted = TRUE;
+            ctx->info_pa_permitted = TRUE;
             code = restart_init_creds_loop(context, ctx, FALSE);
         } else {
             if (retry && ctx->selected_preauth_type != KRB5_PADATA_NONE) {

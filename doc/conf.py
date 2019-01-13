@@ -45,12 +45,12 @@ else:
 
 # General information about the project.
 project = u'MIT Kerberos'
-copyright = u'1985-2018, MIT'
+copyright = u'1985-2019, MIT'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-execfile("version.py")
+exec(open("version.py").read())
 # The short X.Y version.
 r_list = [r_major, r_minor]
 if r_patch:
@@ -238,7 +238,7 @@ if 'mansubs' in tags:
     ckeytab = '``@CKTNAME@``'
 elif 'pathsubs' in tags:
     # Read configured paths from a file produced by the build system.
-    execfile('paths.py')
+    exec(open("paths.py").read())
 else:
     bindir = ':ref:`BINDIR <paths>`'
     sbindir = ':ref:`SBINDIR <paths>`'
@@ -295,9 +295,9 @@ man_pages = [
     ('user/user_config/kerberos', 'kerberos', u'Overview of using Kerberos', [u'MIT'], 7),
     ('admin/admin_commands/krb5kdc', 'krb5kdc', u'Kerberos V5 KDC', [u'MIT'], 8),
     ('admin/admin_commands/kadmin_local', 'kadmin', u'Kerberos V5 database administration program', [u'MIT'], 1),
-    ('admin/admin_commands/kprop', 'kprop', u'propagate a Kerberos V5 principal database to a slave server', [u'MIT'], 8),
+    ('admin/admin_commands/kprop', 'kprop', u'propagate a Kerberos V5 principal database to a replica server', [u'MIT'], 8),
     ('admin/admin_commands/kproplog', 'kproplog', u'display the contents of the Kerberos principal update log', [u'MIT'], 8),
-    ('admin/admin_commands/kpropd', 'kpropd', u'Kerberos V5 slave KDC update server', [u'MIT'], 8),
+    ('admin/admin_commands/kpropd', 'kpropd', u'Kerberos V5 replica KDC update server', [u'MIT'], 8),
     ('admin/admin_commands/kdb5_util', 'kdb5_util', u'Kerberos database maintenance utility', [u'MIT'], 8),
     ('admin/admin_commands/ktutil', 'ktutil', u'Kerberos keytab file maintenance utility', [u'MIT'], 1),
     ('admin/admin_commands/k5srvutil', 'k5srvutil', u'host key table (keytab) manipulation utility', [u'MIT'], 1),

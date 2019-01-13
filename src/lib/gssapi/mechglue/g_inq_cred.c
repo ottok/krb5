@@ -200,11 +200,6 @@ gss_inquire_cred_by_mech(minor_status, cred_handle, mech_type, name,
     if (cred_handle != GSS_C_NO_CREDENTIAL && mech_cred == GSS_C_NO_CREDENTIAL)
 	return (GSS_S_NO_CRED);
 
-#if 0
-    if (mech_cred == NULL)
-	return (GSS_S_DEFECTIVE_CREDENTIAL);
-#endif
-
     public_mech = gssint_get_public_oid(selected_mech);
     status = mech->gss_inquire_cred_by_mech(minor_status,
 					    mech_cred, public_mech,

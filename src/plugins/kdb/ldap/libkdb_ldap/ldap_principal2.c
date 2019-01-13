@@ -628,7 +628,7 @@ update_ldap_mod_auth_ind(krb5_context context, krb5_db_entry *entry,
     int i = 0;
     krb5_error_code ret;
     char *auth_ind = NULL;
-    char *strval[10] = {};
+    char *strval[10] = { 0 };
     char *ai, *ai_save = NULL;
     int sv_num = sizeof(strval) / sizeof(*strval);
 
@@ -1748,13 +1748,15 @@ getstringtime(krb5_timestamp epochtime)
     char                *strtime=NULL;
     time_t              posixtime = ts2tt(epochtime);
 
-    strtime = calloc (50, 1);
-    if (strtime == NULL)
-        return NULL;
-
     if (gmtime_r(&posixtime, &tme) == NULL)
         return NULL;
 
-    strftime(strtime, 50, "%Y%m%d%H%M%SZ", &tme);
+    strtime = calloc(50, 1);
+    if (strtime == NULL)
+        return NULL;
+    if (strftime(strtime, 50, "%Y%m%d%H%M%SZ", &tme) == 0) {
+        free(strtime);
+        return NULL;
+    }
     return strtime;
 }

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -275,9 +275,9 @@ specifies the encryption type of the new master key; see
 <a class="reference internal" href="../conf_files/kdc_conf.html#encryption-types"><span class="std std-ref">Encryption types</span></a> in <a class="reference internal" href="../conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> for a list of possible
 values.  The <strong>-s</strong> option stashes the new master key in the stash
 file, which will be created if it doesn’t already exist.</p>
-<p>After a new master key is added, it should be propagated to slave
+<p>After a new master key is added, it should be propagated to replica
 servers via a manual or periodic invocation of <a class="reference internal" href="kprop.html#kprop-8"><span class="std std-ref">kprop</span></a>.  Then,
-the stash files on the slave servers should be updated with the
+the stash files on the replica servers should be updated with the
 kdb5_util <strong>stash</strong> command.  Once those steps are complete, the key
 is ready to be marked active with the kdb5_util <strong>use_mkey</strong> command.</p>
 </div>
@@ -541,6 +541,7 @@ variables.</p>
 <li class="toctree-l2"><a class="reference internal" href="../conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../appl_servers.html">Application servers</a></li>
@@ -548,6 +549,8 @@ variables.</p>
 <li class="toctree-l2"><a class="reference internal" href="../backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../https.html">HTTPS proxy configuration</a></li>
@@ -600,8 +603,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

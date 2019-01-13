@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +27,7 @@
     <link rel="search" title="Search" href="search.html" />
     <link rel="copyright" title="Copyright" href="copyright.html" />
     <link rel="next" title="MIT Kerberos License information" href="mitK5license.html" />
-    <link rel="prev" title="KDC cookie format" href="formats/cookie.html" /> 
+    <link rel="prev" title="PKINIT freshness tokens" href="formats/freshness_token.html" /> 
   </head>
   <body>
     <div class="header-wrapper">
@@ -40,7 +40,7 @@
                 
         <a href="index.html" title="Full Table of Contents"
             accesskey="C">Contents</a> |
-        <a href="formats/cookie.html" title="KDC cookie format"
+        <a href="formats/freshness_token.html" title="PKINIT freshness tokens"
             accesskey="P">previous</a> |
         <a href="mitK5license.html" title="MIT Kerberos License information"
             accesskey="N">next</a> |
@@ -72,8 +72,8 @@
 <dl class="docutils">
 <dt>Releases:</dt>
 <dd><ul class="first last simple">
-<li>Latest stable: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.16/">https://web.mit.edu/kerberos/krb5-1.16/</a></li>
-<li>Supported: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.15/">https://web.mit.edu/kerberos/krb5-1.15/</a></li>
+<li>Latest stable: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.17/">https://web.mit.edu/kerberos/krb5-1.17/</a></li>
+<li>Supported: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.16/">https://web.mit.edu/kerberos/krb5-1.16/</a></li>
 <li>Release cycle: 9 – 12 months</li>
 </ul>
 </dd>
@@ -92,7 +92,7 @@
 </ul>
 </dd>
 </dl>
-<p>Database backends: LDAP, DB2</p>
+<p>Database backends: LDAP, DB2, LMDB</p>
 <p>krb4 support: Kerberos 5 release &lt; 1.8</p>
 <p>DES support: configurable (See <a class="reference internal" href="admin/advanced/retiring-des.html#retiring-des"><span class="std std-ref">Retiring DES</span></a>)</p>
 </div>
@@ -204,8 +204,8 @@ permitted by KDC policy.</li>
 the <a class="reference external" href="https://msdn.microsoft.com/en-us/library/hh553774.aspx">MS-KKDCP</a>
 protocol.</li>
 <li>Add support for <a class="reference external" href="https://k5wiki.kerberos.org/wiki/Projects/Hierarchical_iprop">hierarchical incremental propagation</a>,
-where slaves can act as intermediates between an upstream master
-and other downstream slaves.</li>
+where replicas can act as intermediates between an upstream master
+and other downstream replicas.</li>
 <li>Add support for configuring GSS mechanisms using
 <code class="docutils literal"><span class="pre">/etc/gss/mech.d/*.conf</span></code> files in addition to
 <code class="docutils literal"><span class="pre">/etc/gss/mech</span></code>.</li>
@@ -312,9 +312,9 @@ platforms with support for open file description locks.</li>
 </ul>
 </li>
 <li>Performance:<ul>
-<li>On slave KDCs, poll the master KDC immediately after processing a
-full resync, and do not require two full resyncs after the master
-KDC’s log file is reset.</li>
+<li>On replica KDCs, poll the master KDC immediately after processing
+a full resync, and do not require two full resyncs after the
+master KDC’s log file is reset.</li>
 </ul>
 </li>
 </ul>
@@ -434,6 +434,69 @@ options.</li>
 </ul>
 </li>
 </ul>
+<p>Release 1.17</p>
+<ul class="simple">
+<li>Administrator experience:<ul>
+<li>A new Kerberos database module using the Lightning Memory-Mapped
+Database library (LMDB) has been added.  The LMDB KDB module
+should be more performant and more robust than the DB2 module, and
+may become the default module for new databases in a future
+release.</li>
+<li>“kdb5_util dump” will no longer dump policy entries when specific
+principal names are requested.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>The new krb5_get_etype_info() API can be used to retrieve enctype,
+salt, and string-to-key parameters from the KDC for a client
+principal.</li>
+<li>The new GSS_KRB5_NT_ENTERPRISE_NAME name type allows enterprise
+principal names to be used with GSS-API functions.</li>
+<li>KDC and kadmind modules which call com_err() will now write to the
+log file in a format more consistent with other log messages.</li>
+<li>Programs which use large numbers of memory credential caches
+should perform better.</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>The SPAKE pre-authentication mechanism is now supported.  This
+mechanism protects against password dictionary attacks without
+requiring any additional infrastructure such as certificates.
+SPAKE is enabled by default on clients, but must be manually
+enabled on the KDC for this release.</li>
+<li>PKINIT freshness tokens are now supported.  Freshness tokens can
+protect against scenarios where an attacker uses temporary access
+to a smart card to generate authentication requests for the
+future.</li>
+<li>Password change operations now prefer TCP over UDP, to avoid
+spurious error messages about replays when a response packet is
+dropped.</li>
+<li>The KDC now supports cross-realm S4U2Self requests when used with
+a third-party KDB module such as Samba’s.  The client code for
+cross-realm S4U2Self requests is also now more robust.</li>
+</ul>
+</li>
+<li>User experience:<ul>
+<li>The new ktutil addent -f flag can be used to fetch salt
+information from the KDC for password-based keys.</li>
+<li>The new kdestroy -p option can be used to destroy a credential
+cache within a collection by client principal name.</li>
+<li>The Kerberos man page has been restored, and documents the
+environment variables that affect programs using the Kerberos
+library.</li>
+</ul>
+</li>
+<li>Code quality:<ul>
+<li>Python test scripts now use Python 3.</li>
+<li>Python test scripts now display markers in verbose output, making
+it easier to find where a failure occurred within the scripts.</li>
+<li>The Windows build system has been simplified and updated to work
+with more recent versions of Visual Studio.  A large volume of
+unused Windows-specific code has been removed.  Visual Studio 2013
+or later is now required.</li>
+</ul>
+</li>
+</ul>
 <p><cite>Pre-authentication mechanisms</cite></p>
 <ul class="simple">
 <li>PW-SALT                                         <span class="target" id="index-11"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc4120.html#section-5.2.7.3"><strong>RFC 4120#section-5.2.7.3</strong></a></li>
@@ -445,6 +508,7 @@ options.</li>
 <li>FX-COOKIE                                       <span class="target" id="index-16"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc6113.html#section-5.2"><strong>RFC 6113#section-5.2</strong></a></li>
 <li>S4U-X509-USER                (release 1.8)      <a class="reference external" href="https://msdn.microsoft.com/en-us/library/cc246091">https://msdn.microsoft.com/en-us/library/cc246091</a></li>
 <li>OTP                          (release 1.12)     <a class="reference internal" href="admin/otp.html#otp-preauth"><span class="std std-ref">OTP Preauthentication</span></a></li>
+<li>SPAKE                        (release 1.17)     <a class="reference internal" href="admin/spake.html#spake"><span class="std std-ref">SPAKE Preauthentication</span></a></li>
 </ul>
 <p><cite>PRNG</cite></p>
 <ul class="simple">
@@ -504,14 +568,14 @@ options.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 
         <a href="index.html" title="Full Table of Contents"
             >Contents</a> |
-        <a href="formats/cookie.html" title="KDC cookie format"
+        <a href="formats/freshness_token.html" title="PKINIT freshness tokens"
             >previous</a> |
         <a href="mitK5license.html" title="MIT Kerberos License information"
             >next</a> |

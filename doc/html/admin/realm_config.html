@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -71,10 +71,10 @@ need more than one).</li>
 <li>How you will assign your hostnames to Kerberos realms.</li>
 <li>Which ports your KDC and and kadmind services will use, if they will
 not be using the default ports.</li>
-<li>How many slave KDCs you need and where they should be located.</li>
-<li>The hostnames of your master and slave KDCs.</li>
+<li>How many replica KDCs you need and where they should be located.</li>
+<li>The hostnames of your master and replica KDCs.</li>
 <li>How frequently you will propagate the database from the master KDC
-to the slave KDCs.</li>
+to the replica KDCs.</li>
 </ul>
 <div class="section" id="realm-name">
 <h2>Realm name<a class="headerlink" href="#realm-name" title="Permalink to this headline">¶</a></h2>
@@ -142,25 +142,25 @@ ports, as long as they are specified in each host’s
 port numbers used by the Kerberos V5 programs, refer to the
 <a class="reference internal" href="appl_servers.html#conf-firewall"><span class="std std-ref">Configuring your firewall to work with Kerberos V5</span></a>.</p>
 </div>
-<div class="section" id="slave-kdcs">
-<h2>Slave KDCs<a class="headerlink" href="#slave-kdcs" title="Permalink to this headline">¶</a></h2>
-<p>Slave KDCs provide an additional source of Kerberos ticket-granting
+<div class="section" id="replica-kdcs">
+<h2>Replica KDCs<a class="headerlink" href="#replica-kdcs" title="Permalink to this headline">¶</a></h2>
+<p>Replica KDCs provide an additional source of Kerberos ticket-granting
 services in the event of inaccessibility of the master KDC.  The
-number of slave KDCs you need and the decision of where to place them,
+number of replica KDCs you need and the decision of where to place them,
 both physically and logically, depends on the specifics of your
 network.</p>
 <p>Kerberos authentication requires that each client be able to contact a
 KDC.  Therefore, you need to anticipate any likely reason a KDC might
-be unavailable and have a slave KDC to take up the slack.</p>
+be unavailable and have a replica KDC to take up the slack.</p>
 <p>Some considerations include:</p>
 <ul class="simple">
-<li>Have at least one slave KDC as a backup, for when the master KDC is
-down, is being upgraded, or is otherwise unavailable.</li>
+<li>Have at least one replica KDC as a backup, for when the master KDC
+is down, is being upgraded, or is otherwise unavailable.</li>
 <li>If your network is split such that a network outage is likely to
 cause a network partition (some segment or segments of the network
-to become cut off or isolated from other segments), have a slave KDC
-accessible to each segment.</li>
-<li>If possible, have at least one slave KDC in a different building
+to become cut off or isolated from other segments), have a replica
+KDC accessible to each segment.</li>
+<li>If possible, have at least one replica KDC in a different building
 from the master, in case of power outages, fires, or other localized
 disasters.</li>
 </ul>
@@ -169,8 +169,8 @@ disasters.</li>
 <span id="kdc-hostnames"></span><h2>Hostnames for KDCs<a class="headerlink" href="#hostnames-for-kdcs" title="Permalink to this headline">¶</a></h2>
 <p>MIT recommends that your KDCs have a predefined set of CNAME records
 (DNS hostname aliases), such as <code class="docutils literal"><span class="pre">kerberos</span></code> for the master KDC and
-<code class="docutils literal"><span class="pre">kerberos-1</span></code>, <code class="docutils literal"><span class="pre">kerberos-2</span></code>, … for the slave KDCs.  This way, if
-you need to swap a machine, you only need to change a DNS entry,
+<code class="docutils literal"><span class="pre">kerberos-1</span></code>, <code class="docutils literal"><span class="pre">kerberos-2</span></code>, … for the replica KDCs.  This way,
+if you need to swap a machine, you only need to change a DNS entry,
 rather than having to change hostnames.</p>
 <p>As of MIT krb5 1.4, clients can locate a realm’s KDCs through DNS
 using SRV records (<span class="target" id="index-0"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc2782.html"><strong>RFC 2782</strong></a>), assuming the Kerberos realm name is
@@ -280,18 +280,18 @@ records are found.</p>
 <div class="section" id="database-propagation">
 <span id="db-prop"></span><h2>Database propagation<a class="headerlink" href="#database-propagation" title="Permalink to this headline">¶</a></h2>
 <p>The Kerberos database resides on the master KDC, and must be
-propagated regularly (usually by a cron job) to the slave KDCs.  In
+propagated regularly (usually by a cron job) to the replica KDCs.  In
 deciding how frequently the propagation should happen, you will need
 to balance the amount of time the propagation takes against the
 maximum reasonable amount of time a user should have to wait for a
 password change to take effect.</p>
 <p>If the propagation time is longer than this maximum reasonable time
 (e.g., you have a particularly large database, you have a lot of
-slaves, or you experience frequent network delays), you may wish to
+replicas, or you experience frequent network delays), you may wish to
 cut down on your propagation delay by performing the propagation in
 parallel.  To do this, have the master KDC propagate the database to
-one set of slaves, and then have each of these slaves propagate the
-database to additional slaves.</p>
+one set of replicas, and then have each of these replicas propagate
+the database to additional replicas.</p>
 <p>See also <a class="reference internal" href="database.html#incr-db-prop"><span class="std std-ref">Incremental database propagation</span></a></p>
 </div>
 </div>
@@ -308,7 +308,7 @@ database to additional slaves.</p>
 <li><a class="reference internal" href="#realm-name">Realm name</a></li>
 <li><a class="reference internal" href="#mapping-hostnames-onto-kerberos-realms">Mapping hostnames onto Kerberos realms</a></li>
 <li><a class="reference internal" href="#ports-for-the-kdc-and-admin-services">Ports for the KDC and admin services</a></li>
-<li><a class="reference internal" href="#slave-kdcs">Slave KDCs</a></li>
+<li><a class="reference internal" href="#replica-kdcs">Replica KDCs</a></li>
 <li><a class="reference internal" href="#hostnames-for-kdcs">Hostnames for KDCs</a></li>
 <li><a class="reference internal" href="#kdc-discovery">KDC Discovery</a></li>
 <li><a class="reference internal" href="#database-propagation">Database propagation</a></li>
@@ -325,6 +325,7 @@ database to additional slaves.</p>
 <li class="toctree-l2"><a class="reference internal" href="conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appl_servers.html">Application servers</a></li>
@@ -332,6 +333,8 @@ database to additional slaves.</p>
 <li class="toctree-l2"><a class="reference internal" href="backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="https.html">HTTPS proxy configuration</a></li>
@@ -371,8 +374,8 @@ database to additional slaves.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

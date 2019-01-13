@@ -933,10 +933,10 @@ typedef struct _kdb_vftabl {
      *
      * If db_args contains the value "temporary", the module should create an
      * exclusively locked side copy of the database suitable for loading in a
-     * propagation from master to slave.  This side copy will later be promoted
-     * with promote_db, allowing complete updates of the DB with no loss in
-     * read availability.  If the module cannot comply with this architecture,
-     * it should return an error.
+     * propagation from master to replica.  This side copy will later be
+     * promoted with promote_db, allowing complete updates of the DB with no
+     * loss in read availability.  If the module cannot comply with this
+     * architecture, it should return an error.
      */
     krb5_error_code (*create)(krb5_context kcontext, char *conf_section,
                               char **db_args);
@@ -1018,9 +1018,10 @@ typedef struct _kdb_vftabl {
      *     requested; also set by the admin interface.  Determines whether the
      *     module should return in-realm aliases.
      *
-     * A module can return in-realm aliases if KRB5_KDB_FLAG_ALIAS_OK is set.
-     * To return an in-realm alias, fill in a different value for
-     * entries->princ than the one requested.
+     * A module can return in-realm aliases if KRB5_KDB_FLAG_ALIAS_OK is set,
+     * or if search_for->type is KRB5_NT_ENTERPRISE_PRINCIPAL.  To return an
+     * in-realm alias, fill in a different value for entries->princ than the
+     * one requested.
      *
      * A module can return out-of-realm referrals if KRB5_KDB_FLAG_CANONICALIZE
      * is set.  For AS request clients (KRB5_KDB_FLAG_CLIENT_REFERRALS_ONLY is
@@ -1257,14 +1258,15 @@ typedef struct _kdb_vftabl {
      *
      *   flags: The flags used to look up the client principal.
      *
-     *   client_princ: For S4U2Proxy TGS requests, the client principal
-     *     requested by the service; for regular TGS requests, the
+     *   client_princ: For S4U2Self and S4U2Proxy TGS requests, the client
+     *     principal requested by the service; for regular TGS requests, the
      *     possibly-canonicalized client principal.
      *
      *   client: The DB entry of the client.  For S4U2Self, this will be the DB
      *     entry for the client principal requested by the service).
      *
-     *   server: The DB entry of the service principal.
+     *   server: The DB entry of the service principal, or of a cross-realm
+     *     krbtgt principal in case of referral.
      *
      *   krbtgt: For TGS requests, the DB entry of the server of the ticket in
      *     the PA-TGS-REQ padata; this is usually a local or cross-realm krbtgt

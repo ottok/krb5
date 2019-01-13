@@ -202,10 +202,10 @@ void
 free_padata_context(krb5_context context, void *padata_context);
 
 krb5_error_code
-add_pa_data_element (krb5_context context,
-                     krb5_pa_data *padata,
-                     krb5_pa_data ***out_padata,
-                     krb5_boolean copy);
+alloc_pa_data(krb5_preauthtype pa_type, size_t len, krb5_pa_data **out);
+
+krb5_error_code
+add_pa_data_element(krb5_pa_data ***list, krb5_pa_data *pa);
 
 /* kdc_preauth_ec.c */
 krb5_error_code
@@ -269,6 +269,8 @@ krb5_error_code
 kdc_process_s4u2self_req (kdc_realm_t *kdc_active_realm,
                           krb5_kdc_req *request,
                           krb5_const_principal client_princ,
+                          krb5_const_principal header_srv_princ,
+                          krb5_boolean issuing_referral,
                           const krb5_db_entry *server,
                           krb5_keyblock *tgs_subkey,
                           krb5_keyblock *tgs_session,
@@ -426,11 +428,13 @@ struct krb5_kdcpreauth_rock_st {
     krb5_kdc_req *request;
     krb5_data *inner_body;
     krb5_db_entry *client;
+    krb5_db_entry *local_tgt;
     krb5_key_data *client_key;
     krb5_keyblock *client_keyblock;
     struct kdc_request_state *rstate;
     verto_ctx *vctx;
     krb5_data ***auth_indicators;
+    krb5_boolean send_freshness_token;
 };
 
 #define isflagset(flagfield, flag) (flagfield & (flag))

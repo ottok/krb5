@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -26,7 +26,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="next" title="Account lockout" href="lockout.html" />
+    <link rel="next" title="Database types" href="dbtypes.html" />
     <link rel="prev" title="Realm configuration decisions" href="realm_config.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
             accesskey="C">Contents</a> |
         <a href="realm_config.html" title="Realm configuration decisions"
             accesskey="P">previous</a> |
-        <a href="lockout.html" title="Account lockout"
+        <a href="dbtypes.html" title="Database types"
             accesskey="N">next</a> |
         <a href="../genindex.html" title="General Index"
             accesskey="I">index</a> |
@@ -247,8 +247,9 @@ renewable tickets.  <strong>+allow_renewable</strong> clears this flag.</dd>
 proxiable tickets.  <strong>+allow_proxiable</strong> clears this flag.</dd>
 <dt>{-|+}<strong>allow_dup_skey</strong></dt>
 <dd><strong>-allow_dup_skey</strong> disables user-to-user authentication for this
-principal by prohibiting this principal from obtaining a session
-key for another user.  <strong>+allow_dup_skey</strong> clears this flag.</dd>
+principal by prohibiting others from obtaining a service ticket
+encrypted in this principal’s TGT session key.
+<strong>+allow_dup_skey</strong> clears this flag.</dd>
 <dt>{-|+}<strong>requires_preauth</strong></dt>
 <dd><strong>+requires_preauth</strong> requires this principal to preauthenticate
 before being allowed to kinit.  <strong>-requires_preauth</strong> clears this
@@ -271,7 +272,9 @@ authenticating to the service.  <strong>-ok_as_delegate</strong> clears this
 flag.</dd>
 <dt>{-|+}<strong>allow_svr</strong></dt>
 <dd><strong>-allow_svr</strong> prohibits the issuance of service tickets for this
-principal.  <strong>+allow_svr</strong> clears this flag.</dd>
+principal.  In release 1.17 and later, user-to-user service
+tickets are still allowed unless the <strong>-allow_dup_skey</strong> flag is
+also set.  <strong>+allow_svr</strong> clears this flag.</dd>
 <dt>{-|+}<strong>allow_tgs_req</strong></dt>
 <dd><strong>-allow_tgs_req</strong> specifies that a Ticket-Granting Service (TGS)
 request for a service ticket for this principal is not permitted.
@@ -1071,13 +1074,13 @@ when prompted.  If this is the first time you are changing the
 master key, the new key will have version 2.  The new master key
 will not be used until you make it active.</p>
 </li>
-<li><p class="first">Propagate the database to all slave KDCs, either manually or by
+<li><p class="first">Propagate the database to all replica KDCs, either manually or by
 waiting until the next scheduled propagation.  If you do not have
-any slave KDCs, you can skip this and the next step.</p>
+any replica KDCs, you can skip this and the next step.</p>
 </li>
-<li><p class="first">On each slave KDC, run <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">list_mkeys</span></code> to verify that the
-new master key is present, and then <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">stash</span></code> to write
-the new master key to the slave KDC’s stash file.</p>
+<li><p class="first">On each replica KDC, run <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">list_mkeys</span></code> to verify that
+the new master key is present, and then <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">stash</span></code> to
+write the new master key to the replica KDC’s stash file.</p>
 </li>
 <li><p class="first">On the master KDC, run <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">use_mkey</span> <span class="pre">2</span></code> to begin using the
 new master key.  Replace <code class="docutils literal"><span class="pre">2</span></code> with the version of the new master
@@ -1090,11 +1093,15 @@ restarted for this change to take full effect.</p>
 command will iterate over the database and re-encrypt all keys in
 the new master key.  If the database is large and uses DB2, the
 master KDC will become unavailable while this command runs, but
-clients should fail over to slave KDCs (if any are present) during
-this time period.  In release 1.13 and later, you can instead run
-<code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">-x</span> <span class="pre">unlockiter</span> <span class="pre">update_princ_encryption</span></code> to use unlocked
-iteration; this variant will take longer, but will keep the
-database available to the KDC and kadmind while it runs.</p>
+clients should fail over to replica KDCs (if any are present)
+during this time period.  In release 1.13 and later, you can
+instead run <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">-x</span> <span class="pre">unlockiter</span> <span class="pre">update_princ_encryption</span></code> to
+use unlocked iteration; this variant will take longer, but will
+keep the database available to the KDC and kadmind while it runs.</p>
+</li>
+<li><p class="first">Wait until the above changes have propagated to all replica KDCs
+and until all running KDC and kadmind processes have serviced
+requests using updated principal entries.</p>
 </li>
 <li><p class="first">On the master KDC, run <code class="docutils literal"><span class="pre">kdb5_util</span> <span class="pre">purge_mkeys</span></code> to clean up the
 old master key.</p>
@@ -1577,21 +1584,21 @@ Upgrading the KDC to release 1.14 or later will correct this bug.</p>
 <h3>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h3>
 <p>At some very large sites, dumping and transmitting the database can
 take more time than is desirable for changes to propagate from the
-master KDC to the slave KDCs.  The incremental propagation support
+master KDC to the replica KDCs.  The incremental propagation support
 added in the 1.7 release is intended to address this.</p>
 <p>With incremental propagation enabled, all programs on the master KDC
 that change the database also write information about the changes to
 an “update log” file, maintained as a circular buffer of a certain
-size.  A process on each slave KDC connects to a service on the master
-KDC (currently implemented in the <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> server) and
+size.  A process on each replica KDC connects to a service on the
+master KDC (currently implemented in the <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> server) and
 periodically requests the changes that have been made since the last
 check.  By default, this check is done every two minutes.  If the
 database has just been modified in the previous several seconds
-(currently the threshold is hard-coded at 10 seconds), the slave will
-not retrieve updates, but instead will pause and try again soon after.
-This reduces the likelihood that incremental update queries will cause
-delays for an administrator trying to make a bunch of changes to the
-database at the same time.</p>
+(currently the threshold is hard-coded at 10 seconds), the replica
+will not retrieve updates, but instead will pause and try again soon
+after.  This reduces the likelihood that incremental update queries
+will cause delays for an administrator trying to make a bunch of
+changes to the database at the same time.</p>
 <p>Incremental propagation uses the following entries in the per-realm
 data in the KDC config file (See <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>):</p>
 <table border="1" class="docutils">
@@ -1609,17 +1616,17 @@ data in the KDC config file (See <a class="reference internal" href="conf_files/
 <td><em>integer</em></td>
 <td>Indicates the number of entries that should be retained in the update log. The default is 1000; the maximum number is 2500.</td>
 </tr>
-<tr class="row-odd"><td>iprop_slave_poll</td>
+<tr class="row-odd"><td>iprop_replica_poll</td>
 <td><em>time interval</em></td>
-<td>Indicates how often the slave should poll the master KDC for changes to the database. The default is two minutes.</td>
+<td>Indicates how often the replica should poll the master KDC for changes to the database. The default is two minutes.</td>
 </tr>
 <tr class="row-even"><td>iprop_port</td>
 <td><em>integer</em></td>
-<td>Specifies the port number to be used for incremental propagation. This is required in both master and slave configuration files.</td>
+<td>Specifies the port number to be used for incremental propagation. This is required in both master and replica configuration files.</td>
 </tr>
 <tr class="row-odd"><td>iprop_resync_timeout</td>
 <td><em>integer</em></td>
-<td>Specifies the number of seconds to wait for a full propagation to complete. This is optional on slave configurations.  Defaults to 300 seconds (5 minutes).</td>
+<td>Specifies the number of seconds to wait for a full propagation to complete. This is optional on replica configurations.  Defaults to 300 seconds (5 minutes).</td>
 </tr>
 <tr class="row-even"><td>iprop_logfile</td>
 <td><em>file name</em></td>
@@ -1627,42 +1634,43 @@ data in the KDC config file (See <a class="reference internal" href="conf_files/
 </tr>
 </tbody>
 </table>
-<p>Both master and slave sides must have a principal named
+<p>Both master and replica sides must have a principal named
 <code class="docutils literal"><span class="pre">kiprop/hostname</span></code> (where <em>hostname</em> is the lowercase,
 fully-qualified, canonical name for the host) registered in the
 Kerberos database, and have keys for that principal stored in the
 default keytab file (<a class="reference internal" href="../mitK5defaults.html#paths"><span class="std std-ref">DEFKTNAME</span></a>).  In release 1.13, the
 <code class="docutils literal"><span class="pre">kiprop/hostname</span></code> principal is created automatically for the master
-KDC, but it must still be created for slave KDCs.</p>
+KDC, but it must still be created for replica KDCs.</p>
 <p>On the master KDC side, the <code class="docutils literal"><span class="pre">kiprop/hostname</span></code> principal must be
 listed in the kadmind ACL file <a class="reference internal" href="conf_files/kadm5_acl.html#kadm5-acl-5"><span class="std std-ref">kadm5.acl</span></a>, and given the
 <strong>p</strong> privilege (see <a class="reference internal" href="#privileges"><span class="std std-ref">Privileges</span></a>).</p>
-<p>On the slave KDC side, <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> should be run.  When
+<p>On the replica KDC side, <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> should be run.  When
 incremental propagation is enabled, it will connect to the kadmind on
 the master KDC and start requesting updates.</p>
 <p>The normal kprop mechanism is disabled by the incremental propagation
-support.  However, if the slave has been unable to fetch changes from
-the master KDC for too long (network problems, perhaps), the log on
-the master may wrap around and overwrite some of the updates that the
-slave has not yet retrieved.  In this case, the slave will instruct
-the master KDC to dump the current database out to a file and invoke a
-one-time kprop propagation, with special options to also convey the
-point in the update log at which the slave should resume fetching
-incremental updates.  Thus, all the keytab and ACL setup previously
-described for kprop propagation is still needed.</p>
-<p>If an environment has a large number of slaves, it may be desirable to
-arrange them in a hierarchy instead of having the master serve updates
-to every slave.  To do this, run <code class="docutils literal"><span class="pre">kadmind</span> <span class="pre">-proponly</span></code> on each
-intermediate slave, and <code class="docutils literal"><span class="pre">kpropd</span> <span class="pre">-A</span> <span class="pre">upstreamhostname</span></code> on downstream
-slaves to direct each one to the appropriate upstream slave.</p>
+support.  However, if the replica has been unable to fetch changes
+from the master KDC for too long (network problems, perhaps), the log
+on the master may wrap around and overwrite some of the updates that
+the replica has not yet retrieved.  In this case, the replica will
+instruct the master KDC to dump the current database out to a file and
+invoke a one-time kprop propagation, with special options to also
+convey the point in the update log at which the replica should resume
+fetching incremental updates.  Thus, all the keytab and ACL setup
+previously described for kprop propagation is still needed.</p>
+<p>If an environment has a large number of replicas, it may be desirable
+to arrange them in a hierarchy instead of having the master serve
+updates to every replica.  To do this, run <code class="docutils literal"><span class="pre">kadmind</span> <span class="pre">-proponly</span></code> on
+each intermediate replica, and <code class="docutils literal"><span class="pre">kpropd</span> <span class="pre">-A</span> <span class="pre">upstreamhostname</span></code> on
+downstream replicas to direct each one to the appropriate upstream
+replica.</p>
 <p>There are several known restrictions in the current implementation:</p>
 <ul class="simple">
 <li>The incremental update protocol does not transport changes to policy
 objects.  Any policy changes on the master will result in full
-resyncs to all slaves.</li>
-<li>The slave’s KDB module must support locking; it cannot be using the
+resyncs to all replicas.</li>
+<li>The replica’s KDB module must support locking; it cannot be using the
 LDAP KDB module.</li>
-<li>The master and slave must be able to initiate TCP connections in
+<li>The master and replica must be able to initiate TCP connections in
 both directions, without an intervening NAT.</li>
 </ul>
 </div>
@@ -1681,12 +1689,12 @@ rpcbind (also known as portmapper) and the client looks up the port
 number to contact.  In the MIT implementation, where interaction with
 some modern versions of rpcbind doesn’t always work well, the port
 number must be specified in the config file on both the master and
-slave sides.</p>
+replica sides.</p>
 <p>The Sun implementation hard-codes pathnames in <code class="docutils literal"><span class="pre">/var/krb5</span></code> for the
-update log and the per-slave kprop dump files.  In the MIT
+update log and the per-replica kprop dump files.  In the MIT
 implementation, the pathname for the update log is specified in the
-config file, and the per-slave dump files are stored in
-<a class="reference internal" href="../mitK5defaults.html#paths"><span class="std std-ref">LOCALSTATEDIR</span></a><code class="docutils literal"><span class="pre">/krb5kdc</span></code><code class="docutils literal"><span class="pre">/slave_datatrans_hostname</span></code>.</p>
+config file, and the per-replica dump files are stored in
+<a class="reference internal" href="../mitK5defaults.html#paths"><span class="std std-ref">LOCALSTATEDIR</span></a><code class="docutils literal"><span class="pre">/krb5kdc</span></code><code class="docutils literal"><span class="pre">/replica_datatrans_hostname</span></code>.</p>
 </div>
 </div>
 </div>
@@ -1789,6 +1797,7 @@ config file, and the per-slave dump files are stored in
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Database administration</a><ul class="simple">
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appl_servers.html">Application servers</a></li>
@@ -1796,6 +1805,8 @@ config file, and the per-slave dump files are stored in
 <li class="toctree-l2"><a class="reference internal" href="backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="https.html">HTTPS proxy configuration</a></li>
@@ -1835,8 +1846,8 @@ config file, and the per-slave dump files are stored in
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 
@@ -1844,7 +1855,7 @@ config file, and the per-slave dump files are stored in
             >Contents</a> |
         <a href="realm_config.html" title="Realm configuration decisions"
             >previous</a> |
-        <a href="lockout.html" title="Account lockout"
+        <a href="dbtypes.html" title="Database types"
             >next</a> |
         <a href="../genindex.html" title="General Index"
             >index</a> |

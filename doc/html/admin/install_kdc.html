@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -64,23 +64,23 @@
   <div class="section" id="installing-kdcs">
 <h1>Installing KDCs<a class="headerlink" href="#installing-kdcs" title="Permalink to this headline">¶</a></h1>
 <p>When setting up Kerberos in a production environment, it is best to
-have multiple slave KDCs alongside with a master KDC to ensure the
+have multiple replica KDCs alongside with a master KDC to ensure the
 continued availability of the Kerberized services.  Each KDC contains
 a copy of the Kerberos database.  The master KDC contains the writable
-copy of the realm database, which it replicates to the slave KDCs at
+copy of the realm database, which it replicates to the replica KDCs at
 regular intervals.  All database changes (such as password changes)
-are made on the master KDC.  Slave KDCs provide Kerberos
+are made on the master KDC.  Replica KDCs provide Kerberos
 ticket-granting services, but not database administration, when the
 master KDC is unavailable.  MIT recommends that you install all of
 your KDCs to be able to function as either the master or one of the
-slaves.  This will enable you to easily switch your master KDC with
-one of the slaves if necessary (see <a class="reference internal" href="#switch-master-slave"><span class="std std-ref">Switching master and slave KDCs</span></a>).  This
-installation procedure is based on that recommendation.</p>
+replicas.  This will enable you to easily switch your master KDC with
+one of the replicas if necessary (see <a class="reference internal" href="#switch-master-replica"><span class="std std-ref">Switching master and replica KDCs</span></a>).
+This installation procedure is based on that recommendation.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <ul class="last simple">
 <li>The Kerberos system relies on the availability of correct time
-information.  Ensure that the master and all slave KDCs have
+information.  Ensure that the master and all replica KDCs have
 properly synchronized clocks.</li>
 <li>It is best to install and run KDCs on secured and dedicated
 hardware with limited access.  If your KDC is also a file
@@ -99,7 +99,7 @@ source (See <a class="reference internal" href="../build/doing_build.html#do-bui
 <p>For the purpose of this document we will use the following
 names:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>    <span class="o">-</span> <span class="n">master</span> <span class="n">KDC</span>
-<span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>  <span class="o">-</span> <span class="n">slave</span> <span class="n">KDC</span>
+<span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>  <span class="o">-</span> <span class="n">replica</span> <span class="n">KDC</span>
 <span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>      <span class="o">-</span> <span class="n">realm</span> <span class="n">name</span>
 <span class="o">.</span><span class="n">k5</span><span class="o">.</span><span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>  <span class="o">-</span> <span class="n">stash</span> <span class="n">file</span>
 <span class="n">admin</span><span class="o">/</span><span class="n">admin</span>         <span class="o">-</span> <span class="n">admin</span> <span class="n">principal</span>
@@ -317,25 +317,26 @@ against the principals that you have created on the previous step
 </pre></div>
 </div>
 </div>
-<div class="section" id="install-the-slave-kdcs">
-<h2>Install the slave KDCs<a class="headerlink" href="#install-the-slave-kdcs" title="Permalink to this headline">¶</a></h2>
-<p>You are now ready to start configuring the slave KDCs.</p>
+<div class="section" id="install-the-replica-kdcs">
+<h2>Install the replica KDCs<a class="headerlink" href="#install-the-replica-kdcs" title="Permalink to this headline">¶</a></h2>
+<p>You are now ready to start configuring the replica KDCs.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Assuming you are setting the KDCs up so that you can easily
-switch the master KDC with one of the slaves, you should
+switch the master KDC with one of the replicas, you should
 perform each of these steps on the master KDC as well as the
-slave KDCs, unless these instructions specify otherwise.</p>
+replica KDCs, unless these instructions specify otherwise.</p>
 </div>
-<div class="section" id="create-host-keytabs-for-slave-kdcs">
-<span id="slave-host-key"></span><h3>Create host keytabs for slave KDCs<a class="headerlink" href="#create-host-keytabs-for-slave-kdcs" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="create-host-keytabs-for-replica-kdcs">
+<span id="replica-host-key"></span><h3>Create host keytabs for replica KDCs<a class="headerlink" href="#create-host-keytabs-for-replica-kdcs" title="Permalink to this headline">¶</a></h3>
 <p>Each KDC needs a <code class="docutils literal"><span class="pre">host</span></code> key in the Kerberos database.  These keys
 are used for mutual authentication when propagating the database dump
 file from the master KDC to the secondary KDC servers.</p>
 <p>On the master KDC, connect to administrative interface and create the
 host principal for each of the KDCs’ <code class="docutils literal"><span class="pre">host</span></code> services.  For example,
 if the master KDC were called <code class="docutils literal"><span class="pre">kerberos.mit.edu</span></code>, and you had a
-slave KDC named <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code>, you would type the following:</p>
+replica KDC named <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code>, you would type the
+following:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kadmin</span>
 <span class="n">kadmin</span><span class="p">:</span> <span class="n">addprinc</span> <span class="o">-</span><span class="n">randkey</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
 <span class="n">NOTICE</span><span class="p">:</span> <span class="n">no</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;host/kerberos.mit.edu@ATHENA.MIT.EDU&quot;</span><span class="p">;</span> <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span>
@@ -348,12 +349,12 @@ slave KDC named <code class="docutils literal"><span class="pre">kerberos-1.mit.
 </div>
 <p>It is not strictly necessary to have the master KDC server in the
 Kerberos database, but it can be handy if you want to be able to swap
-the master KDC with one of the slaves.</p>
+the master KDC with one of the replicas.</p>
 <p>Next, extract <code class="docutils literal"><span class="pre">host</span></code> random keys for all participating KDCs and
 store them in each host’s default keytab file.  Ideally, you should
 extract each keytab locally on its own KDC.  If this is not feasible,
 you should use an encrypted session to send them across the network.
-To extract a keytab directly on a slave KDC called
+To extract a keytab directly on a replica KDC called
 <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code>, you would execute the following command:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span>
@@ -366,7 +367,7 @@ To extract a keytab directly on a slave KDC called
     <span class="nb">type</span> <span class="n">arcfour</span><span class="o">-</span><span class="n">hmac</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>If you are instead extracting a keytab for the slave KDC called
+<p>If you are instead extracting a keytab for the replica KDC called
 <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code> on the master KDC, you should use a dedicated
 temporary keytab file for that machine’s keytab:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="o">-</span><span class="n">k</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">keytab</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
@@ -379,11 +380,11 @@ temporary keytab file for that machine’s keytab:</p>
 <p>The file <code class="docutils literal"><span class="pre">/tmp/kerberos-1.keytab</span></code> can then be installed as
 <code class="docutils literal"><span class="pre">/etc/krb5.keytab</span></code> on the host <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code>.</p>
 </div>
-<div class="section" id="configure-slave-kdcs">
-<h3>Configure slave KDCs<a class="headerlink" href="#configure-slave-kdcs" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="configure-replica-kdcs">
+<h3>Configure replica KDCs<a class="headerlink" href="#configure-replica-kdcs" title="Permalink to this headline">¶</a></h3>
 <p>Database propagation copies the contents of the master’s database, but
 does not propagate configuration files, stash files, or the kadm5 ACL
-file.  The following files must be copied by hand to each slave (see
+file.  The following files must be copied by hand to each replica (see
 <a class="reference internal" href="../mitK5defaults.html#mitk5defaults"><span class="std std-ref">MIT Kerberos defaults</span></a> for the default locations for these files):</p>
 <ul class="simple">
 <li>krb5.conf</li>
@@ -392,26 +393,26 @@ file.  The following files must be copied by hand to each slave (see
 <li>master key stash file</li>
 </ul>
 <p>Move the copied files into their appropriate directories, exactly as
-on the master KDC.  kadm5.acl is only needed to allow a slave to swap
-with the master KDC.</p>
-<p>The database is propagated from the master KDC to the slave KDCs via
+on the master KDC.  kadm5.acl is only needed to allow a replica to
+swap with the master KDC.</p>
+<p>The database is propagated from the master KDC to the replica KDCs via
 the <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> daemon.  You must explicitly specify the
 principals which are allowed to provide Kerberos dump updates on the
-slave machine with a new database.  Create a file named kpropd.acl in
-the KDC state directory containing the <code class="docutils literal"><span class="pre">host</span></code> principals for each of
-the KDCs:</p>
+replica machine with a new database.  Create a file named kpropd.acl
+in the KDC state directory containing the <code class="docutils literal"><span class="pre">host</span></code> principals for each
+of the KDCs:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
 <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If you expect that the master and slave KDCs will be
+<p class="last">If you expect that the master and replica KDCs will be
 switched at some point of time, list the host principals
 from all participating KDC servers in kpropd.acl files on
 all of the KDCs.  Otherwise, you only need to list the
 master KDC’s host principal in the kpropd.acl files of the
-slave KDCs.</p>
+replica KDCs.</p>
 </div>
 <p>Then, add the following line to <code class="docutils literal"><span class="pre">/etc/inetd.conf</span></code> on each KDC
 (adjust the path to kpropd):</p>
@@ -421,27 +422,27 @@ slave KDCs.</p>
 <p>You also need to add the following line to <code class="docutils literal"><span class="pre">/etc/services</span></code> on each
 KDC, if it is not already present (assuming that the default port is
 used):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">krb5_prop</span>       <span class="mi">754</span><span class="o">/</span><span class="n">tcp</span>               <span class="c1"># Kerberos slave propagation</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">krb5_prop</span>       <span class="mi">754</span><span class="o">/</span><span class="n">tcp</span>               <span class="c1"># Kerberos replica propagation</span>
 </pre></div>
 </div>
 <p>Restart inetd daemon.</p>
 <p>Alternatively, start <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> as a stand-alone daemon.  This is
 required when incremental propagation is enabled.</p>
-<p>Now that the slave KDC is able to accept database propagation, you’ll
-need to propagate the database from the master server.</p>
-<p>NOTE: Do not start the slave KDC yet; you still do not have a copy of
-the master’s database.</p>
+<p>Now that the replica KDC is able to accept database propagation,
+you’ll need to propagate the database from the master server.</p>
+<p>NOTE: Do not start the replica KDC yet; you still do not have a copy
+of the master’s database.</p>
 </div>
-<div class="section" id="propagate-the-database-to-each-slave-kdc">
-<span id="kprop-to-slaves"></span><h3>Propagate the database to each slave KDC<a class="headerlink" href="#propagate-the-database-to-each-slave-kdc" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="propagate-the-database-to-each-replica-kdc">
+<span id="kprop-to-replicas"></span><h3>Propagate the database to each replica KDC<a class="headerlink" href="#propagate-the-database-to-each-replica-kdc" title="Permalink to this headline">¶</a></h3>
 <p>First, create a dump file of the database on the master KDC, as
 follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kdb5_util</span> <span class="n">dump</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">krb5kdc</span><span class="o">/</span><span class="n">slave_datatrans</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kdb5_util</span> <span class="n">dump</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">krb5kdc</span><span class="o">/</span><span class="n">replica_datatrans</span>
 </pre></div>
 </div>
-<p>Then, manually propagate the database to each slave KDC, as in the
+<p>Then, manually propagate the database to each replica KDC, as in the
 following example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kprop</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">krb5kdc</span><span class="o">/</span><span class="n">slave_datatrans</span> <span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kprop</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">krb5kdc</span><span class="o">/</span><span class="n">replica_datatrans</span> <span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
 
 <span class="n">Database</span> <span class="n">propagation</span> <span class="n">to</span> <span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="p">:</span> <span class="n">SUCCEEDED</span>
 </pre></div>
@@ -457,17 +458,17 @@ with the name of the KDC state directory.</p>
 
 kdclist = &quot;kerberos-1.mit.edu kerberos-2.mit.edu&quot;
 
-kdb5_util dump /usr/local/var/krb5kdc/slave_datatrans
+kdb5_util dump /usr/local/var/krb5kdc/replica_datatrans
 
 for kdc in $kdclist
 do
-    kprop -f /usr/local/var/krb5kdc/slave_datatrans $kdc
+    kprop -f /usr/local/var/krb5kdc/replica_datatrans $kdc
 done
 </pre></div>
 </div>
 <p>You will need to set up a cron job to run this script at the intervals
 you decided on earlier (see <a class="reference internal" href="realm_config.html#db-prop"><span class="std std-ref">Database propagation</span></a>).</p>
-<p>Now that the slave KDC has a copy of the Kerberos database, you can
+<p>Now that the replica KDC has a copy of the Kerberos database, you can
 start the krb5kdc daemon:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">krb5kdc</span>
 </pre></div>
@@ -494,33 +495,33 @@ to be redirected to <a class="reference internal" href="troubleshoot.html#troubl
 <a class="reference internal" href="admin_commands/kadmin_local.html#kadmin-1"><span class="std std-ref">kadmin</span></a> to load principals for your users, hosts, and other
 services into the Kerberos database.  This procedure is described
 fully in <a class="reference internal" href="database.html#add-mod-del-princs"><span class="std std-ref">Adding, modifying and deleting principals</span></a>.</p>
-<p>You may occasionally want to use one of your slave KDCs as the master.
-This might happen if you are upgrading the master KDC, or if your
-master KDC has a disk crash.  See the following section for the
+<p>You may occasionally want to use one of your replica KDCs as the
+master.  This might happen if you are upgrading the master KDC, or if
+your master KDC has a disk crash.  See the following section for the
 instructions.</p>
 </div>
-<div class="section" id="switching-master-and-slave-kdcs">
-<span id="switch-master-slave"></span><h2>Switching master and slave KDCs<a class="headerlink" href="#switching-master-and-slave-kdcs" title="Permalink to this headline">¶</a></h2>
-<p>You may occasionally want to use one of your slave KDCs as the master.
-This might happen if you are upgrading the master KDC, or if your
-master KDC has a disk crash.</p>
+<div class="section" id="switching-master-and-replica-kdcs">
+<span id="switch-master-replica"></span><h2>Switching master and replica KDCs<a class="headerlink" href="#switching-master-and-replica-kdcs" title="Permalink to this headline">¶</a></h2>
+<p>You may occasionally want to use one of your replica KDCs as the
+master.  This might happen if you are upgrading the master KDC, or if
+your master KDC has a disk crash.</p>
 <p>Assuming you have configured all of your KDCs to be able to function
-as either the master KDC or a slave KDC (as this document recommends),
-all you need to do to make the changeover is:</p>
+as either the master KDC or a replica KDC (as this document
+recommends), all you need to do to make the changeover is:</p>
 <p>If the master KDC is still running, do the following on the <em>old</em>
 master KDC:</p>
 <ol class="arabic simple">
 <li>Kill the kadmind process.</li>
 <li>Disable the cron job that propagates the database.</li>
 <li>Run your database propagation script manually, to ensure that the
-slaves all have the latest copy of the database (see
-<a class="reference internal" href="#kprop-to-slaves"><span class="std std-ref">Propagate the database to each slave KDC</span></a>).</li>
+replicas all have the latest copy of the database (see
+<a class="reference internal" href="#kprop-to-replicas"><span class="std std-ref">Propagate the database to each replica KDC</span></a>).</li>
 </ol>
 <p>On the <em>new</em> master KDC:</p>
 <ol class="arabic simple">
 <li>Start the <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> daemon (see <a class="reference internal" href="#start-kdc-daemons"><span class="std std-ref">Start the Kerberos daemons on the master KDC</span></a>).</li>
 <li>Set up the cron job to propagate the database (see
-<a class="reference internal" href="#kprop-to-slaves"><span class="std std-ref">Propagate the database to each slave KDC</span></a>).</li>
+<a class="reference internal" href="#kprop-to-replicas"><span class="std std-ref">Propagate the database to each replica KDC</span></a>).</li>
 <li>Switch the CNAMEs of the old and new master KDCs.  If you can’t do
 this, you’ll need to change the <a class="reference internal" href="conf_files/krb5_conf.html#krb5-conf-5"><span class="std std-ref">krb5.conf</span></a> file on every
 client machine in your Kerberos realm.</li>
@@ -529,8 +530,8 @@ client machine in your Kerberos realm.</li>
 <div class="section" id="incremental-database-propagation">
 <h2>Incremental database propagation<a class="headerlink" href="#incremental-database-propagation" title="Permalink to this headline">¶</a></h2>
 <p>If you expect your Kerberos database to become large, you may wish to
-set up incremental propagation to slave KDCs.  See <a class="reference internal" href="database.html#incr-db-prop"><span class="std std-ref">Incremental database propagation</span></a>
-for details.</p>
+set up incremental propagation to replica KDCs.  See
+<a class="reference internal" href="database.html#incr-db-prop"><span class="std std-ref">Incremental database propagation</span></a> for details.</p>
 </div>
 </div>
 
@@ -553,17 +554,17 @@ for details.</p>
 <li><a class="reference internal" href="#add-administrators-to-the-acl-file">Add administrators to the ACL file</a></li>
 <li><a class="reference internal" href="#add-administrators-to-the-kerberos-database">Add administrators to the Kerberos database</a></li>
 <li><a class="reference internal" href="#start-the-kerberos-daemons-on-the-master-kdc">Start the Kerberos daemons on the master KDC</a></li>
-<li><a class="reference internal" href="#install-the-slave-kdcs">Install the slave KDCs</a><ul>
-<li><a class="reference internal" href="#create-host-keytabs-for-slave-kdcs">Create host keytabs for slave KDCs</a></li>
-<li><a class="reference internal" href="#configure-slave-kdcs">Configure slave KDCs</a></li>
-<li><a class="reference internal" href="#propagate-the-database-to-each-slave-kdc">Propagate the database to each slave KDC</a><ul>
+<li><a class="reference internal" href="#install-the-replica-kdcs">Install the replica KDCs</a><ul>
+<li><a class="reference internal" href="#create-host-keytabs-for-replica-kdcs">Create host keytabs for replica KDCs</a></li>
+<li><a class="reference internal" href="#configure-replica-kdcs">Configure replica KDCs</a></li>
+<li><a class="reference internal" href="#propagate-the-database-to-each-replica-kdc">Propagate the database to each replica KDC</a><ul>
 <li><a class="reference internal" href="#propagation-failed">Propagation failed?</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a class="reference internal" href="#add-kerberos-principals-to-the-database">Add Kerberos principals to the database</a></li>
-<li><a class="reference internal" href="#switching-master-and-slave-kdcs">Switching master and slave KDCs</a></li>
+<li><a class="reference internal" href="#switching-master-and-replica-kdcs">Switching master and replica KDCs</a></li>
 <li><a class="reference internal" href="#incremental-database-propagation">Incremental database propagation</a></li>
 </ul>
 </li>
@@ -583,6 +584,7 @@ for details.</p>
 <li class="toctree-l2"><a class="reference internal" href="conf_files/index.html">Configuration Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="realm_config.html">Realm configuration decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="database.html">Database administration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dbtypes.html">Database types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lockout.html">Account lockout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conf_ldap.html">Configuring Kerberos with OpenLDAP back-end</a></li>
 <li class="toctree-l2"><a class="reference internal" href="appl_servers.html">Application servers</a></li>
@@ -590,6 +592,8 @@ for details.</p>
 <li class="toctree-l2"><a class="reference internal" href="backup_host.html">Backups of secure hosts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pkinit.html">PKINIT configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="otp.html">OTP Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spake.html">SPAKE Preauthentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary.html">Addressing dictionary attack risks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="princ_dns.html">Principal names and DNS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enctypes.html">Encryption types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="https.html">HTTPS proxy configuration</a></li>
@@ -629,8 +633,8 @@ for details.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

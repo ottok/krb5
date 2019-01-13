@@ -13,7 +13,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.16.2',
+        VERSION:     '1.17',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -855,6 +855,8 @@
 </li>
       <li><a href="appdev/refs/api/krb5_get_error_message.html#c.krb5_get_error_message">krb5_get_error_message (C function)</a>
 </li>
+      <li><a href="appdev/refs/api/krb5_get_etype_info.html#c.krb5_get_etype_info">krb5_get_etype_info (C function)</a>
+</li>
       <li><a href="appdev/refs/api/krb5_get_fallback_host_realm.html#c.krb5_get_fallback_host_realm">krb5_get_fallback_host_realm (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_get_host_realm.html#c.krb5_get_host_realm">krb5_get_host_realm (C function)</a>
@@ -1023,12 +1025,12 @@
 </li>
       <li><a href="appdev/refs/types/krb5_int16.html#c.krb5_int16">krb5_int16 (C type)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="appdev/refs/macros/KRB5_INT16_MAX.html#KRB5_INT16_MAX">KRB5_INT16_MAX (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_INT16_MIN.html#KRB5_INT16_MIN">KRB5_INT16_MIN (built-in variable)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="appdev/refs/types/krb5_int32.html#c.krb5_int32">krb5_int32 (C type)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_INT32_MAX.html#KRB5_INT32_MAX">KRB5_INT32_MAX (built-in variable)</a>
@@ -1203,6 +1205,8 @@
 </li>
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_KRB_SAFE_CKSUM.html#KRB5_KEYUSAGE_KRB_SAFE_CKSUM">KRB5_KEYUSAGE_KRB_SAFE_CKSUM (built-in variable)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_PA_AS_FRESHNESS.html#KRB5_KEYUSAGE_PA_AS_FRESHNESS">KRB5_KEYUSAGE_PA_AS_FRESHNESS (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_PA_FX_COOKIE.html#KRB5_KEYUSAGE_PA_FX_COOKIE">KRB5_KEYUSAGE_PA_FX_COOKIE (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_PA_OTP_REQUEST.html#KRB5_KEYUSAGE_PA_OTP_REQUEST">KRB5_KEYUSAGE_PA_OTP_REQUEST (built-in variable)</a>
@@ -1218,6 +1222,8 @@
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_PA_SAM_CHALLENGE_TRACKID.html#KRB5_KEYUSAGE_PA_SAM_CHALLENGE_TRACKID">KRB5_KEYUSAGE_PA_SAM_CHALLENGE_TRACKID (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_PA_SAM_RESPONSE.html#KRB5_KEYUSAGE_PA_SAM_RESPONSE">KRB5_KEYUSAGE_PA_SAM_RESPONSE (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_SPAKE.html#KRB5_KEYUSAGE_SPAKE">KRB5_KEYUSAGE_SPAKE (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_KEYUSAGE_TGS_REP_ENCPART_SESSKEY.html#KRB5_KEYUSAGE_TGS_REP_ENCPART_SESSKEY">KRB5_KEYUSAGE_TGS_REP_ENCPART_SESSKEY (built-in variable)</a>
 </li>
@@ -1441,15 +1447,21 @@
 </li>
       <li><a href="appdev/refs/api/krb5_pac_sign.html#c.krb5_pac_sign">krb5_pac_sign (C function)</a>
 </li>
+      <li><a href="appdev/refs/api/krb5_pac_sign_ext.html#c.krb5_pac_sign_ext">krb5_pac_sign_ext (C function)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_PAC_UPN_DNS_INFO.html#KRB5_PAC_UPN_DNS_INFO">KRB5_PAC_UPN_DNS_INFO (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_pac_verify.html#c.krb5_pac_verify">krb5_pac_verify (C function)</a>
+</li>
+      <li><a href="appdev/refs/api/krb5_pac_verify_ext.html#c.krb5_pac_verify_ext">krb5_pac_verify_ext (C function)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_AFS3_SALT.html#KRB5_PADATA_AFS3_SALT">KRB5_PADATA_AFS3_SALT (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_AP_REQ.html#KRB5_PADATA_AP_REQ">KRB5_PADATA_AP_REQ (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_AS_CHECKSUM.html#KRB5_PADATA_AS_CHECKSUM">KRB5_PADATA_AS_CHECKSUM (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PADATA_AS_FRESHNESS.html#KRB5_PADATA_AS_FRESHNESS">KRB5_PADATA_AS_FRESHNESS (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_ENC_SANDIA_SECURID.html#KRB5_PADATA_ENC_SANDIA_SECURID">KRB5_PADATA_ENC_SANDIA_SECURID (built-in variable)</a>
 </li>
@@ -1512,6 +1524,8 @@
       <li><a href="appdev/refs/macros/KRB5_PADATA_SAM_RESPONSE_2.html#KRB5_PADATA_SAM_RESPONSE_2">KRB5_PADATA_SAM_RESPONSE_2 (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_SESAME.html#KRB5_PADATA_SESAME">KRB5_PADATA_SESAME (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PADATA_SPAKE.html#KRB5_PADATA_SPAKE">KRB5_PADATA_SPAKE (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_SVR_REFERRAL_INFO.html#KRB5_PADATA_SVR_REFERRAL_INFO">KRB5_PADATA_SVR_REFERRAL_INFO (built-in variable)</a>
 </li>
@@ -2028,8 +2042,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.16.2</i><br />
-                &copy; <a href="copyright.html">Copyright</a> 1985-2018, MIT.
+            <div class="right" ><i>Release: 1.17</i><br />
+                &copy; <a href="copyright.html">Copyright</a> 1985-2019, MIT.
             </div>
             <div class="left">
                 

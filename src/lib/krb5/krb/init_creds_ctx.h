@@ -58,8 +58,10 @@ struct _krb5_init_creds_context {
     krb5_data s2kparams;
     krb5_keyblock as_key;
     krb5_enctype etype;
-    krb5_boolean enc_pa_rep_permitted;
+    krb5_boolean info_pa_permitted;
     krb5_boolean restarted;
+    krb5_boolean fallback_disabled;
+    krb5_boolean encts_disabled;
     struct krb5_responder_context_st rctx;
     krb5_preauthtype selected_preauth_type;
     krb5_preauthtype allowed_preauth_type;

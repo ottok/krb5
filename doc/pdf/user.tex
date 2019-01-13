@@ -55,7 +55,7 @@
 
 \title{Kerberos User Guide}
 \date{ }
-\release{1.16.2}
+\release{1.17}
 \author{MIT}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -928,7 +928,8 @@ credentials cache is destroyed.
 \label{\detokenize{user/user_commands/kdestroy:options}}\begin{description}
 \item[{\sphinxstylestrong{-A}}] \leavevmode
 Destroys all caches in the collection, if a cache collection is
-available.
+available.  May be used with the \sphinxstylestrong{-c} option to specify the
+collection to be destroyed.
 
 \item[{\sphinxstylestrong{-q}}] \leavevmode
 Run quietly.  Normally kdestroy beeps if it fails to destroy the
@@ -942,6 +943,11 @@ location are used.
 The default credentials cache may vary between systems.  If the
 \sphinxstylestrong{KRB5CCNAME} environment variable is set, its value is used to
 name the default ticket cache.
+
+\item[{\sphinxstylestrong{-p} \sphinxstyleemphasis{princ\_name}}] \leavevmode
+If a cache collection is available, destroy the cache for
+\sphinxstyleemphasis{princ\_name} instead of the primary cache.  May be used with the
+\sphinxstylestrong{-c} option to specify the collection to be searched.
 
 \end{description}
 
@@ -1169,6 +1175,9 @@ specify where to find trusted X509 anchor information
 \item[{\sphinxstylestrong{flag\_RSA\_PROTOCOL}{[}\sphinxstylestrong{=yes}{]}}] \leavevmode
 specify use of RSA, rather than the default Diffie-Hellman
 protocol
+
+\item[{\sphinxstylestrong{disable\_freshness}{[}\sphinxstylestrong{=yes}{]}}] \leavevmode
+disable sending freshness tokens (for testing purposes only)
 
 \end{description}
 
@@ -1965,6 +1974,7 @@ Default location of Kerberos 5 credentials cache
 {[}\sphinxstylestrong{-P}{]}
 {[}\sphinxstylestrong{-S} \sphinxstyleemphasis{sname}{]}
 {[}\sphinxstylestrong{-U} \sphinxstyleemphasis{for\_user}{]}
+{[}\sphinxstylestrong{\textendash{}u2u} \sphinxstyleemphasis{ccache}{]}
 \sphinxstyleemphasis{service1 service2} …
 
 
@@ -2011,6 +2021,12 @@ Specifies that protocol transition (S4U2Self) is to be used to
 acquire a ticket on behalf of \sphinxstyleemphasis{for\_user}.  If constrained
 delegation is not requested, the service name must match the
 credentials cache client principal.
+
+\item[{\sphinxstylestrong{\textendash{}u2u} \sphinxstyleemphasis{ccache}}] \leavevmode
+Requests a user-to-user ticket.  \sphinxstyleemphasis{ccache} must contain a local
+krbtgt ticket for the server principal.  The reported version
+number will typically be 0, as the resulting ticket is not
+encrypted in the server’s long-term key.
 
 \end{description}
 
