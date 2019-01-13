@@ -1,3 +1,13 @@
+krb5 (1.17-1) unstable; urgency=low
+
+  * New Upstream release
+  * Don't include all memory ccaches in ccache collection, avoids invalid
+    mutex, Closes: #918088
+  * The default path for the KDC database even without a config file is
+    /var/lib/krb5kdc/principal, Closes: #777579
+
+ -- Sam Hartman <hartmans@debian.org>  Sun, 13 Jan 2019 15:59:40 -0500
+
 krb5 (1.16.2-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
