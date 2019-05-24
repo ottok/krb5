@@ -1246,16 +1246,6 @@ _passes = [
     # No special settings; exercises AES256.
     ('default', None, None, None),
 
-    # Exercise a DES enctype and the v4 salt type.
-    ('desv4', None,
-     {'libdefaults': {
-                'default_tgs_enctypes': 'des-cbc-crc',
-                'default_tkt_enctypes': 'des-cbc-crc',
-                'permitted_enctypes': 'des-cbc-crc',
-                'allow_weak_crypto': 'true'}},
-     {'realms': {'$realm': {
-                    'supported_enctypes': 'des-cbc-crc:v4',
-                    'master_key_type': 'des-cbc-crc'}}}),
 
     # Exercise the DES3 enctype.
     ('des3', None,
@@ -1318,7 +1308,7 @@ _passes = [
                     'master_key_type': 'aes256-sha2'}}}),
 
     # Test a setup with modern principal keys but an old TGT key.
-    ('aes256.destgt', 'des-cbc-crc:normal',
+    ('aes256.destgt', 'arcfour-hmac:normal',
      {'libdefaults': {'allow_weak_crypto': 'true'}},
      None)
 ]
