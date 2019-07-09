@@ -1,0 +1,3334 @@
+From: Robbie Harwood <rharwood@redhat.com>
+Date: Fri, 24 May 2019 13:12:03 -0400
+Subject: Remove support for single-DES and CRC
+
+Single-DES removal brings us closer to compliance with RFC 6649.
+Single-DES was disabled by default starting in release 1.8, and
+user-visible deprecation warnings were issued starting in release
+1.17.
+
+ticket: 8808
+(cherry picked from commit fb2dada5eb89c4cd4e39dedd6dbb7dbd5e94f8b8)
+---
+ doc/admin/advanced/retiring-des.rst                |   5 +
+ doc/admin/conf_files/kdc_conf.rst                  |  17 +-
+ doc/admin/conf_files/krb5_conf.rst                 |  17 +-
+ doc/admin/enctypes.rst                             |  38 +-
+ doc/appdev/refs/macros/index.rst                   |   1 +
+ doc/conf.py                                        |   2 +-
+ doc/mitK5features.rst                              |   2 +-
+ src/include/k5-int.h                               |   1 -
+ src/include/krb5/krb5.hin                          |  10 +-
+ src/include/win-mac.h                              |  12 -
+ src/kdc/kdc_util.c                                 |  14 -
+ src/kdc/main.c                                     |   6 -
+ src/kdc/realm_data.h                               |   1 -
+ src/lib/crypto/builtin/des/des_int.h               |   1 -
+ src/lib/crypto/builtin/enc_provider/Makefile.in    |   3 -
+ src/lib/crypto/builtin/enc_provider/deps           |  12 -
+ src/lib/crypto/builtin/enc_provider/des.c          | 120 ----
+ src/lib/crypto/builtin/hash_provider/Makefile.in   |   7 +-
+ src/lib/crypto/builtin/hash_provider/deps          |  13 -
+ src/lib/crypto/builtin/hash_provider/hash_crc32.c  |  56 --
+ src/lib/crypto/krb/Makefile.in                     |   9 -
+ src/lib/crypto/krb/cksumtypes.c                    |  24 -
+ src/lib/crypto/krb/combine_keys.c                  |   3 -
+ src/lib/crypto/krb/crc32.c                         | 165 -----
+ src/lib/crypto/krb/crypto_int.h                    |  16 -
+ src/lib/crypto/krb/default_state.c                 |   4 -
+ src/lib/crypto/krb/deps                            |  36 --
+ src/lib/crypto/krb/enc_old.c                       | 181 ------
+ src/lib/crypto/krb/etypes.c                        |  46 --
+ src/lib/crypto/krb/s2k_des.c                       | 691 ---------------------
+ src/lib/crypto/libk5crypto.exports                 |   1 -
+ src/lib/crypto/openssl/enc_provider/Makefile.in    |   3 -
+ src/lib/crypto/openssl/enc_provider/deps           |  11 -
+ src/lib/crypto/openssl/enc_provider/des.c          | 218 -------
+ src/lib/crypto/openssl/hash_provider/Makefile.in   |  10 +-
+ src/lib/crypto/openssl/hash_provider/deps          |  12 -
+ src/lib/crypto/openssl/hash_provider/hash_crc32.c  |  56 --
+ src/lib/gssapi/krb5/accept_sec_context.c           |   3 -
+ src/lib/gssapi/krb5/gssapiP_krb5.h                 |  20 +-
+ src/lib/gssapi/krb5/k5seal.c                       |  28 +-
+ src/lib/gssapi/krb5/k5sealiov.c                    |  20 -
+ src/lib/gssapi/krb5/k5unseal.c                     | 112 ----
+ src/lib/gssapi/krb5/k5unsealiov.c                  |  34 +-
+ src/lib/gssapi/krb5/util_crypt.c                   |  41 --
+ src/lib/kadm5/kadm_rpc_xdr.c                       |  10 -
+ src/lib/krb5/ccache/cc_mslsa.c                     |  11 +-
+ src/lib/krb5/krb/auth_con.c                        |  23 +-
+ src/lib/krb5/krb/gic_keytab.c                      |   4 -
+ src/lib/krb5/krb/init_ctx.c                        |   9 -
+ src/lib/krb5/krb/mk_req_ext.c                      |  43 +-
+ src/lib/krb5/krb/s4u_creds.c                       |   3 -
+ src/lib/krb5/krb/ser_ctx.c                         |   2 +-
+ src/man/kdc.conf.man                               |  47 +-
+ src/man/krb5.conf.man                              |   6 +-
+ .../leash/htmlhelp/html/Encryption_Types.htm       |  14 +-
+ 55 files changed, 74 insertions(+), 2180 deletions(-)
+ delete mode 100644 src/lib/crypto/builtin/enc_provider/des.c
+ delete mode 100644 src/lib/crypto/builtin/hash_provider/hash_crc32.c
+ delete mode 100644 src/lib/crypto/krb/crc32.c
+ delete mode 100644 src/lib/crypto/krb/enc_old.c
+ delete mode 100644 src/lib/crypto/krb/s2k_des.c
+ delete mode 100644 src/lib/crypto/openssl/enc_provider/des.c
+ delete mode 100644 src/lib/crypto/openssl/hash_provider/hash_crc32.c
+
+diff --git a/doc/admin/advanced/retiring-des.rst b/doc/admin/advanced/retiring-des.rst
+index ebac95f..4a964c1 100644
+--- a/doc/admin/advanced/retiring-des.rst
++++ b/doc/admin/advanced/retiring-des.rst
+@@ -22,6 +22,11 @@ However, deployments of krb5 using Kerberos databases created with older
+ versions of krb5 will not necessarily start using strong crypto for
+ ordinary operation without administrator intervention.
+ 
++MIT krb5 began flagging deprecated encryption types with release 1.17,
++and removed DES (single-DES) support in release 1.18.  As a
++consequence, a release prior to 1.18 is required to perform these
++migrations.
++
+ Types of keys
+ -------------
+ 
+diff --git a/doc/admin/conf_files/kdc_conf.rst b/doc/admin/conf_files/kdc_conf.rst
+index c73791c..6a5a6cc 100644
+--- a/doc/admin/conf_files/kdc_conf.rst
++++ b/doc/admin/conf_files/kdc_conf.rst
+@@ -381,13 +381,6 @@ The following tags may be specified in a [realms] subsection:
+     listed in **host_based_services**.  ``no_host_referral = *`` will
+     disable referral processing altogether.
+ 
+-**des_crc_session_supported**
+-    (Boolean value).  If set to true, the KDC will assume that service
+-    principals support des-cbc-crc for session key enctype negotiation
+-    purposes.  If **allow_weak_crypto** in :ref:`libdefaults` is
+-    false, or if des-cbc-crc is not a permitted enctype, then this
+-    variable has no effect.  Defaults to true.  New in release 1.11.
+-
+ **reject_bad_transit**
+     (Boolean value.)  If set to true, the KDC will check the list of
+     transited realms for cross-realm tickets against the transit path
+@@ -848,13 +841,8 @@ Encryption types marked as "weak" are available for compatibility but
+ not recommended for use.
+ 
+ ==================================================== =========================================================
+-des-cbc-crc                                          DES cbc mode with CRC-32 (weak)
+-des-cbc-md4                                          DES cbc mode with RSA-MD4 (weak)
+-des-cbc-md5                                          DES cbc mode with RSA-MD5 (weak)
+-des-cbc-raw                                          DES cbc mode raw (weak)
+ des3-cbc-raw                                         Triple DES cbc mode raw (weak)
+ des3-cbc-sha1 des3-hmac-sha1 des3-cbc-sha1-kd        Triple DES cbc mode with HMAC/sha1
+-des-hmac-sha1                                        DES with HMAC/sha1 (weak)
+ aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1       AES-256 CTS mode with 96-bit SHA-1 HMAC
+ aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1       AES-128 CTS mode with 96-bit SHA-1 HMAC
+ aes256-cts-hmac-sha384-192 aes256-sha2               AES-256 CTS mode with 192-bit SHA-384 HMAC
+@@ -863,7 +851,6 @@ arcfour-hmac rc4-hmac arcfour-hmac-md5               RC4 with HMAC/MD5
+ arcfour-hmac-exp rc4-hmac-exp arcfour-hmac-md5-exp   Exportable RC4 with HMAC/MD5 (weak)
+ camellia256-cts-cmac camellia256-cts                 Camellia-256 CTS mode with CMAC
+ camellia128-cts-cmac camellia128-cts                 Camellia-128 CTS mode with CMAC
+-des                                                  The DES family: des-cbc-crc, des-cbc-md5, and des-cbc-md4 (weak)
+ des3                                                 The triple DES family: des3-cbc-sha1
+ aes                                                  The AES family: aes256-cts-hmac-sha1-96, aes128-cts-hmac-sha1-96, aes256-cts-hmac-sha384-192, and aes128-cts-hmac-sha256-128
+ rc4                                                  The RC4 family: arcfour-hmac
+@@ -875,8 +862,8 @@ types for the variable in question.  Types or families can be removed
+ from the current list by prefixing them with a minus sign ("-").
+ Types or families can be prefixed with a plus sign ("+") for symmetry;
+ it has the same meaning as just listing the type or family.  For
+-example, "``DEFAULT -des``" would be the default set of encryption
+-types with DES types removed, and "``des3 DEFAULT``" would be the
++example, "``DEFAULT -rc4``" would be the default set of encryption
++types with RC4 types removed, and "``des3 DEFAULT``" would be the
+ default set of encryption types with triple DES types moved to the
+ front.
+ 
+diff --git a/doc/admin/conf_files/krb5_conf.rst b/doc/admin/conf_files/krb5_conf.rst
+index 7b4389f..320f1c4 100644
+--- a/doc/admin/conf_files/krb5_conf.rst
++++ b/doc/admin/conf_files/krb5_conf.rst
+@@ -106,10 +106,7 @@ The libdefaults section may contain any of the following relations:
+     in :ref:`Encryption_types` in :ref:`kdc.conf(5)`) will be filtered
+     out of the lists **default_tgs_enctypes**,
+     **default_tkt_enctypes**, and **permitted_enctypes**.  The default
+-    value for this tag is false, which may cause authentication
+-    failures in existing Kerberos infrastructures that do not support
+-    strong crypto.  Users in affected environments should set this tag
+-    to true until their infrastructure adopts stronger ciphers.
++    value for this tag is false.
+ 
+ **ap_req_checksum_type**
+     An integer which specifies the type of AP-REQ checksum to use in
+@@ -171,9 +168,7 @@ The libdefaults section may contain any of the following relations:
+     preference from highest to lowest.  The list may be delimited with
+     commas or whitespace.  See :ref:`Encryption_types` in
+     :ref:`kdc.conf(5)` for a list of the accepted values for this tag.
+-    The default value is |defetypes|, but single-DES encryption types
+-    will be implicitly removed from this list if the value of
+-    **allow_weak_crypto** is false.
++    The default value is |defetypes|.
+ 
+     Do not set this unless required for specific backward
+     compatibility purposes; stale values of this setting can prevent
+@@ -185,9 +180,7 @@ The libdefaults section may contain any of the following relations:
+     the client should request when making an AS-REQ, in order of
+     preference from highest to lowest.  The format is the same as for
+     default_tgs_enctypes.  The default value for this tag is
+-    |defetypes|, but single-DES encryption types will be implicitly
+-    removed from this list if the value of **allow_weak_crypto** is
+-    false.
++    |defetypes|.
+ 
+     Do not set this unless required for specific backward
+     compatibility purposes; stale values of this setting can prevent
+@@ -321,9 +314,7 @@ The libdefaults section may contain any of the following relations:
+ **permitted_enctypes**
+     Identifies all encryption types that are permitted for use in
+     session key encryption.  The default value for this tag is
+-    |defetypes|, but single-DES encryption types will be implicitly
+-    removed from this list if the value of **allow_weak_crypto** is
+-    false.
++    |defetypes|.
+ 
+ **plugin_base_dir**
+     If set, determines the base directory where krb5 plugins are
+diff --git a/doc/admin/enctypes.rst b/doc/admin/enctypes.rst
+index 3cdfc92..84183a5 100644
+--- a/doc/admin/enctypes.rst
++++ b/doc/admin/enctypes.rst
+@@ -48,17 +48,12 @@ Session key selection
+ The KDC chooses the session key enctype by taking the intersection of
+ its **permitted_enctypes** list, the list of long-term keys for the
+ most recent kvno of the service, and the client's requested list of
+-enctypes.  If **allow_weak_crypto** is true, all services are assumed
+-to support des-cbc-crc.
++enctypes.
+ 
+-Starting in krb5-1.11, **des_crc_session_supported** in
+-:ref:`kdc.conf(5)` allows additional control over whether the KDC
+-issues des-cbc-crc session keys.
+-
+-Also starting in krb5-1.11, it is possible to set a string attribute
+-on a service principal to control what session key enctypes the KDC
+-may issue for service tickets for that principal.  See
+-:ref:`set_string` in :ref:`kadmin(1)` for details.
++Starting in krb5-1.11, it is possible to set a string attribute on a
++service principal to control what session key enctypes the KDC may
++issue for service tickets for that principal.  See :ref:`set_string`
++in :ref:`kadmin(1)` for details.
+ 
+ 
+ Choosing enctypes for a service
+@@ -86,11 +81,11 @@ affect how enctypes are chosen.
+ 
+ **allow_weak_crypto**
+     defaults to *false* starting with krb5-1.8.  When *false*, removes
+-    single-DES enctypes (and other weak enctypes) from
+-    **permitted_enctypes**, **default_tkt_enctypes**, and
+-    **default_tgs_enctypes**.  Do not set this to *true* unless the
+-    use of weak enctypes is an acceptable risk for your environment
+-    and the weak enctypes are required for backward compatibility.
++    weak enctypes from **permitted_enctypes**,
++    **default_tkt_enctypes**, and **default_tgs_enctypes**.  Do not
++    set this to *true* unless the use of weak enctypes is an
++    acceptable risk for your environment and the weak enctypes are
++    required for backward compatibility.
+ 
+ **permitted_enctypes**
+     controls the set of enctypes that a service will accept as session
+@@ -127,9 +122,9 @@ See :ref:`Encryption_types` for additional information about enctypes.
+ ========================== ===== ======== =======
+ enctype                    weak? krb5     Windows
+ ========================== ===== ======== =======
+-des-cbc-crc                weak  all      >=2000
+-des-cbc-md4                weak  all      ?
+-des-cbc-md5                weak  all      >=2000
++des-cbc-crc                weak  <1.18    >=2000
++des-cbc-md4                weak  <1.18    ?
++des-cbc-md5                weak  <1.18    >=2000
+ des3-cbc-sha1                    >=1.1    none
+ arcfour-hmac                     >=1.3    >=2000
+ arcfour-hmac-exp           weak  >=1.3    >=2000
+@@ -141,6 +136,7 @@ camellia128-cts-cmac             >=1.9    none
+ camellia256-cts-cmac             >=1.9    none
+ ========================== ===== ======== =======
+ 
+-krb5 releases 1.8 and later disable the single-DES enctypes by
+-default.  Microsoft Windows releases Windows 7 and later disable
+-single-DES enctypes by default.
++krb5 releases 1.18 and later do not support single-DES.  krb5 releases
++1.8 and later disable the single-DES enctypes by default.  Microsoft
++Windows releases Windows 7 and later disable single-DES enctypes by
++default.
+diff --git a/doc/appdev/refs/macros/index.rst b/doc/appdev/refs/macros/index.rst
+index 47c6d44..534795d 100644
+--- a/doc/appdev/refs/macros/index.rst
++++ b/doc/appdev/refs/macros/index.rst
+@@ -55,6 +55,7 @@ Public
+    ENCTYPE_DES3_CBC_RAW.rst
+    ENCTYPE_DES3_CBC_SHA.rst
+    ENCTYPE_DES3_CBC_SHA1.rst
++   ENCTYPE_DES3_CBC_SHA1.rst
+    ENCTYPE_DES_CBC_CRC.rst
+    ENCTYPE_DES_CBC_MD4.rst
+    ENCTYPE_DES_CBC_MD5.rst
+diff --git a/doc/conf.py b/doc/conf.py
+index c32e330..759367c 100644
+--- a/doc/conf.py
++++ b/doc/conf.py
+@@ -272,7 +272,7 @@ else:
+     rst_epilog += '''
+ .. |krb5conf| replace:: ``/etc/krb5.conf``
+ .. |defkeysalts| replace:: ``aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal des3-cbc-sha1:normal arcfour-hmac-md5:normal``
+-.. |defetypes| replace:: ``aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 aes256-cts-hmac-sha384-192 aes128-cts-hmac-sha256-128 des3-cbc-sha1 arcfour-hmac-md5 camellia256-cts-cmac camellia128-cts-cmac des-cbc-crc des-cbc-md5 des-cbc-md4``
++.. |defetypes| replace:: ``aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 aes256-cts-hmac-sha384-192 aes128-cts-hmac-sha256-128 des3-cbc-sha1 arcfour-hmac-md5 camellia256-cts-cmac camellia128-cts-cmac``
+ .. |defmkey| replace:: ``aes256-cts-hmac-sha1-96``
+ .. |copy| unicode:: U+000A9
+ '''
+diff --git a/doc/mitK5features.rst b/doc/mitK5features.rst
+index 584f7b8..a19068e 100644
+--- a/doc/mitK5features.rst
++++ b/doc/mitK5features.rst
+@@ -37,7 +37,7 @@ Database backends: LDAP, DB2, LMDB
+ 
+ krb4 support: Kerberos 5 release < 1.8
+ 
+-DES support: configurable (See :ref:`retiring-des`)
++DES support: Kerberos 5 release < 1.18 (See :ref:`retiring-des`)
+ 
+ Interoperability
+ ----------------
+diff --git a/src/include/k5-int.h b/src/include/k5-int.h
+index e4f1678..6145f31 100644
+--- a/src/include/k5-int.h
++++ b/src/include/k5-int.h
+@@ -200,7 +200,6 @@ typedef unsigned char   u_char;
+ #define KRB5_CONF_DEFAULT_REALM                "default_realm"
+ #define KRB5_CONF_DEFAULT_TGS_ENCTYPES         "default_tgs_enctypes"
+ #define KRB5_CONF_DEFAULT_TKT_ENCTYPES         "default_tkt_enctypes"
+-#define KRB5_CONF_DES_CRC_SESSION_SUPPORTED    "des_crc_session_supported"
+ #define KRB5_CONF_DICT_FILE                    "dict_file"
+ #define KRB5_CONF_DISABLE                      "disable"
+ #define KRB5_CONF_DISABLE_ENCRYPTED_TIMESTAMP  "disable_encrypted_timestamp"
+diff --git a/src/include/krb5/krb5.hin b/src/include/krb5/krb5.hin
+index c40a6cc..12e2967 100644
+--- a/src/include/krb5/krb5.hin
++++ b/src/include/krb5/krb5.hin
+@@ -416,13 +416,13 @@ typedef struct _krb5_crypto_iov {
+ 
+ /* per Kerberos v5 protocol spec */
+ #define ENCTYPE_NULL            0x0000
+-#define ENCTYPE_DES_CBC_CRC     0x0001  /**< DES cbc mode with CRC-32 */
+-#define ENCTYPE_DES_CBC_MD4     0x0002  /**< DES cbc mode with RSA-MD4 */
+-#define ENCTYPE_DES_CBC_MD5     0x0003  /**< DES cbc mode with RSA-MD5 */
+-#define ENCTYPE_DES_CBC_RAW     0x0004  /**< @deprecated DES cbc mode raw */
++#define ENCTYPE_DES_CBC_CRC     0x0001  /**< @deprecated no longer supported */
++#define ENCTYPE_DES_CBC_MD4     0x0002  /**< @deprecated no longer supported */
++#define ENCTYPE_DES_CBC_MD5     0x0003  /**< @deprecated no longer supported */
++#define ENCTYPE_DES_CBC_RAW     0x0004  /**< @deprecated no longer supported */
+ #define ENCTYPE_DES3_CBC_SHA    0x0005  /**< @deprecated DES-3 cbc with SHA1 */
+ #define ENCTYPE_DES3_CBC_RAW    0x0006  /**< @deprecated DES-3 cbc mode raw */
+-#define ENCTYPE_DES_HMAC_SHA1   0x0008  /**< @deprecated */
++#define ENCTYPE_DES_HMAC_SHA1   0x0008  /**< @deprecated no longer supported */
+ /* PKINIT */
+ #define ENCTYPE_DSA_SHA1_CMS    0x0009  /**< DSA with SHA1, CMS signature */
+ #define ENCTYPE_MD5_RSA_CMS     0x000a  /**< MD5 with RSA, CMS signature */
+diff --git a/src/include/win-mac.h b/src/include/win-mac.h
+index c3744ed..dc0f2a1 100644
+--- a/src/include/win-mac.h
++++ b/src/include/win-mac.h
+@@ -176,18 +176,6 @@ typedef _W64 int         ssize_t;
+ #define HAVE_STDLIB_H
+ #endif
+ 
+-/* This controls which encryption routines libcrypto will provide */
+-#define PROVIDE_DES_CBC_MD5
+-#define PROVIDE_DES_CBC_CRC
+-#define PROVIDE_DES_CBC_RAW
+-#define PROVIDE_DES_CBC_CKSUM
+-#define PROVIDE_CRC32
+-#define PROVIDE_RSA_MD4
+-#define PROVIDE_RSA_MD5
+-/* #define PROVIDE_DES3_CBC_SHA */
+-/* #define PROVIDE_DES3_CBC_RAW */
+-/* #define PROVIDE_NIST_SHA */
+-
+ /* Ugly. Microsoft, in stdc mode, doesn't support the low-level i/o
+  * routines directly. Rather, they only export the _<function> version.
+  * The following defines works around this problem.
+diff --git a/src/kdc/kdc_util.c b/src/kdc/kdc_util.c
+index 0155c28..f27e5de 100644
+--- a/src/kdc/kdc_util.c
++++ b/src/kdc/kdc_util.c
+@@ -979,17 +979,6 @@ dbentry_supports_enctype(kdc_realm_t *kdc_active_realm, krb5_db_entry *server,
+     free(etypes_str);
+     free(etypes);
+ 
+-    /* If configured to, assume every server without a session_enctypes
+-     * attribute supports DES_CBC_CRC. */
+-    if (kdc_active_realm->realm_assume_des_crc_sess &&
+-        enctype == ENCTYPE_DES_CBC_CRC)
+-        return TRUE;
+-
+-    /* Due to an ancient interop problem, assume nothing supports des-cbc-md5
+-     * unless there's a session_enctypes explicitly saying that it does. */
+-    if (enctype == ENCTYPE_DES_CBC_MD5)
+-        return FALSE;
+-
+     /* Assume the server supports any enctype it has a long-term key for. */
+     return !krb5_dbe_find_enctype(kdc_context, server, enctype, -1, 0, &datap);
+ }
+@@ -1728,9 +1717,6 @@ krb5_boolean
+ enctype_requires_etype_info_2(krb5_enctype enctype)
+ {
+     switch(enctype) {
+-    case ENCTYPE_DES_CBC_CRC:
+-    case ENCTYPE_DES_CBC_MD4:
+-    case ENCTYPE_DES_CBC_MD5:
+     case ENCTYPE_DES3_CBC_SHA1:
+     case ENCTYPE_DES3_CBC_RAW:
+     case ENCTYPE_ARCFOUR_HMAC:
+diff --git a/src/kdc/main.c b/src/kdc/main.c
+index 408c723..54079ff 100644
+--- a/src/kdc/main.c
++++ b/src/kdc/main.c
+@@ -295,12 +295,6 @@ init_realm(kdc_realm_t * rdp, krb5_pointer aprof, char *realm,
+                                 &rdp->realm_reject_bad_transit))
+         rdp->realm_reject_bad_transit = TRUE;
+ 
+-    /* Handle assume des-cbc-crc is supported for session keys */
+-    hierarchy[2] = KRB5_CONF_DES_CRC_SESSION_SUPPORTED;
+-    if (krb5_aprof_get_boolean(aprof, hierarchy, TRUE,
+-                               &rdp->realm_assume_des_crc_sess))
+-        rdp->realm_assume_des_crc_sess = TRUE;
+-
+     /* Handle ticket maximum life */
+     hierarchy[2] = KRB5_CONF_MAX_LIFE;
+     if (krb5_aprof_get_deltat(aprof, hierarchy, TRUE, &rdp->realm_maxlife))
+diff --git a/src/kdc/realm_data.h b/src/kdc/realm_data.h
+index 859daf1..8d698dc 100644
+--- a/src/kdc/realm_data.h
++++ b/src/kdc/realm_data.h
+@@ -73,7 +73,6 @@ typedef struct __kdc_realm_data {
+     krb5_deltat         realm_maxrlife; /* Maximum renewable life for realm */
+     krb5_boolean        realm_reject_bad_transit; /* Accept unverifiable transited_realm ? */
+     krb5_boolean        realm_restrict_anon;  /* Anon to local TGT only */
+-    krb5_boolean        realm_assume_des_crc_sess;  /* Assume princs support des-cbc-crc for session keys */
+ } kdc_realm_t;
+ 
+ struct server_handle {
+diff --git a/src/lib/crypto/builtin/des/des_int.h b/src/lib/crypto/builtin/des/des_int.h
+index 67e40a1..f8dc6b2 100644
+--- a/src/lib/crypto/builtin/des/des_int.h
++++ b/src/lib/crypto/builtin/des/des_int.h
+@@ -131,7 +131,6 @@ typedef struct mit_des_ran_key_seed {
+ /* the first byte of the key is already in the keyblock */
+ 
+ #define MIT_DES_BLOCK_LENGTH            (8*sizeof(krb5_octet))
+-#define MIT_DES_CBC_CRC_PAD_MINIMUM     CRC32_CKSUM_LENGTH
+ /* This used to be 8*sizeof(krb5_octet) */
+ #define MIT_DES_KEYSIZE                 8
+ 
+diff --git a/src/lib/crypto/builtin/enc_provider/Makefile.in b/src/lib/crypto/builtin/enc_provider/Makefile.in
+index 4fd3311..3459e1d 100644
+--- a/src/lib/crypto/builtin/enc_provider/Makefile.in
++++ b/src/lib/crypto/builtin/enc_provider/Makefile.in
+@@ -11,21 +11,18 @@ LOCALINCLUDES = -I$(srcdir)/../des 	\
+ ##DOS##OBJFILE = ..\..\$(OUTPRE)enc_provider.lst
+ 
+ STLIBOBJS= \
+-	des.o 	\
+ 	des3.o 	\
+ 	rc4.o 	\
+ 	aes.o   \
+ 	camellia.o
+ 
+ OBJS= \
+-	$(OUTPRE)des.$(OBJEXT) 	\
+ 	$(OUTPRE)des3.$(OBJEXT) 	\
+ 	$(OUTPRE)aes.$(OBJEXT) 	\
+ 	$(OUTPRE)camellia.$(OBJEXT)	\
+ 	$(OUTPRE)rc4.$(OBJEXT)
+ 
+ SRCS= \
+-	$(srcdir)/des.c 	\
+ 	$(srcdir)/des3.c 	\
+ 	$(srcdir)/aes.c 	\
+ 	$(srcdir)/camellia.c	\
+diff --git a/src/lib/crypto/builtin/enc_provider/deps b/src/lib/crypto/builtin/enc_provider/deps
+index 72e3407..7a3324c 100644
+--- a/src/lib/crypto/builtin/enc_provider/deps
++++ b/src/lib/crypto/builtin/enc_provider/deps
+@@ -1,18 +1,6 @@
+ #
+ # Generated makefile dependencies follow.
+ #
+-des.so des.po $(OUTPRE)des.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+-  $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+-  $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h \
+-  $(srcdir)/../aes/aes.h $(srcdir)/../crypto_mod.h $(srcdir)/../des/des_int.h \
+-  $(srcdir)/../sha2/sha2.h $(top_srcdir)/include/k5-buf.h \
+-  $(top_srcdir)/include/k5-err.h $(top_srcdir)/include/k5-gmt_mktime.h \
+-  $(top_srcdir)/include/k5-int-pkinit.h $(top_srcdir)/include/k5-int.h \
+-  $(top_srcdir)/include/k5-platform.h $(top_srcdir)/include/k5-plugin.h \
+-  $(top_srcdir)/include/k5-thread.h $(top_srcdir)/include/k5-trace.h \
+-  $(top_srcdir)/include/krb5.h $(top_srcdir)/include/krb5/authdata_plugin.h \
+-  $(top_srcdir)/include/krb5/plugin.h $(top_srcdir)/include/port-sockets.h \
+-  $(top_srcdir)/include/socket-utils.h des.c
+ des3.so des3.po $(OUTPRE)des3.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+   $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+   $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h \
+diff --git a/src/lib/crypto/builtin/enc_provider/des.c b/src/lib/crypto/builtin/enc_provider/des.c
+deleted file mode 100644
+index 30b8229..0000000
+--- a/src/lib/crypto/builtin/enc_provider/des.c
++++ /dev/null
+@@ -1,120 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/*
+- * Copyright (C) 1998 by the FundsXpress, INC.
+- *
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may require
+- * a specific license from the United States Government.  It is the
+- * responsibility of any person or organization contemplating export to
+- * obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of FundsXpress. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  FundsXpress makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+- */
+-
+-#include "crypto_int.h"
+-#include "des_int.h"
+-
+-static krb5_error_code
+-validate_and_schedule(krb5_key key, const krb5_data *ivec,
+-                      const krb5_crypto_iov *data, size_t num_data,
+-                      mit_des_key_schedule schedule)
+-{
+-    if (key->keyblock.length != 8)
+-        return KRB5_BAD_KEYSIZE;
+-    if (iov_total_length(data, num_data, FALSE) % 8 != 0)
+-        return KRB5_BAD_MSIZE;
+-    if (ivec != NULL && ivec->length != 8)
+-        return KRB5_BAD_MSIZE;
+-
+-    switch (mit_des_key_sched(key->keyblock.contents, schedule)) {
+-    case -1:
+-        return(KRB5DES_BAD_KEYPAR);
+-    case -2:
+-        return(KRB5DES_WEAK_KEY);
+-    }
+-    return 0;
+-}
+-
+-static krb5_error_code
+-des_encrypt(krb5_key key, const krb5_data *ivec, krb5_crypto_iov *data,
+-            size_t num_data)
+-{
+-    mit_des_key_schedule schedule;
+-    krb5_error_code err;
+-
+-    err = validate_and_schedule(key, ivec, data, num_data, schedule);
+-    if (err)
+-        return err;
+-
+-    krb5int_des_cbc_encrypt(data, num_data, schedule,
+-                            ivec != NULL ? (unsigned char *) ivec->data :
+-                            NULL);
+-
+-    zap(schedule, sizeof(schedule));
+-    return 0;
+-}
+-
+-static krb5_error_code
+-des_decrypt(krb5_key key, const krb5_data *ivec, krb5_crypto_iov *data,
+-            size_t num_data)
+-{
+-    mit_des_key_schedule schedule;
+-    krb5_error_code err;
+-
+-    err = validate_and_schedule(key, ivec, data, num_data, schedule);
+-    if (err)
+-        return err;
+-
+-    krb5int_des_cbc_decrypt(data, num_data, schedule,
+-                            ivec != NULL ? (unsigned char *) ivec->data :
+-                            NULL);
+-
+-    zap(schedule, sizeof(schedule));
+-    return 0;
+-}
+-
+-static krb5_error_code
+-des_cbc_mac(krb5_key key, const krb5_crypto_iov *data, size_t num_data,
+-            const krb5_data *ivec, krb5_data *output)
+-{
+-    mit_des_key_schedule schedule;
+-    krb5_error_code err;
+-
+-    err = validate_and_schedule(key, ivec, data, num_data, schedule);
+-    if (err)
+-        return err;
+-
+-    if (output->length != 8)
+-        return KRB5_CRYPTO_INTERNAL;
+-
+-    krb5int_des_cbc_mac(data, num_data, schedule,
+-                        ivec != NULL ? (unsigned char *) ivec->data : NULL,
+-                        (unsigned char *) output->data);
+-
+-    zap(schedule, sizeof(schedule));
+-    return 0;
+-}
+-
+-const struct krb5_enc_provider krb5int_enc_des = {
+-    8,
+-    7, 8,
+-    des_encrypt,
+-    des_decrypt,
+-    des_cbc_mac,
+-    krb5int_des_init_state,
+-    krb5int_default_free_state
+-};
+diff --git a/src/lib/crypto/builtin/hash_provider/Makefile.in b/src/lib/crypto/builtin/hash_provider/Makefile.in
+index 2f587a4..ceebf93 100644
+--- a/src/lib/crypto/builtin/hash_provider/Makefile.in
++++ b/src/lib/crypto/builtin/hash_provider/Makefile.in
+@@ -8,20 +8,17 @@ LOCALINCLUDES = -I$(srcdir)/.. -I$(srcdir)/../../krb -I$(srcdir)/../md4 \
+ ##DOS##OBJFILE = ..\..\$(OUTPRE)hash_provider.lst
+ 
+ STLIBOBJS= \
+-	hash_crc32.o 	\
+ 	hash_md4.o 	\
+ 	hash_md5.o 	\
+ 	hash_sha1.o	\
+ 	hash_sha2.o
+ 
+-OBJS=   $(OUTPRE)hash_crc32.$(OBJEXT) 	\
+-	$(OUTPRE)hash_md4.$(OBJEXT) 	\
++OBJS=   $(OUTPRE)hash_md4.$(OBJEXT) 	\
+ 	$(OUTPRE)hash_md5.$(OBJEXT) 	\
+ 	$(OUTPRE)hash_sha1.$(OBJEXT)	\
+ 	$(OUTPRE)hash_sha2.$(OBJEXT)
+ 
+-SRCS=	$(srcdir)/hash_crc32.c	\
+-	$(srcdir)/hash_md4.c 	\
++SRCS=	$(srcdir)/hash_md4.c 	\
+ 	$(srcdir)/hash_md5.c 	\
+ 	$(srcdir)/hash_sha1.c	\
+ 	$(srcdir)/hash_sha2.c
+diff --git a/src/lib/crypto/builtin/hash_provider/deps b/src/lib/crypto/builtin/hash_provider/deps
+index 18f89b3..fb65a44 100644
+--- a/src/lib/crypto/builtin/hash_provider/deps
++++ b/src/lib/crypto/builtin/hash_provider/deps
+@@ -1,19 +1,6 @@
+ #
+ # Generated makefile dependencies follow.
+ #
+-hash_crc32.so hash_crc32.po $(OUTPRE)hash_crc32.$(OBJEXT): \
+-  $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+-  $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+-  $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h $(srcdir)/../aes/aes.h \
+-  $(srcdir)/../crypto_mod.h $(srcdir)/../sha2/sha2.h \
+-  $(top_srcdir)/include/k5-buf.h $(top_srcdir)/include/k5-err.h \
+-  $(top_srcdir)/include/k5-gmt_mktime.h $(top_srcdir)/include/k5-int-pkinit.h \
+-  $(top_srcdir)/include/k5-int.h $(top_srcdir)/include/k5-platform.h \
+-  $(top_srcdir)/include/k5-plugin.h $(top_srcdir)/include/k5-thread.h \
+-  $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5.h \
+-  $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+-  $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+-  hash_crc32.c
+ hash_md4.so hash_md4.po $(OUTPRE)hash_md4.$(OBJEXT): \
+   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+   $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+diff --git a/src/lib/crypto/builtin/hash_provider/hash_crc32.c b/src/lib/crypto/builtin/hash_provider/hash_crc32.c
+deleted file mode 100644
+index 1d0be55..0000000
+--- a/src/lib/crypto/builtin/hash_provider/hash_crc32.c
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/*
+- * Copyright (C) 1998 by the FundsXpress, INC.
+- *
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may require
+- * a specific license from the United States Government.  It is the
+- * responsibility of any person or organization contemplating export to
+- * obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of FundsXpress. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  FundsXpress makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+- */
+-
+-#include "crypto_int.h"
+-
+-static krb5_error_code
+-k5_crc32_hash(const krb5_crypto_iov *data, size_t num_data, krb5_data *output)
+-{
+-    unsigned long c;
+-    unsigned int i;
+-
+-    if (output->length != CRC32_CKSUM_LENGTH)
+-        return KRB5_CRYPTO_INTERNAL;
+-
+-    c = 0;
+-    for (i = 0; i < num_data; i++) {
+-        const krb5_crypto_iov *iov = &data[i];
+-
+-        if (SIGN_IOV(iov))
+-            mit_crc32(iov->data.data, iov->data.length, &c);
+-    }
+-
+-    store_32_le(c, output->data);
+-    return 0;
+-}
+-
+-const struct krb5_hash_provider krb5int_hash_crc32 = {
+-    "CRC32",
+-    CRC32_CKSUM_LENGTH,
+-    1,
+-    k5_crc32_hash
+-};
+diff --git a/src/lib/crypto/krb/Makefile.in b/src/lib/crypto/krb/Makefile.in
+index fc01a2c..c0e0b79 100644
+--- a/src/lib/crypto/krb/Makefile.in
++++ b/src/lib/crypto/krb/Makefile.in
+@@ -23,7 +23,6 @@ STLIBOBJS=\
+ 	cmac.o			\
+ 	coll_proof_cksum.o	\
+ 	combine_keys.o		\
+-	crc32.o			\
+ 	crypto_length.o		\
+ 	crypto_libinit.o	\
+ 	default_state.o 	\
+@@ -37,7 +36,6 @@ STLIBOBJS=\
+ 	enc_dk_cmac.o		\
+ 	enc_dk_hmac.o		\
+ 	enc_etm.o		\
+-	enc_old.o		\
+ 	enc_raw.o		\
+ 	enc_rc4.o		\
+ 	etypes.o		\
+@@ -61,7 +59,6 @@ STLIBOBJS=\
+ 	prng.o			\
+ 	prng_$(PRNG_ALG).o	\
+ 	random_to_key.o		\
+-	s2k_des.o		\
+ 	s2k_pbkdf2.o		\
+ 	s2k_rc4.o		\
+ 	state.o 		\
+@@ -88,7 +85,6 @@ OBJS=\
+ 	$(OUTPRE)cmac.$(OBJEXT)			\
+ 	$(OUTPRE)coll_proof_cksum.$(OBJEXT)	\
+ 	$(OUTPRE)combine_keys.$(OBJEXT)		\
+-	$(OUTPRE)crc32.$(OBJEXT)		\
+ 	$(OUTPRE)crypto_length.$(OBJEXT)	\
+ 	$(OUTPRE)crypto_libinit.$(OBJEXT)	\
+ 	$(OUTPRE)default_state.$(OBJEXT) 	\
+@@ -102,7 +98,6 @@ OBJS=\
+ 	$(OUTPRE)enc_dk_cmac.$(OBJEXT)		\
+ 	$(OUTPRE)enc_dk_hmac.$(OBJEXT)		\
+ 	$(OUTPRE)enc_etm.$(OBJEXT)		\
+-	$(OUTPRE)enc_old.$(OBJEXT)		\
+ 	$(OUTPRE)enc_raw.$(OBJEXT)		\
+ 	$(OUTPRE)enc_rc4.$(OBJEXT)		\
+ 	$(OUTPRE)etypes.$(OBJEXT)		\
+@@ -126,7 +121,6 @@ OBJS=\
+ 	$(OUTPRE)prng.$(OBJEXT)			\
+ 	$(OUTPRE)prng_$(PRNG_ALG).$(OBJEXT)	\
+ 	$(OUTPRE)random_to_key.$(OBJEXT)	\
+-	$(OUTPRE)s2k_des.$(OBJEXT)		\
+ 	$(OUTPRE)s2k_pbkdf2.$(OBJEXT)		\
+ 	$(OUTPRE)s2k_rc4.$(OBJEXT)		\
+ 	$(OUTPRE)state.$(OBJEXT) 		\
+@@ -153,7 +147,6 @@ SRCS=\
+ 	$(srcdir)/cmac.c		\
+ 	$(srcdir)/coll_proof_cksum.c	\
+ 	$(srcdir)/combine_keys.c	\
+-	$(srcdir)/crc32.c		\
+ 	$(srcdir)/crypto_length.c	\
+ 	$(srcdir)/crypto_libinit.c	\
+ 	$(srcdir)/default_state.c 	\
+@@ -167,7 +160,6 @@ SRCS=\
+ 	$(srcdir)/enc_dk_cmac.c		\
+ 	$(srcdir)/enc_dk_hmac.c		\
+ 	$(srcdir)/enc_etm.c		\
+-	$(srcdir)/enc_old.c		\
+ 	$(srcdir)/enc_raw.c		\
+ 	$(srcdir)/enc_rc4.c		\
+ 	$(srcdir)/etypes.c		\
+@@ -192,7 +184,6 @@ SRCS=\
+ 	$(srcdir)/prng_$(PRNG_ALG).c	\
+ 	$(srcdir)/cf2.c 		\
+ 	$(srcdir)/random_to_key.c	\
+-	$(srcdir)/s2k_des.c		\
+ 	$(srcdir)/s2k_pbkdf2.c		\
+ 	$(srcdir)/s2k_rc4.c		\
+ 	$(srcdir)/state.c 		\
+diff --git a/src/lib/crypto/krb/cksumtypes.c b/src/lib/crypto/krb/cksumtypes.c
+index 85967f9..ecc2e08 100644
+--- a/src/lib/crypto/krb/cksumtypes.c
++++ b/src/lib/crypto/krb/cksumtypes.c
+@@ -28,42 +28,18 @@
+ #include "crypto_int.h"
+ 
+ const struct krb5_cksumtypes krb5int_cksumtypes_list[] = {
+-    { CKSUMTYPE_CRC32,
+-      "crc32", { 0 }, "CRC-32",
+-      NULL, &krb5int_hash_crc32,
+-      krb5int_unkeyed_checksum, NULL,
+-      4, 4, CKSUM_UNKEYED | CKSUM_NOT_COLL_PROOF },
+-
+     { CKSUMTYPE_RSA_MD4,
+       "md4", { 0 }, "RSA-MD4",
+       NULL, &krb5int_hash_md4,
+       krb5int_unkeyed_checksum, NULL,
+       16, 16, CKSUM_UNKEYED },
+ 
+-    { CKSUMTYPE_RSA_MD4_DES,
+-      "md4-des", { 0 }, "RSA-MD4 with DES cbc mode",
+-      &krb5int_enc_des, &krb5int_hash_md4,
+-      krb5int_confounder_checksum, krb5int_confounder_verify,
+-      24, 24, 0 },
+-
+-    { CKSUMTYPE_DESCBC,
+-      "des-cbc", { 0 }, "DES cbc mode",
+-      &krb5int_enc_des, NULL,
+-      krb5int_cbc_checksum, NULL,
+-      8, 8, 0 },
+-
+     { CKSUMTYPE_RSA_MD5,
+       "md5", { 0 }, "RSA-MD5",
+       NULL, &krb5int_hash_md5,
+       krb5int_unkeyed_checksum, NULL,
+       16, 16, CKSUM_UNKEYED },
+ 
+-    { CKSUMTYPE_RSA_MD5_DES,
+-      "md5-des", { 0 }, "RSA-MD5 with DES cbc mode",
+-      &krb5int_enc_des, &krb5int_hash_md5,
+-      krb5int_confounder_checksum, krb5int_confounder_verify,
+-      24, 24, 0 },
+-
+     { CKSUMTYPE_NIST_SHA,
+       "sha", { 0 }, "NIST-SHA",
+       NULL, &krb5int_hash_sha1,
+diff --git a/src/lib/crypto/krb/combine_keys.c b/src/lib/crypto/krb/combine_keys.c
+index 90905c5..c36434e 100644
+--- a/src/lib/crypto/krb/combine_keys.c
++++ b/src/lib/crypto/krb/combine_keys.c
+@@ -60,9 +60,6 @@ static krb5_boolean
+ enctype_ok(krb5_enctype e)
+ {
+     switch (e) {
+-    case ENCTYPE_DES_CBC_CRC:
+-    case ENCTYPE_DES_CBC_MD4:
+-    case ENCTYPE_DES_CBC_MD5:
+     case ENCTYPE_DES3_CBC_SHA1:
+         return TRUE;
+     default:
+diff --git a/src/lib/crypto/krb/crc32.c b/src/lib/crypto/krb/crc32.c
+deleted file mode 100644
+index 11fe312..0000000
+--- a/src/lib/crypto/krb/crc32.c
++++ /dev/null
+@@ -1,165 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/* lib/crypto/krb/crc32.c */
+-/*
+- * Copyright 1990, 2002 by the Massachusetts Institute of Technology.
+- * All Rights Reserved.
+- *
+- * Export of this software from the United States of America may
+- *   require a specific license from the United States Government.
+- *   It is the responsibility of any person or organization contemplating
+- *   export to obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of M.I.T. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  Furthermore if you modify this software you must label
+- * your software as modified software and not distribute it in such a
+- * fashion that it might be confused with the original M.I.T. software.
+- * M.I.T. makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- */
+-/*
+- * Copyright (C) 1986 Gary S. Brown.  You may use this program, or
+- * code or tables extracted from it, as desired without restriction.
+- */
+-
+-/*
+- *
+- * CRC-32/AUTODIN-II routines
+- */
+-
+-#include "crypto_int.h"
+-
+-/* First, the polynomial itself and its table of feedback terms.  The  */
+-/* polynomial is                                                       */
+-/* X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X^1+X^0 */
+-/* Note that we take it "backwards" and put the highest-order term in  */
+-/* the lowest-order bit.  The X^32 term is "implied"; the LSB is the   */
+-/* X^31 term, etc.  The X^0 term (usually shown as "+1") results in    */
+-/* the MSB being 1.                                                    */
+-
+-/* Note that the usual hardware shift register implementation, which   */
+-/* is what we're using (we're merely optimizing it by doing eight-bit  */
+-/* chunks at a time) shifts bits into the lowest-order term.  In our   */
+-/* implementation, that means shifting towards the right.  Why do we   */
+-/* do it this way?  Because the calculated CRC must be transmitted in  */
+-/* order from highest-order term to lowest-order term.  UARTs transmit */
+-/* characters in order from LSB to MSB.  By storing the CRC this way,  */
+-/* we hand it to the UART in the order low-byte to high-byte; the UART */
+-/* sends each low-bit to hight-bit; and the result is transmission bit */
+-/* by bit from highest- to lowest-order term without requiring any bit */
+-/* shuffling on our part.  Reception works similarly.                  */
+-
+-/* The feedback terms table consists of 256, 32-bit entries.  Notes:   */
+-/*                                                                     */
+-/*  1. The table can be generated at runtime if desired; code to do so */
+-/*     is shown later.  It might not be obvious, but the feedback      */
+-/*     terms simply represent the results of eight shift/xor opera-    */
+-/*     tions for all combinations of data and CRC register values.     */
+-/*                                                                     */
+-/*  2. The CRC accumulation logic is the same for all CRC polynomials, */
+-/*     be they sixteen or thirty-two bits wide.  You simply choose the */
+-/*     appropriate table.  Alternatively, because the table can be     */
+-/*     generated at runtime, you can start by generating the table for */
+-/*     the polynomial in question and use exactly the same "updcrc",   */
+-/*     if your application needn't simultaneously handle two CRC       */
+-/*     polynomials.  (Note, however, that XMODEM is strange.)          */
+-/*                                                                     */
+-/*  3. For 16-bit CRCs, the table entries need be only 16 bits wide;   */
+-/*     of course, 32-bit entries work OK if the high 16 bits are zero. */
+-/*                                                                     */
+-/*  4. The values must be right-shifted by eight bits by the "updcrc"  */
+-/*     logic; the shift must be unsigned (bring in zeroes).  On some   */
+-/*     hardware you could probably optimize the shift in assembler by  */
+-/*     using byte-swap instructions.                                   */
+-
+-static u_long const crc_table[256] = {
+-    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
+-    0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
+-    0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
+-    0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
+-    0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de,
+-    0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
+-    0x136c9856, 0x646ba8c0, 0xfd62f97a, 0x8a65c9ec,
+-    0x14015c4f, 0x63066cd9, 0xfa0f3d63, 0x8d080df5,
+-    0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172,
+-    0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
+-    0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940,
+-    0x32d86ce3, 0x45df5c75, 0xdcd60dcf, 0xabd13d59,
+-    0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116,
+-    0x21b4f4b5, 0x56b3c423, 0xcfba9599, 0xb8bda50f,
+-    0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
+-    0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d,
+-    0x76dc4190, 0x01db7106, 0x98d220bc, 0xefd5102a,
+-    0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
+-    0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818,
+-    0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
+-    0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e,
+-    0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457,
+-    0x65b0d9c6, 0x12b7e950, 0x8bbeb8ea, 0xfcb9887c,
+-    0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65,
+-    0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2,
+-    0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb,
+-    0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0,
+-    0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9,
+-    0x5005713c, 0x270241aa, 0xbe0b1010, 0xc90c2086,
+-    0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
+-    0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4,
+-    0x59b33d17, 0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad,
+-    0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a,
+-    0xead54739, 0x9dd277af, 0x04db2615, 0x73dc1683,
+-    0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8,
+-    0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
+-    0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe,
+-    0xf762575d, 0x806567cb, 0x196c3671, 0x6e6b06e7,
+-    0xfed41b76, 0x89d32be0, 0x10da7a5a, 0x67dd4acc,
+-    0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
+-    0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252,
+-    0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b,
+-    0xd80d2bda, 0xaf0a1b4c, 0x36034af6, 0x41047a60,
+-    0xdf60efc3, 0xa867df55, 0x316e8eef, 0x4669be79,
+-    0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
+-    0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f,
+-    0xc5ba3bbe, 0xb2bd0b28, 0x2bb45a92, 0x5cb36a04,
+-    0xc2d7ffa7, 0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d,
+-    0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a,
+-    0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
+-    0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38,
+-    0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21,
+-    0x86d3d2d4, 0xf1d4e242, 0x68ddb3f8, 0x1fda836e,
+-    0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
+-    0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c,
+-    0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45,
+-    0xa00ae278, 0xd70dd2ee, 0x4e048354, 0x3903b3c2,
+-    0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db,
+-    0xaed16a4a, 0xd9d65adc, 0x40df0b66, 0x37d83bf0,
+-    0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
+-    0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6,
+-    0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
+-    0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
+-    0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
+-};
+-
+-void
+-mit_crc32(krb5_pointer in, size_t in_length, unsigned long *cksum)
+-{
+-    u_char *data;
+-    u_long c = *cksum;
+-    int idx;
+-    size_t i;
+-
+-    data = (u_char *)in;
+-    for (i = 0; i < in_length; i++) {
+-        idx = (int) (data[i] ^ c);
+-        idx &= 0xff;
+-        c >>= 8;
+-        c ^= crc_table[idx];
+-    }
+-
+-    *cksum = c;
+-}
+diff --git a/src/lib/crypto/krb/crypto_int.h b/src/lib/crypto/krb/crypto_int.h
+index e509929..78dec9d 100644
+--- a/src/lib/crypto/krb/crypto_int.h
++++ b/src/lib/crypto/krb/crypto_int.h
+@@ -173,8 +173,6 @@ extern const size_t krb5int_cksumtypes_length;
+ /*** Prototypes for enctype table functions ***/
+ 
+ /* Length */
+-unsigned int krb5int_old_crypto_length(const struct krb5_keytypes *ktp,
+-                                       krb5_cryptotype type);
+ unsigned int krb5int_raw_crypto_length(const struct krb5_keytypes *ktp,
+                                        krb5_cryptotype type);
+ unsigned int krb5int_arcfour_crypto_length(const struct krb5_keytypes *ktp,
+@@ -189,10 +187,6 @@ unsigned int krb5int_aes2_crypto_length(const struct krb5_keytypes *ktp,
+                                         krb5_cryptotype type);
+ 
+ /* Encrypt */
+-krb5_error_code krb5int_old_encrypt(const struct krb5_keytypes *ktp,
+-                                    krb5_key key, krb5_keyusage usage,
+-                                    const krb5_data *ivec,
+-                                    krb5_crypto_iov *data, size_t num_data);
+ krb5_error_code krb5int_raw_encrypt(const struct krb5_keytypes *ktp,
+                                     krb5_key key, krb5_keyusage usage,
+                                     const krb5_data *ivec,
+@@ -217,10 +211,6 @@ krb5_error_code krb5int_etm_encrypt(const struct krb5_keytypes *ktp,
+                                     krb5_crypto_iov *data, size_t num_data);
+ 
+ /* Decrypt */
+-krb5_error_code krb5int_old_decrypt(const struct krb5_keytypes *ktp,
+-                                    krb5_key key, krb5_keyusage usage,
+-                                    const krb5_data *ivec,
+-                                    krb5_crypto_iov *data, size_t num_data);
+ krb5_error_code krb5int_raw_decrypt(const struct krb5_keytypes *ktp,
+                                     krb5_key key, krb5_keyusage usage,
+                                     const krb5_data *ivec,
+@@ -381,10 +371,6 @@ krb5_error_code krb5int_cmac_checksum(const struct krb5_enc_provider *enc,
+                                       size_t num_data,
+                                       krb5_data *output);
+ 
+-/* Compute a CRC-32 checksum.  c is in-out to allow chaining; init to 0. */
+-#define CRC32_CKSUM_LENGTH 4
+-void mit_crc32(krb5_pointer in, size_t in_length, unsigned long *c);
+-
+ /* Translate an RFC 3961 key usage to a Microsoft RC4 usage. */
+ krb5_keyusage krb5int_arcfour_translate_usage(krb5_keyusage usage);
+ 
+@@ -448,7 +434,6 @@ void k5_iov_cursor_put(struct iov_cursor *cursor, unsigned char *block);
+ /* Modules must implement the k5_sha256() function prototyped in k5-int.h. */
+ 
+ /* Modules must implement the following enc_providers and hash_providers: */
+-extern const struct krb5_enc_provider krb5int_enc_des;
+ extern const struct krb5_enc_provider krb5int_enc_des3;
+ extern const struct krb5_enc_provider krb5int_enc_arcfour;
+ extern const struct krb5_enc_provider krb5int_enc_aes128;
+@@ -458,7 +443,6 @@ extern const struct krb5_enc_provider krb5int_enc_aes256_ctr;
+ extern const struct krb5_enc_provider krb5int_enc_camellia128;
+ extern const struct krb5_enc_provider krb5int_enc_camellia256;
+ 
+-extern const struct krb5_hash_provider krb5int_hash_crc32;
+ extern const struct krb5_hash_provider krb5int_hash_md4;
+ extern const struct krb5_hash_provider krb5int_hash_md5;
+ extern const struct krb5_hash_provider krb5int_hash_sha1;
+diff --git a/src/lib/crypto/krb/default_state.c b/src/lib/crypto/krb/default_state.c
+index c7bfe32..0757c8b 100644
+--- a/src/lib/crypto/krb/default_state.c
++++ b/src/lib/crypto/krb/default_state.c
+@@ -39,10 +39,6 @@ krb5int_des_init_state(const krb5_keyblock *key, krb5_keyusage usage,
+     if (alloc_data(state_out, 8))
+         return ENOMEM;
+ 
+-    /* des-cbc-crc uses the key as the initial ivec. */
+-    if (key->enctype == ENCTYPE_DES_CBC_CRC)
+-        memcpy(state_out->data, key->contents, state_out->length);
+-
+     return 0;
+ }
+ 
+diff --git a/src/lib/crypto/krb/deps b/src/lib/crypto/krb/deps
+index 2a7f9b0..f9a7408 100644
+--- a/src/lib/crypto/krb/deps
++++ b/src/lib/crypto/krb/deps
+@@ -204,18 +204,6 @@ combine_keys.so combine_keys.po $(OUTPRE)combine_keys.$(OBJEXT): \
+   $(top_srcdir)/include/krb5/plugin.h $(top_srcdir)/include/port-sockets.h \
+   $(top_srcdir)/include/socket-utils.h combine_keys.c \
+   crypto_int.h
+-crc32.so crc32.po $(OUTPRE)crc32.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+-  $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+-  $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../builtin/aes/aes.h \
+-  $(srcdir)/../builtin/crypto_mod.h $(srcdir)/../builtin/sha2/sha2.h \
+-  $(top_srcdir)/include/k5-buf.h $(top_srcdir)/include/k5-err.h \
+-  $(top_srcdir)/include/k5-gmt_mktime.h $(top_srcdir)/include/k5-int-pkinit.h \
+-  $(top_srcdir)/include/k5-int.h $(top_srcdir)/include/k5-platform.h \
+-  $(top_srcdir)/include/k5-plugin.h $(top_srcdir)/include/k5-thread.h \
+-  $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5.h \
+-  $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+-  $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+-  crc32.c crypto_int.h
+ crypto_length.so crypto_length.po $(OUTPRE)crypto_length.$(OBJEXT): \
+   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+   $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+@@ -372,18 +360,6 @@ enc_etm.so enc_etm.po $(OUTPRE)enc_etm.$(OBJEXT): $(BUILDTOP)/include/autoconf.h
+   $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+   $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+   crypto_int.h enc_etm.c
+-enc_old.so enc_old.po $(OUTPRE)enc_old.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+-  $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+-  $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../builtin/aes/aes.h \
+-  $(srcdir)/../builtin/crypto_mod.h $(srcdir)/../builtin/sha2/sha2.h \
+-  $(top_srcdir)/include/k5-buf.h $(top_srcdir)/include/k5-err.h \
+-  $(top_srcdir)/include/k5-gmt_mktime.h $(top_srcdir)/include/k5-int-pkinit.h \
+-  $(top_srcdir)/include/k5-int.h $(top_srcdir)/include/k5-platform.h \
+-  $(top_srcdir)/include/k5-plugin.h $(top_srcdir)/include/k5-thread.h \
+-  $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5.h \
+-  $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+-  $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+-  crypto_int.h enc_old.c
+ enc_raw.so enc_raw.po $(OUTPRE)enc_raw.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+   $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+   $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../builtin/aes/aes.h \
+@@ -660,18 +636,6 @@ random_to_key.so random_to_key.po $(OUTPRE)random_to_key.$(OBJEXT): \
+   $(top_srcdir)/include/krb5.h $(top_srcdir)/include/krb5/authdata_plugin.h \
+   $(top_srcdir)/include/krb5/plugin.h $(top_srcdir)/include/port-sockets.h \
+   $(top_srcdir)/include/socket-utils.h crypto_int.h random_to_key.c
+-s2k_des.so s2k_des.po $(OUTPRE)s2k_des.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+-  $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+-  $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../builtin/aes/aes.h \
+-  $(srcdir)/../builtin/crypto_mod.h $(srcdir)/../builtin/sha2/sha2.h \
+-  $(top_srcdir)/include/k5-buf.h $(top_srcdir)/include/k5-err.h \
+-  $(top_srcdir)/include/k5-gmt_mktime.h $(top_srcdir)/include/k5-int-pkinit.h \
+-  $(top_srcdir)/include/k5-int.h $(top_srcdir)/include/k5-platform.h \
+-  $(top_srcdir)/include/k5-plugin.h $(top_srcdir)/include/k5-thread.h \
+-  $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5.h \
+-  $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+-  $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+-  crypto_int.h s2k_des.c
+ s2k_pbkdf2.so s2k_pbkdf2.po $(OUTPRE)s2k_pbkdf2.$(OBJEXT): \
+   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+   $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+diff --git a/src/lib/crypto/krb/enc_old.c b/src/lib/crypto/krb/enc_old.c
+deleted file mode 100644
+index 1b02a59..0000000
+--- a/src/lib/crypto/krb/enc_old.c
++++ /dev/null
+@@ -1,181 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/* lib/crypto/krb/enc_old.c */
+-/*
+- * Copyright 2008 by the Massachusetts Institute of Technology.
+- * All Rights Reserved.
+- *
+- * Export of this software from the United States of America may
+- *   require a specific license from the United States Government.
+- *   It is the responsibility of any person or organization contemplating
+- *   export to obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of M.I.T. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  Furthermore if you modify this software you must label
+- * your software as modified software and not distribute it in such a
+- * fashion that it might be confused with the original M.I.T. software.
+- * M.I.T. makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- */
+-
+-#include "crypto_int.h"
+-
+-unsigned int
+-krb5int_old_crypto_length(const struct krb5_keytypes *ktp,
+-                          krb5_cryptotype type)
+-{
+-    switch (type) {
+-    case KRB5_CRYPTO_TYPE_HEADER:
+-        return ktp->enc->block_size + ktp->hash->hashsize;
+-    case KRB5_CRYPTO_TYPE_PADDING:
+-        return ktp->enc->block_size;
+-    case KRB5_CRYPTO_TYPE_TRAILER:
+-        return 0;
+-    case KRB5_CRYPTO_TYPE_CHECKSUM:
+-        return ktp->hash->hashsize;
+-    default:
+-        assert(0 && "invalid cryptotype passed to krb5int_old_crypto_length");
+-        return 0;
+-    }
+-}
+-
+-krb5_error_code
+-krb5int_old_encrypt(const struct krb5_keytypes *ktp, krb5_key key,
+-                    krb5_keyusage usage, const krb5_data *ivec,
+-                    krb5_crypto_iov *data, size_t num_data)
+-{
+-    const struct krb5_enc_provider *enc = ktp->enc;
+-    const struct krb5_hash_provider *hash = ktp->hash;
+-    krb5_error_code ret;
+-    krb5_crypto_iov *header, *trailer, *padding;
+-    krb5_data checksum, confounder, crcivec = empty_data();
+-    unsigned int plainlen, padsize;
+-    size_t i;
+-
+-    /* E(Confounder | Checksum | Plaintext | Pad) */
+-
+-    plainlen = enc->block_size + hash->hashsize;
+-    for (i = 0; i < num_data; i++) {
+-        krb5_crypto_iov *iov = &data[i];
+-
+-        if (iov->flags == KRB5_CRYPTO_TYPE_DATA)
+-            plainlen += iov->data.length;
+-    }
+-
+-    header = krb5int_c_locate_iov(data, num_data, KRB5_CRYPTO_TYPE_HEADER);
+-    if (header == NULL ||
+-        header->data.length < enc->block_size + hash->hashsize)
+-        return KRB5_BAD_MSIZE;
+-
+-    /* Trailer may be absent. */
+-    trailer = krb5int_c_locate_iov(data, num_data, KRB5_CRYPTO_TYPE_TRAILER);
+-    if (trailer != NULL)
+-        trailer->data.length = 0;
+-
+-    /* Check that the input data is correctly padded. */
+-    padsize = krb5_roundup(plainlen, enc->block_size) - plainlen;
+-    padding = krb5int_c_locate_iov(data, num_data, KRB5_CRYPTO_TYPE_PADDING);
+-    if (padsize > 0 && (padding == NULL || padding->data.length < padsize))
+-        return KRB5_BAD_MSIZE;
+-    if (padding) {
+-        padding->data.length = padsize;
+-        memset(padding->data.data, 0, padsize);
+-    }
+-
+-    /* Generate a confounder in the header block. */
+-    confounder = make_data(header->data.data, enc->block_size);
+-    ret = krb5_c_random_make_octets(0, &confounder);
+-    if (ret != 0)
+-        goto cleanup;
+-    checksum = make_data(header->data.data + enc->block_size, hash->hashsize);
+-    memset(checksum.data, 0, hash->hashsize);
+-
+-    /* Checksum the plaintext with zeroed checksum and padding. */
+-    ret = hash->hash(data, num_data, &checksum);
+-    if (ret != 0)
+-        goto cleanup;
+-
+-    /* Use the key as the ivec for des-cbc-crc if none was provided. */
+-    if (key->keyblock.enctype == ENCTYPE_DES_CBC_CRC && ivec == NULL) {
+-        ret = alloc_data(&crcivec, key->keyblock.length);
+-        if (ret != 0)
+-            goto cleanup;
+-        memcpy(crcivec.data, key->keyblock.contents, key->keyblock.length);
+-        ivec = &crcivec;
+-    }
+-
+-    ret = enc->encrypt(key, ivec, data, num_data);
+-    if (ret != 0)
+-        goto cleanup;
+-
+-cleanup:
+-    zapfree(crcivec.data, crcivec.length);
+-    return ret;
+-}
+-
+-krb5_error_code
+-krb5int_old_decrypt(const struct krb5_keytypes *ktp, krb5_key key,
+-                    krb5_keyusage usage, const krb5_data *ivec,
+-                    krb5_crypto_iov *data, size_t num_data)
+-{
+-    const struct krb5_enc_provider *enc = ktp->enc;
+-    const struct krb5_hash_provider *hash = ktp->hash;
+-    krb5_error_code ret;
+-    krb5_crypto_iov *header, *trailer;
+-    krb5_data checksum, crcivec = empty_data();
+-    char *saved_checksum = NULL;
+-
+-    /* Check that the input data is correctly padded. */
+-    if (iov_total_length(data, num_data, FALSE) % enc->block_size != 0)
+-        return KRB5_BAD_MSIZE;
+-
+-    header = krb5int_c_locate_iov(data, num_data, KRB5_CRYPTO_TYPE_HEADER);
+-    if (header == NULL ||
+-        header->data.length != enc->block_size + hash->hashsize)
+-        return KRB5_BAD_MSIZE;
+-
+-    trailer = krb5int_c_locate_iov(data, num_data, KRB5_CRYPTO_TYPE_TRAILER);
+-    if (trailer != NULL && trailer->data.length != 0)
+-        return KRB5_BAD_MSIZE;
+-
+-    /* Use the key as the ivec for des-cbc-crc if none was provided. */
+-    if (key->keyblock.enctype == ENCTYPE_DES_CBC_CRC && ivec == NULL) {
+-        ret = alloc_data(&crcivec, key->keyblock.length);
+-        memcpy(crcivec.data, key->keyblock.contents, key->keyblock.length);
+-        ivec = &crcivec;
+-    }
+-
+-    /* Decrypt the ciphertext. */
+-    ret = enc->decrypt(key, ivec, data, num_data);
+-    if (ret != 0)
+-        goto cleanup;
+-
+-    /* Save the checksum, then zero it out in the plaintext. */
+-    checksum = make_data(header->data.data + enc->block_size, hash->hashsize);
+-    saved_checksum = k5memdup(checksum.data, checksum.length, &ret);
+-    if (saved_checksum == NULL)
+-        goto cleanup;
+-    memset(checksum.data, 0, checksum.length);
+-
+-    /*
+-     * Checksum the plaintext (with zeroed checksum field), storing the result
+-     * back into the plaintext field we just zeroed out.  Then compare it to
+-     * the saved checksum.
+-     */
+-    ret = hash->hash(data, num_data, &checksum);
+-    if (k5_bcmp(checksum.data, saved_checksum, checksum.length) != 0) {
+-        ret = KRB5KRB_AP_ERR_BAD_INTEGRITY;
+-        goto cleanup;
+-    }
+-
+-cleanup:
+-    zapfree(crcivec.data, crcivec.length);
+-    zapfree(saved_checksum, hash->hashsize);
+-    return ret;
+-}
+diff --git a/src/lib/crypto/krb/etypes.c b/src/lib/crypto/krb/etypes.c
+index 53d4a5c..488838c 100644
+--- a/src/lib/crypto/krb/etypes.c
++++ b/src/lib/crypto/krb/etypes.c
+@@ -34,42 +34,6 @@
+    that assumption. */
+ 
+ const struct krb5_keytypes krb5int_enctypes_list[] = {
+-    { ENCTYPE_DES_CBC_CRC,
+-      "des-cbc-crc", { 0 }, "DES cbc mode with CRC-32",
+-      &krb5int_enc_des, &krb5int_hash_crc32,
+-      16,
+-      krb5int_old_crypto_length, krb5int_old_encrypt, krb5int_old_decrypt,
+-      krb5int_des_string_to_key, k5_rand2key_des,
+-      krb5int_des_prf,
+-      CKSUMTYPE_RSA_MD5_DES,
+-      ETYPE_WEAK, 56 },
+-    { ENCTYPE_DES_CBC_MD4,
+-      "des-cbc-md4", { 0 }, "DES cbc mode with RSA-MD4",
+-      &krb5int_enc_des, &krb5int_hash_md4,
+-      16,
+-      krb5int_old_crypto_length, krb5int_old_encrypt, krb5int_old_decrypt,
+-      krb5int_des_string_to_key, k5_rand2key_des,
+-      krb5int_des_prf,
+-      CKSUMTYPE_RSA_MD4_DES,
+-      ETYPE_WEAK, 56 },
+-    { ENCTYPE_DES_CBC_MD5,
+-      "des-cbc-md5", { "des" }, "DES cbc mode with RSA-MD5",
+-      &krb5int_enc_des, &krb5int_hash_md5,
+-      16,
+-      krb5int_old_crypto_length, krb5int_old_encrypt, krb5int_old_decrypt,
+-      krb5int_des_string_to_key, k5_rand2key_des,
+-      krb5int_des_prf,
+-      CKSUMTYPE_RSA_MD5_DES,
+-      ETYPE_WEAK, 56 },
+-    { ENCTYPE_DES_CBC_RAW,
+-      "des-cbc-raw", { 0 }, "DES cbc mode raw",
+-      &krb5int_enc_des, NULL,
+-      16,
+-      krb5int_raw_crypto_length, krb5int_raw_encrypt, krb5int_raw_decrypt,
+-      krb5int_des_string_to_key, k5_rand2key_des,
+-      krb5int_des_prf,
+-      0,
+-      ETYPE_WEAK, 56 },
+     { ENCTYPE_DES3_CBC_RAW,
+       "des3-cbc-raw", { 0 }, "Triple DES cbc mode raw",
+       &krb5int_enc_des3, NULL,
+@@ -91,16 +55,6 @@ const struct krb5_keytypes krb5int_enctypes_list[] = {
+       CKSUMTYPE_HMAC_SHA1_DES3,
+       0 /*flags*/, 112 },
+ 
+-    { ENCTYPE_DES_HMAC_SHA1,
+-      "des-hmac-sha1", { 0 }, "DES with HMAC/sha1",
+-      &krb5int_enc_des, &krb5int_hash_sha1,
+-      8,
+-      krb5int_dk_crypto_length, krb5int_dk_encrypt, krb5int_dk_decrypt,
+-      krb5int_dk_string_to_key, k5_rand2key_des,
+-      NULL, /*PRF*/
+-      0,
+-      ETYPE_WEAK, 56 },
+-
+     /* rc4-hmac uses a 128-bit key, but due to weaknesses in the RC4 cipher, we
+      * consider its strength degraded and assign it an SSF value of 64. */
+     { ENCTYPE_ARCFOUR_HMAC,
+diff --git a/src/lib/crypto/krb/s2k_des.c b/src/lib/crypto/krb/s2k_des.c
+deleted file mode 100644
+index d5c29be..0000000
+--- a/src/lib/crypto/krb/s2k_des.c
++++ /dev/null
+@@ -1,691 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/*
+- * Copyright (C) 1998 by the FundsXpress, INC.
+- *
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may require
+- * a specific license from the United States Government.  It is the
+- * responsibility of any person or organization contemplating export to
+- * obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of FundsXpress. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  FundsXpress makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+- */
+-
+-/*
+- * RFC 3961 and AFS string to key.  These are not standard crypto primitives
+- * (RFC 3961 string-to-key is implemented in OpenSSL for historical reasons but
+- * it doesn't get weak keys right), so we have to implement them here.
+- */
+-
+-#include <ctype.h>
+-#include "crypto_int.h"
+-
+-#undef min
+-#define min(a,b) ((a)>(b)?(b):(a))
+-
+-/* Compute a CBC checksum of in (with length len) using the specified key and
+- * ivec.  The result is written into out. */
+-static krb5_error_code
+-des_cbc_mac(const unsigned char *keybits, const unsigned char *ivec,
+-            const unsigned char *in, size_t len, unsigned char *out)
+-{
+-    krb5_error_code ret;
+-    krb5_keyblock kb;
+-    krb5_key key;
+-    krb5_crypto_iov iov[2];
+-    unsigned char zero[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+-    krb5_data outd, ivecd;
+-
+-    /* Make a key from keybits. */
+-    kb.magic = KV5M_KEYBLOCK;
+-    kb.enctype = ENCTYPE_DES_CBC_CRC;
+-    kb.length = 8;
+-    kb.contents = (unsigned char *)keybits;
+-    ret = krb5_k_create_key(NULL, &kb, &key);
+-    if (ret)
+-        return ret;
+-
+-    /* Make iovs for the input data, padding it out to the block size. */
+-    iov[0].flags = KRB5_CRYPTO_TYPE_DATA;
+-    iov[0].data = make_data((unsigned char *)in, len);
+-    iov[1].flags = KRB5_CRYPTO_TYPE_DATA;
+-    iov[1].data = make_data(zero, krb5_roundup(len, 8) - len);
+-
+-    /* Make krb5_data structures for the ivec and output. */
+-    ivecd = make_data((unsigned char *)ivec, 8);
+-    outd = make_data(out, 8);
+-
+-    /* Call the cbc_mac operation of the module's DES enc-provider. */
+-    ret = krb5int_enc_des.cbc_mac(key, iov, 2, &ivecd, &outd);
+-    krb5_k_free_key(NULL, key);
+-    return ret;
+-}
+-
+-/*** AFS string-to-key constants ***/
+-
+-/* Initial permutation */
+-static const char IP[] = {
+-    58,50,42,34,26,18,10, 2,
+-    60,52,44,36,28,20,12, 4,
+-    62,54,46,38,30,22,14, 6,
+-    64,56,48,40,32,24,16, 8,
+-    57,49,41,33,25,17, 9, 1,
+-    59,51,43,35,27,19,11, 3,
+-    61,53,45,37,29,21,13, 5,
+-    63,55,47,39,31,23,15, 7,
+-};
+-
+-/* Final permutation, FP = IP^(-1) */
+-static const char FP[] = {
+-    40, 8,48,16,56,24,64,32,
+-    39, 7,47,15,55,23,63,31,
+-    38, 6,46,14,54,22,62,30,
+-    37, 5,45,13,53,21,61,29,
+-    36, 4,44,12,52,20,60,28,
+-    35, 3,43,11,51,19,59,27,
+-    34, 2,42,10,50,18,58,26,
+-    33, 1,41, 9,49,17,57,25,
+-};
+-
+-/*
+- * Permuted-choice 1 from the key bits to yield C and D.
+- * Note that bits 8,16... are left out: They are intended for a parity check.
+- */
+-static const char PC1_C[] = {
+-    57,49,41,33,25,17, 9,
+-    1,58,50,42,34,26,18,
+-    10, 2,59,51,43,35,27,
+-    19,11, 3,60,52,44,36,
+-};
+-
+-static const char PC1_D[] = {
+-    63,55,47,39,31,23,15,
+-    7,62,54,46,38,30,22,
+-    14, 6,61,53,45,37,29,
+-    21,13, 5,28,20,12, 4,
+-};
+-
+-/* Sequence of shifts used for the key schedule */
+-static const char shifts[] = {
+-    1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1,
+-};
+-
+-/* Permuted-choice 2, to pick out the bits from the CD array that generate the
+- * key schedule */
+-static const char PC2_C[] = {
+-    14,17,11,24, 1, 5,
+-    3,28,15, 6,21,10,
+-    23,19,12, 4,26, 8,
+-    16, 7,27,20,13, 2,
+-};
+-
+-static const char PC2_D[] = {
+-    41,52,31,37,47,55,
+-    30,40,51,45,33,48,
+-    44,49,39,56,34,53,
+-    46,42,50,36,29,32,
+-};
+-
+-/* The E bit-selection table */
+-static const char e[] = {
+-    32, 1, 2, 3, 4, 5,
+-    4, 5, 6, 7, 8, 9,
+-    8, 9,10,11,12,13,
+-    12,13,14,15,16,17,
+-    16,17,18,19,20,21,
+-    20,21,22,23,24,25,
+-    24,25,26,27,28,29,
+-    28,29,30,31,32, 1,
+-};
+-
+-/* P is a permutation on the selected combination of the current L and key. */
+-static const char P[] = {
+-    16, 7,20,21,
+-    29,12,28,17,
+-    1,15,23,26,
+-    5,18,31,10,
+-    2, 8,24,14,
+-    32,27, 3, 9,
+-    19,13,30, 6,
+-    22,11, 4,25,
+-};
+-
+-/*
+- * The 8 selection functions.
+- * For some reason, they give a 0-origin
+- * index, unlike everything else.
+- */
+-static const char S[8][64] = {
+-    {14, 4,13, 1, 2,15,11, 8, 3,10, 6,12, 5, 9, 0, 7,
+-     0,15, 7, 4,14, 2,13, 1,10, 6,12,11, 9, 5, 3, 8,
+-     4, 1,14, 8,13, 6, 2,11,15,12, 9, 7, 3,10, 5, 0,
+-     15,12, 8, 2, 4, 9, 1, 7, 5,11, 3,14,10, 0, 6,13},
+-
+-    {15, 1, 8,14, 6,11, 3, 4, 9, 7, 2,13,12, 0, 5,10,
+-     3,13, 4, 7,15, 2, 8,14,12, 0, 1,10, 6, 9,11, 5,
+-     0,14, 7,11,10, 4,13, 1, 5, 8,12, 6, 9, 3, 2,15,
+-     13, 8,10, 1, 3,15, 4, 2,11, 6, 7,12, 0, 5,14, 9},
+-
+-    {10, 0, 9,14, 6, 3,15, 5, 1,13,12, 7,11, 4, 2, 8,
+-     13, 7, 0, 9, 3, 4, 6,10, 2, 8, 5,14,12,11,15, 1,
+-     13, 6, 4, 9, 8,15, 3, 0,11, 1, 2,12, 5,10,14, 7,
+-     1,10,13, 0, 6, 9, 8, 7, 4,15,14, 3,11, 5, 2,12},
+-
+-    { 7,13,14, 3, 0, 6, 9,10, 1, 2, 8, 5,11,12, 4,15,
+-      13, 8,11, 5, 6,15, 0, 3, 4, 7, 2,12, 1,10,14, 9,
+-      10, 6, 9, 0,12,11, 7,13,15, 1, 3,14, 5, 2, 8, 4,
+-      3,15, 0, 6,10, 1,13, 8, 9, 4, 5,11,12, 7, 2,14},
+-
+-    { 2,12, 4, 1, 7,10,11, 6, 8, 5, 3,15,13, 0,14, 9,
+-      14,11, 2,12, 4, 7,13, 1, 5, 0,15,10, 3, 9, 8, 6,
+-      4, 2, 1,11,10,13, 7, 8,15, 9,12, 5, 6, 3, 0,14,
+-      11, 8,12, 7, 1,14, 2,13, 6,15, 0, 9,10, 4, 5, 3},
+-
+-    {12, 1,10,15, 9, 2, 6, 8, 0,13, 3, 4,14, 7, 5,11,
+-     10,15, 4, 2, 7,12, 9, 5, 6, 1,13,14, 0,11, 3, 8,
+-     9,14,15, 5, 2, 8,12, 3, 7, 0, 4,10, 1,13,11, 6,
+-     4, 3, 2,12, 9, 5,15,10,11,14, 1, 7, 6, 0, 8,13},
+-
+-    { 4,11, 2,14,15, 0, 8,13, 3,12, 9, 7, 5,10, 6, 1,
+-      13, 0,11, 7, 4, 9, 1,10,14, 3, 5,12, 2,15, 8, 6,
+-      1, 4,11,13,12, 3, 7,14,10,15, 6, 8, 0, 5, 9, 2,
+-      6,11,13, 8, 1, 4,10, 7, 9, 5, 0,15,14, 2, 3,12},
+-
+-    {13, 2, 8, 4, 6,15,11, 1,10, 9, 3,14, 5, 0,12, 7,
+-     1,15,13, 8,10, 3, 7, 4,12, 5, 6,11, 0,14, 9, 2,
+-     7,11, 4, 1, 9,12,14, 2, 0, 6,10,13,15, 3, 5, 8,
+-     2, 1,14, 7, 4,10, 8,13,15,12, 9, 0, 3, 5, 6,11},
+-};
+-
+-
+-/* Set up the key schedule from the key. */
+-static void
+-afs_crypt_setkey(char *key, char *E, char (*KS)[48])
+-{
+-    int i, j, k, t;
+-    char C[28], D[28];          /* Used to calculate key schedule. */
+-
+-    /*
+-     * First, generate C and D by permuting
+-     * the key.  The low order bit of each
+-     * 8-bit char is not used, so C and D are only 28
+-     * bits apiece.
+-     */
+-    for (i = 0; i < 28; i++) {
+-        C[i] = key[PC1_C[i] - 1];
+-        D[i] = key[PC1_D[i] - 1];
+-    }
+-    /*
+-     * To generate Ki, rotate C and D according
+-     * to schedule and pick up a permutation
+-     * using PC2.
+-     */
+-    for (i = 0; i < 16; i++) {
+-        /* Rotate. */
+-        for (k = 0; k < shifts[i]; k++) {
+-            t = C[0];
+-            for (j = 0; j < 28 - 1; j++)
+-                C[j] = C[j + 1];
+-            C[27] = t;
+-            t = D[0];
+-            for (j = 0; j < 28 - 1; j++)
+-                D[j] = D[j + 1];
+-            D[27] = t;
+-        }
+-        /* Get Ki.  Note C and D are concatenated. */
+-        for (j = 0; j < 24; j++) {
+-            KS[i][j] = C[PC2_C[j]-1];
+-            KS[i][j+24] = D[PC2_D[j]-28-1];
+-        }
+-    }
+-
+-    memcpy(E, e, 48);
+-}
+-
+-/*
+- * The payoff: encrypt a block.
+- */
+-
+-static void
+-afs_encrypt_block(char *block, char *E, char (*KS)[48])
+-{
+-    const long edflag = 0;
+-    int i, ii;
+-    int t, j, k;
+-    char tempL[32];
+-    char f[32];
+-    char L[64];                 /* Current block divided into two halves */
+-    char *const R = &L[32];
+-    /* The combination of the key and the input, before selection. */
+-    char preS[48];
+-
+-    /* First, permute the bits in the input. */
+-    for (j = 0; j < 64; j++)
+-        L[j] = block[IP[j] - 1];
+-    /* Perform an encryption operation 16 times. */
+-    for (ii = 0; ii < 16; ii++) {
+-        /* Set direction. */
+-        i = (edflag) ? 15 - ii : ii;
+-        /* Save the R array, which will be the new L. */
+-        memcpy(tempL, R, 32);
+-        /* Expand R to 48 bits using the E selector; exclusive-or with the
+-         * current key bits. */
+-        for (j = 0; j < 48; j++)
+-            preS[j] = R[E[j] - 1] ^ KS[i][j];
+-        /*
+-         * The pre-select bits are now considered in 8 groups of 6 bits each.
+-         * The 8 selection functions map these 6-bit quantities into 4-bit
+-         * quantities and the results permuted to make an f(R, K).  The
+-         * indexing into the selection functions is peculiar; it could be
+-         * simplified by rewriting the tables.
+-         */
+-        for (j = 0; j < 8; j++) {
+-            t = 6 * j;
+-            k = S[j][(preS[t + 0] << 5) +
+-                     (preS[t + 1] << 3) +
+-                     (preS[t + 2] << 2) +
+-                     (preS[t + 3] << 1) +
+-                     (preS[t + 4] << 0) +
+-                     (preS[t + 5] << 4)];
+-            t = 4 * j;
+-            f[t + 0] = (k >> 3) & 1;
+-            f[t + 1] = (k >> 2) & 1;
+-            f[t + 2] = (k >> 1) & 1;
+-            f[t + 3] = (k >> 0) & 1;
+-        }
+-        /* The new R is L ^ f(R, K).  The f here has to be permuted first,
+-         * though. */
+-        for (j = 0; j < 32; j++)
+-            R[j] = L[j] ^ f[P[j] - 1];
+-        /* Finally, the new L (the original R) is copied back. */
+-        memcpy(L, tempL, 32);
+-    }
+-    /* The output L and R are reversed. */
+-    for (j = 0; j < 32; j++) {
+-        t = L[j];
+-        L[j] = R[j];
+-        R[j] = t;
+-    }
+-    /* The final output gets the inverse permutation of the very original. */
+-    for (j = 0; j < 64; j++)
+-        block[j] = L[FP[j] - 1];
+-}
+-
+-/* iobuf must be at least 16 bytes */
+-static char *
+-afs_crypt(const char *pw, const char *salt, char *iobuf)
+-{
+-    int i, j, c;
+-    int temp;
+-    char block[66];
+-    char E[48];
+-    char KS[16][48];            /* Key schedule, generated from key */
+-
+-    for (i = 0; i < 66; i++)
+-        block[i] = 0;
+-    for (i = 0; (c = *pw) != '\0' && i < 64; pw++){
+-        for(j = 0; j < 7; j++, i++)
+-            block[i] = (c >> (6 - j)) & 01;
+-        i++;
+-    }
+-
+-    afs_crypt_setkey(block, E, KS);
+-
+-    for (i = 0; i < 66; i++)
+-        block[i] = 0;
+-
+-    for (i = 0; i < 2; i++) {
+-        c = *salt++;
+-        iobuf[i] = c;
+-        if (c > 'Z')
+-            c -= 6;
+-        if (c > '9')
+-            c -= 7;
+-        c -= '.';
+-        for (j = 0; j < 6; j++) {
+-            if ((c >> j) & 01) {
+-                temp = E[6 * i + j];
+-                E[6 * i + j] = E[6 * i + j + 24];
+-                E[6 * i + j + 24] = temp;
+-            }
+-        }
+-    }
+-
+-    for (i = 0; i < 25; i++)
+-        afs_encrypt_block(block, E, KS);
+-
+-    for (i = 0; i < 11; i++) {
+-        c = 0;
+-        for (j = 0; j < 6; j++) {
+-            c <<= 1;
+-            c |= block[6 * i + j];
+-        }
+-        c += '.';
+-        if (c > '9')
+-            c += 7;
+-        if (c > 'Z')
+-            c += 6;
+-        iobuf[i + 2] = c;
+-    }
+-    iobuf[i + 2] = 0;
+-    if (iobuf[1] == 0)
+-        iobuf[1] = iobuf[0];
+-    return iobuf;
+-}
+-
+-static krb5_error_code
+-afs_s2k_oneblock(const krb5_data *data, const krb5_data *salt,
+-                 unsigned char *key_out)
+-{
+-    unsigned int i;
+-    unsigned char password[9]; /* trailing nul for crypt() */
+-    char afs_crypt_buf[16];
+-
+-    /*
+-     * Run afs_crypt and use the first eight returned bytes after the copy of
+-     * the (fixed) salt.
+-     *
+-     * Since the returned bytes are alphanumeric, the output is limited to
+-     * 2**48 possibilities; for each byte, only 64 possible values can be used.
+-     */
+-
+-    memset(password, 0, sizeof(password));
+-    if (salt->length > 0)
+-        memcpy(password, salt->data, min(salt->length, 8));
+-    for (i = 0; i < 8; i++) {
+-        if (isupper(password[i]))
+-            password[i] = tolower(password[i]);
+-    }
+-    for (i = 0; i < data->length; i++)
+-        password[i] ^= data->data[i];
+-    for (i = 0; i < 8; i++) {
+-        if (password[i] == '\0')
+-            password[i] = 'X';
+-    }
+-    password[8] = '\0';
+-    /* Out-of-bounds salt characters are equivalent to a salt string
+-     * of "p1". */
+-    strncpy((char *)key_out,
+-            (char *)afs_crypt((char *)password, "#~", afs_crypt_buf) + 2, 8);
+-    for (i = 0; i < 8; i++)
+-        key_out[i] <<= 1;
+-    /* Fix up key parity again. */
+-    k5_des_fixup_key_parity(key_out);
+-    zap(password, sizeof(password));
+-    return 0;
+-}
+-
+-static krb5_error_code
+-afs_s2k_multiblock(const krb5_data *data, const krb5_data *salt,
+-                   unsigned char *key_out)
+-{
+-    krb5_error_code ret;
+-    unsigned char ivec[8], tkey[8], *password;
+-    size_t pw_len = salt->length + data->length;
+-    unsigned int i, j;
+-
+-    /* Do a CBC checksum, twice, and use the result as the new key.  */
+-
+-    password = malloc(pw_len);
+-    if (!password)
+-        return ENOMEM;
+-
+-    if (data->length > 0)
+-        memcpy(password, data->data, data->length);
+-    for (i = data->length, j = 0; j < salt->length; i++, j++) {
+-        password[i] = salt->data[j];
+-        if (isupper(password[i]))
+-            password[i] = tolower(password[i]);
+-    }
+-
+-    memcpy(ivec, "kerberos", sizeof(ivec));
+-    memcpy(tkey, ivec, sizeof(tkey));
+-    k5_des_fixup_key_parity(tkey);
+-    ret = des_cbc_mac(tkey, ivec, password, pw_len, tkey);
+-    if (ret)
+-        goto cleanup;
+-
+-    memcpy(ivec, tkey, sizeof(ivec));
+-    k5_des_fixup_key_parity(tkey);
+-    ret = des_cbc_mac(tkey, ivec, password, pw_len, key_out);
+-    if (ret)
+-        goto cleanup;
+-    k5_des_fixup_key_parity(key_out);
+-
+-cleanup:
+-    zapfree(password, pw_len);
+-    return ret;
+-}
+-
+-static krb5_error_code
+-afs_s2k(const krb5_data *data, const krb5_data *salt, unsigned char *key_out)
+-{
+-    if (data->length <= 8)
+-        return afs_s2k_oneblock(data, salt, key_out);
+-    else
+-        return afs_s2k_multiblock(data, salt, key_out);
+-}
+-
+-static krb5_error_code
+-des_s2k(const krb5_data *pw, const krb5_data *salt, unsigned char *key_out)
+-{
+-    union {
+-        /* 8 "forward" bytes, 8 "reverse" bytes */
+-        unsigned char uc[16];
+-        krb5_ui_4 ui[4];
+-    } temp;
+-    unsigned int i;
+-    krb5_ui_4 x, y, z;
+-    unsigned char *p, *copy;
+-    size_t copylen;
+-    krb5_error_code ret;
+-
+-    /* As long as the architecture is big-endian or little-endian, it
+-       doesn't matter which it is.  Think of it as reversing the
+-       bytes, and also reversing the bits within each byte.  But this
+-       current algorithm is dependent on having four 8-bit char values
+-       exactly overlay a 32-bit integral type.  */
+-    if (sizeof(temp.uc) != sizeof(temp.ui)
+-        || (unsigned char)~0 != 0xFF
+-        || (krb5_ui_4)~(krb5_ui_4)0 != 0xFFFFFFFF
+-        || (temp.uc[0] = 1, temp.uc[1] = 2, temp.uc[2] = 3, temp.uc[3] = 4,
+-            !(temp.ui[0] == 0x01020304
+-              || temp.ui[0] == 0x04030201)))
+-        abort();
+-#define FETCH4(VAR, IDX)        VAR = temp.ui[IDX/4]
+-#define PUT4(VAR, IDX)          temp.ui[IDX/4] = VAR
+-
+-    copylen = pw->length + salt->length;
+-    /* Don't need NUL termination, at this point we're treating it as
+-       a byte array, not a string.  */
+-    copy = malloc(copylen);
+-    if (copy == NULL)
+-        return ENOMEM;
+-    if (pw->length > 0)
+-        memcpy(copy, pw->data, pw->length);
+-    if (salt->length > 0)
+-        memcpy(copy + pw->length, salt->data, salt->length);
+-
+-    memset(&temp, 0, sizeof(temp));
+-    p = temp.uc;
+-    /* Handle the fan-fold xor operation by splitting the data into
+-       forward and reverse sections, and combine them later, rather
+-       than having to do the reversal over and over again.  */
+-    for (i = 0; i < copylen; i++) {
+-        *p++ ^= copy[i];
+-        if (p == temp.uc+16) {
+-            p = temp.uc;
+-#ifdef PRINT_TEST_VECTORS
+-            {
+-                int j;
+-                printf("after %d input bytes:\nforward block:\t", i+1);
+-                for (j = 0; j < 8; j++)
+-                    printf(" %02x", temp.uc[j] & 0xff);
+-                printf("\nreverse block:\t");
+-                for (j = 8; j < 16; j++)
+-                    printf(" %02x", temp.uc[j] & 0xff);
+-                printf("\n");
+-            }
+-#endif
+-        }
+-    }
+-
+-#ifdef PRINT_TEST_VECTORS
+-    if (p != temp.uc) {
+-        int j;
+-        printf("at end, after %d input bytes:\nforward block:\t", i);
+-        for (j = 0; j < 8; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\nreverse block:\t");
+-        for (j = 8; j < 16; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-#define REVERSE(VAR)                            \
+-    {                                           \
+-        krb5_ui_4 old = VAR, temp1 = 0;         \
+-        int j;                                  \
+-        for (j = 0; j < 32; j++) {              \
+-            temp1 = (temp1 << 1) | (old & 1);   \
+-            old >>= 1;                          \
+-        }                                       \
+-        VAR = temp1;                            \
+-    }
+-
+-    FETCH4 (x, 8);
+-    FETCH4 (y, 12);
+-    /* Ignore high bits of each input byte.  */
+-    x &= 0x7F7F7F7F;
+-    y &= 0x7F7F7F7F;
+-    /* Reverse the bit strings -- after this, y is "before" x.  */
+-    REVERSE (x);
+-    REVERSE (y);
+-#ifdef PRINT_TEST_VECTORS
+-    {
+-        int j;
+-        union { unsigned char uc[4]; krb5_ui_4 ui; } t2;
+-        printf("after reversal, reversed block:\n\t\t");
+-        t2.ui = y;
+-        for (j = 0; j < 4; j++)
+-            printf(" %02x", t2.uc[j] & 0xff);
+-        t2.ui = x;
+-        for (j = 0; j < 4; j++)
+-            printf(" %02x", t2.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-    /* Ignored bits are now at the bottom of each byte, where we'll
+-     * put the parity bits.  Good.  */
+-    FETCH4 (z, 0);
+-    z &= 0x7F7F7F7F;
+-    /* Ignored bits for z are at the top of each byte; fix that.  */
+-    z <<= 1;
+-    /* Finish the fan-fold xor for these four bytes.  */
+-    z ^= y;
+-    PUT4 (z, 0);
+-    /* Now do the second four bytes.  */
+-    FETCH4 (z, 4);
+-    z &= 0x7F7F7F7F;
+-    /* Ignored bits for z are at the top of each byte; fix that.  */
+-    z <<= 1;
+-    /* Finish the fan-fold xor for these four bytes.  */
+-    z ^= x;
+-    PUT4 (z, 4);
+-
+-#ifdef PRINT_TEST_VECTORS
+-    {
+-        int j;
+-        printf("after reversal, combined block:\n\t\t");
+-        for (j = 0; j < 8; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-
+-#define FIXUP(k) (k5_des_fixup_key_parity(k),                   \
+-                  k5_des_is_weak_key(k) ? (k[7] ^= 0xF0) : 0)
+-
+-    /* Now temp.cb is the temporary key, with invalid parity.  */
+-    FIXUP(temp.uc);
+-
+-#ifdef PRINT_TEST_VECTORS
+-    {
+-        int j;
+-        printf("after fixing parity and weak keys:\n\t\t");
+-        for (j = 0; j < 8; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-
+-    ret = des_cbc_mac(temp.uc, temp.uc, copy, copylen, temp.uc);
+-    if (ret)
+-        goto cleanup;
+-
+-#ifdef PRINT_TEST_VECTORS
+-    {
+-        int j;
+-        printf("cbc checksum:\n\t\t");
+-        for (j = 0; j < 8; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-
+-    FIXUP(temp.uc);
+-
+-#ifdef PRINT_TEST_VECTORS
+-    {
+-        int j;
+-        printf("after fixing parity and weak keys:\n\t\t");
+-        for (j = 0; j < 8; j++)
+-            printf(" %02x", temp.uc[j] & 0xff);
+-        printf("\n");
+-    }
+-#endif
+-
+-    memcpy(key_out, temp.uc, 8);
+-
+-cleanup:
+-    zap(&temp, sizeof(temp));
+-    zapfree(copy, copylen);
+-    return ret;
+-}
+-
+-krb5_error_code
+-krb5int_des_string_to_key(const struct krb5_keytypes *ktp,
+-                          const krb5_data *string, const krb5_data *salt,
+-                          const krb5_data *parm, krb5_keyblock *keyblock)
+-{
+-    int type;
+-
+-    if (parm != NULL) {
+-        if (parm->length != 1)
+-            return KRB5_ERR_BAD_S2K_PARAMS;
+-        type = parm->data[0];
+-        if (type != 0 && type != 1)
+-            return KRB5_ERR_BAD_S2K_PARAMS;
+-    } else
+-        type = 0;
+-
+-    /* Use AFS string to key if we were told to. */
+-    if (type == 1)
+-        return afs_s2k(string, salt, keyblock->contents);
+-
+-    return des_s2k(string, salt, keyblock->contents);
+-}
+diff --git a/src/lib/crypto/libk5crypto.exports b/src/lib/crypto/libk5crypto.exports
+index 82eb5f3..6108430 100644
+--- a/src/lib/crypto/libk5crypto.exports
++++ b/src/lib/crypto/libk5crypto.exports
+@@ -85,7 +85,6 @@ krb5_k_prf
+ krb5_k_reference_key
+ krb5_k_verify_checksum
+ krb5_k_verify_checksum_iov
+-mit_crc32
+ krb5int_aes_encrypt
+ krb5int_aes_decrypt
+ krb5int_enc_des3
+diff --git a/src/lib/crypto/openssl/enc_provider/Makefile.in b/src/lib/crypto/openssl/enc_provider/Makefile.in
+index b9e28c9..a9069d2 100644
+--- a/src/lib/crypto/openssl/enc_provider/Makefile.in
++++ b/src/lib/crypto/openssl/enc_provider/Makefile.in
+@@ -3,21 +3,18 @@ BUILDTOP=$(REL)..$(S)..$(S)..$(S)..
+ LOCALINCLUDES = -I$(srcdir)/../../krb -I$(srcdir)/..
+ 
+ STLIBOBJS= \
+-	des.o 	\
+ 	des3.o 	\
+ 	rc4.o 	\
+ 	aes.o   \
+ 	camellia.o
+ 
+ OBJS= \
+-	$(OUTPRE)des.$(OBJEXT) 	\
+ 	$(OUTPRE)des3.$(OBJEXT) 	\
+ 	$(OUTPRE)aes.$(OBJEXT) 	\
+ 	$(OUTPRE)camellia.$(OBJEXT) 	\
+ 	$(OUTPRE)rc4.$(OBJEXT)
+ 
+ SRCS= \
+-	$(srcdir)/des.c 	\
+ 	$(srcdir)/des3.c 	\
+ 	$(srcdir)/aes.c 	\
+ 	$(srcdir)/camellia.c 	\
+diff --git a/src/lib/crypto/openssl/enc_provider/deps b/src/lib/crypto/openssl/enc_provider/deps
+index 428fcf6..1c28cc8 100644
+--- a/src/lib/crypto/openssl/enc_provider/deps
++++ b/src/lib/crypto/openssl/enc_provider/deps
+@@ -1,17 +1,6 @@
+ #
+ # Generated makefile dependencies follow.
+ #
+-des.so des.po $(OUTPRE)des.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+-  $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+-  $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h \
+-  $(srcdir)/../crypto_mod.h $(top_srcdir)/include/k5-buf.h \
+-  $(top_srcdir)/include/k5-err.h $(top_srcdir)/include/k5-gmt_mktime.h \
+-  $(top_srcdir)/include/k5-int-pkinit.h $(top_srcdir)/include/k5-int.h \
+-  $(top_srcdir)/include/k5-platform.h $(top_srcdir)/include/k5-plugin.h \
+-  $(top_srcdir)/include/k5-thread.h $(top_srcdir)/include/k5-trace.h \
+-  $(top_srcdir)/include/krb5.h $(top_srcdir)/include/krb5/authdata_plugin.h \
+-  $(top_srcdir)/include/krb5/plugin.h $(top_srcdir)/include/port-sockets.h \
+-  $(top_srcdir)/include/socket-utils.h des.c
+ des3.so des3.po $(OUTPRE)des3.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
+   $(BUILDTOP)/include/krb5/krb5.h $(BUILDTOP)/include/osconf.h \
+   $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h \
+diff --git a/src/lib/crypto/openssl/enc_provider/des.c b/src/lib/crypto/openssl/enc_provider/des.c
+deleted file mode 100644
+index a662db5..0000000
+--- a/src/lib/crypto/openssl/enc_provider/des.c
++++ /dev/null
+@@ -1,218 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/* lib/crypto/openssl/enc_provider/des.c */
+-/*
+- * Copyright (C) 2009 by the Massachusetts Institute of Technology.
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may
+- *   require a specific license from the United States Government.
+- *   It is the responsibility of any person or organization contemplating
+- *   export to obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of M.I.T. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  Furthermore if you modify this software you must label
+- * your software as modified software and not distribute it in such a
+- * fashion that it might be confused with the original M.I.T. software.
+- * M.I.T. makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- */
+-
+-/*
+- * Copyright (C) 1998 by the FundsXpress, INC.
+- *
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may require
+- * a specific license from the United States Government.  It is the
+- * responsibility of any person or organization contemplating export to
+- * obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of FundsXpress. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  FundsXpress makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+- */
+-
+-#include "crypto_int.h"
+-#include <openssl/evp.h>
+-#include <openssl/des.h>
+-
+-#define DES_BLOCK_SIZE 8
+-#define DES_KEY_SIZE 8
+-#define DES_KEY_BYTES 7
+-
+-static krb5_error_code
+-validate(krb5_key key, const krb5_data *ivec, const krb5_crypto_iov *data,
+-         size_t num_data, krb5_boolean *empty)
+-{
+-    size_t input_length = iov_total_length(data, num_data, FALSE);
+-
+-    if (key->keyblock.length != DES_KEY_SIZE)
+-        return(KRB5_BAD_KEYSIZE);
+-    if ((input_length%DES_BLOCK_SIZE) != 0)
+-        return(KRB5_BAD_MSIZE);
+-    if (ivec && (ivec->length != 8))
+-        return(KRB5_BAD_MSIZE);
+-
+-    *empty = (input_length == 0);
+-    return 0;
+-}
+-
+-static krb5_error_code
+-k5_des_encrypt(krb5_key key, const krb5_data *ivec, krb5_crypto_iov *data,
+-               size_t num_data)
+-{
+-    int ret, olen = DES_BLOCK_SIZE;
+-    unsigned char iblock[DES_BLOCK_SIZE], oblock[DES_BLOCK_SIZE];
+-    struct iov_cursor cursor;
+-    EVP_CIPHER_CTX *ctx;
+-    krb5_boolean empty;
+-
+-    ret = validate(key, ivec, data, num_data, &empty);
+-    if (ret != 0 || empty)
+-        return ret;
+-
+-    ctx = EVP_CIPHER_CTX_new();
+-    if (ctx == NULL)
+-        return ENOMEM;
+-
+-    ret = EVP_EncryptInit_ex(ctx, EVP_des_cbc(), NULL,
+-                             key->keyblock.contents, (ivec && ivec->data) ? (unsigned char*)ivec->data : NULL);
+-    if (!ret) {
+-        EVP_CIPHER_CTX_free(ctx);
+-        return KRB5_CRYPTO_INTERNAL;
+-    }
+-
+-    EVP_CIPHER_CTX_set_padding(ctx, 0);
+-
+-    k5_iov_cursor_init(&cursor, data, num_data, DES_BLOCK_SIZE, FALSE);
+-    while (k5_iov_cursor_get(&cursor, iblock)) {
+-        ret = EVP_EncryptUpdate(ctx, oblock, &olen, iblock, DES_BLOCK_SIZE);
+-        if (!ret)
+-            break;
+-        k5_iov_cursor_put(&cursor, oblock);
+-    }
+-
+-    if (ivec != NULL)
+-        memcpy(ivec->data, oblock, DES_BLOCK_SIZE);
+-
+-    EVP_CIPHER_CTX_free(ctx);
+-
+-    zap(iblock, sizeof(iblock));
+-    zap(oblock, sizeof(oblock));
+-
+-    if (ret != 1)
+-        return KRB5_CRYPTO_INTERNAL;
+-    return 0;
+-}
+-
+-static krb5_error_code
+-k5_des_decrypt(krb5_key key, const krb5_data *ivec, krb5_crypto_iov *data,
+-               size_t num_data)
+-{
+-    int ret, olen = DES_BLOCK_SIZE;
+-    unsigned char iblock[DES_BLOCK_SIZE], oblock[DES_BLOCK_SIZE];
+-    struct iov_cursor cursor;
+-    EVP_CIPHER_CTX *ctx;
+-    krb5_boolean empty;
+-
+-    ret = validate(key, ivec, data, num_data, &empty);
+-    if (ret != 0 || empty)
+-        return ret;
+-
+-    ctx = EVP_CIPHER_CTX_new();
+-    if (ctx == NULL)
+-        return ENOMEM;
+-
+-    ret = EVP_DecryptInit_ex(ctx, EVP_des_cbc(), NULL,
+-                             key->keyblock.contents,
+-                             (ivec) ? (unsigned char*)ivec->data : NULL);
+-    if (!ret) {
+-        EVP_CIPHER_CTX_free(ctx);
+-        return KRB5_CRYPTO_INTERNAL;
+-    }
+-
+-    EVP_CIPHER_CTX_set_padding(ctx,0);
+-
+-    k5_iov_cursor_init(&cursor, data, num_data, DES_BLOCK_SIZE, FALSE);
+-    while (k5_iov_cursor_get(&cursor, iblock)) {
+-        ret = EVP_DecryptUpdate(ctx, oblock, &olen, iblock, DES_BLOCK_SIZE);
+-        if (!ret)
+-            break;
+-        k5_iov_cursor_put(&cursor, oblock);
+-    }
+-
+-    if (ivec != NULL)
+-        memcpy(ivec->data, iblock, DES_BLOCK_SIZE);
+-
+-    EVP_CIPHER_CTX_free(ctx);
+-
+-    zap(iblock, sizeof(iblock));
+-    zap(oblock, sizeof(oblock));
+-
+-    if (ret != 1)
+-        return KRB5_CRYPTO_INTERNAL;
+-    return 0;
+-}
+-
+-static krb5_error_code
+-k5_des_cbc_mac(krb5_key key, const krb5_crypto_iov *data, size_t num_data,
+-               const krb5_data *ivec, krb5_data *output)
+-{
+-    int ret;
+-    struct iov_cursor cursor;
+-    DES_cblock blockY, blockB;
+-    DES_key_schedule sched;
+-    krb5_boolean empty;
+-
+-    ret = validate(key, ivec, data, num_data, &empty);
+-    if (ret != 0)
+-        return ret;
+-
+-    if (output->length != DES_BLOCK_SIZE)
+-        return KRB5_BAD_MSIZE;
+-
+-    if (DES_set_key((DES_cblock *)key->keyblock.contents, &sched) != 0)
+-        return KRB5_CRYPTO_INTERNAL;
+-
+-    if (ivec != NULL)
+-        memcpy(blockY, ivec->data, DES_BLOCK_SIZE);
+-    else
+-        memset(blockY, 0, DES_BLOCK_SIZE);
+-
+-    k5_iov_cursor_init(&cursor, data, num_data, DES_BLOCK_SIZE, FALSE);
+-    while (k5_iov_cursor_get(&cursor, blockB)) {
+-        store_64_n(load_64_n(blockB) ^ load_64_n(blockY), blockB);
+-        DES_ecb_encrypt(&blockB, &blockY, &sched, 1);
+-    }
+-
+-    memcpy(output->data, blockY, DES_BLOCK_SIZE);
+-    return 0;
+-}
+-
+-const struct krb5_enc_provider krb5int_enc_des = {
+-    DES_BLOCK_SIZE,
+-    DES_KEY_BYTES, DES_KEY_SIZE,
+-    k5_des_encrypt,
+-    k5_des_decrypt,
+-    k5_des_cbc_mac,
+-    krb5int_des_init_state,
+-    krb5int_default_free_state
+-};
+diff --git a/src/lib/crypto/openssl/hash_provider/Makefile.in b/src/lib/crypto/openssl/hash_provider/Makefile.in
+index 7762e20..f7245fb 100644
+--- a/src/lib/crypto/openssl/hash_provider/Makefile.in
++++ b/src/lib/crypto/openssl/hash_provider/Makefile.in
+@@ -2,15 +2,11 @@ mydir=lib$(S)crypto$(S)openssl$(S)hash_provider
+ BUILDTOP=$(REL)..$(S)..$(S)..$(S)..
+ LOCALINCLUDES = -I$(srcdir)/../../krb -I$(srcdir)/..
+ 
+-STLIBOBJS= \
+-	hash_crc32.o 	\
+-	hash_evp.o
++STLIBOBJS=   hash_evp.o
+ 
+-OBJS=   $(OUTPRE)hash_crc32.$(OBJEXT) 	\
+-	$(OUTPRE)hash_evp.$(OBJEXT)
++OBJS=   $(OUTPRE)hash_evp.$(OBJEXT)
+ 
+-SRCS=	$(srcdir)/hash_crc32.c	\
+-	$(srcdir)/hash_evp.c
++SRCS=	$(srcdir)/hash_evp.c
+ 
+ all-unix: all-libobjs
+ 
+diff --git a/src/lib/crypto/openssl/hash_provider/deps b/src/lib/crypto/openssl/hash_provider/deps
+index 87dd020..690574c 100644
+--- a/src/lib/crypto/openssl/hash_provider/deps
++++ b/src/lib/crypto/openssl/hash_provider/deps
+@@ -1,18 +1,6 @@
+ #
+ # Generated makefile dependencies follow.
+ #
+-hash_crc32.so hash_crc32.po $(OUTPRE)hash_crc32.$(OBJEXT): \
+-  $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+-  $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+-  $(COM_ERR_DEPS) $(srcdir)/../../krb/crypto_int.h $(srcdir)/../crypto_mod.h \
+-  $(top_srcdir)/include/k5-buf.h $(top_srcdir)/include/k5-err.h \
+-  $(top_srcdir)/include/k5-gmt_mktime.h $(top_srcdir)/include/k5-int-pkinit.h \
+-  $(top_srcdir)/include/k5-int.h $(top_srcdir)/include/k5-platform.h \
+-  $(top_srcdir)/include/k5-plugin.h $(top_srcdir)/include/k5-thread.h \
+-  $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5.h \
+-  $(top_srcdir)/include/krb5/authdata_plugin.h $(top_srcdir)/include/krb5/plugin.h \
+-  $(top_srcdir)/include/port-sockets.h $(top_srcdir)/include/socket-utils.h \
+-  hash_crc32.c
+ hash_evp.so hash_evp.po $(OUTPRE)hash_evp.$(OBJEXT): \
+   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
+   $(BUILDTOP)/include/osconf.h $(BUILDTOP)/include/profile.h \
+diff --git a/src/lib/crypto/openssl/hash_provider/hash_crc32.c b/src/lib/crypto/openssl/hash_provider/hash_crc32.c
+deleted file mode 100644
+index 4013843..0000000
+--- a/src/lib/crypto/openssl/hash_provider/hash_crc32.c
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+-/*
+- * Copyright (C) 1998 by the FundsXpress, INC.
+- *
+- * All rights reserved.
+- *
+- * Export of this software from the United States of America may require
+- * a specific license from the United States Government.  It is the
+- * responsibility of any person or organization contemplating export to
+- * obtain such a license before exporting.
+- *
+- * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
+- * distribute this software and its documentation for any purpose and
+- * without fee is hereby granted, provided that the above copyright
+- * notice appear in all copies and that both that copyright notice and
+- * this permission notice appear in supporting documentation, and that
+- * the name of FundsXpress. not be used in advertising or publicity pertaining
+- * to distribution of the software without specific, written prior
+- * permission.  FundsXpress makes no representations about the suitability of
+- * this software for any purpose.  It is provided "as is" without express
+- * or implied warranty.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+- */
+-
+-#include "crypto_int.h"
+-
+-static krb5_error_code
+-k5_crc32_hash(const krb5_crypto_iov *data, size_t num_data, krb5_data *output)
+-{
+-    unsigned long c;
+-    unsigned int i;
+-
+-    if (output->length != CRC32_CKSUM_LENGTH)
+-        return(KRB5_CRYPTO_INTERNAL);
+-
+-    c = 0;
+-    for (i = 0; i < num_data; i++) {
+-        const krb5_crypto_iov *iov = &data[i];
+-
+-        if (SIGN_IOV(iov))
+-            mit_crc32(iov->data.data, iov->data.length, &c);
+-    }
+-
+-    store_32_le(c, output->data);
+-    return(0);
+-}
+-
+-const struct krb5_hash_provider krb5int_hash_crc32 = {
+-    "CRC32",
+-    CRC32_CKSUM_LENGTH,
+-    1,
+-    k5_crc32_hash
+-};
+diff --git a/src/lib/gssapi/krb5/accept_sec_context.c b/src/lib/gssapi/krb5/accept_sec_context.c
+index 5baa6ce..439ae6a 100644
+--- a/src/lib/gssapi/krb5/accept_sec_context.c
++++ b/src/lib/gssapi/krb5/accept_sec_context.c
+@@ -1011,9 +1011,6 @@ kg_accept_krb5(minor_status, context_handle,
+             }
+ 
+             switch (negotiated_etype) {
+-            case ENCTYPE_DES_CBC_MD5:
+-            case ENCTYPE_DES_CBC_MD4:
+-            case ENCTYPE_DES_CBC_CRC:
+             case ENCTYPE_DES3_CBC_SHA1:
+             case ENCTYPE_ARCFOUR_HMAC:
+             case ENCTYPE_ARCFOUR_HMAC_EXP:
+diff --git a/src/lib/gssapi/krb5/gssapiP_krb5.h b/src/lib/gssapi/krb5/gssapiP_krb5.h
+index e92be88..2647434 100644
+--- a/src/lib/gssapi/krb5/gssapiP_krb5.h
++++ b/src/lib/gssapi/krb5/gssapiP_krb5.h
+@@ -120,17 +120,17 @@ extern const gss_OID_set kg_all_mechs;
+ /* These are to be stored in little-endian order, i.e., des-mac is
+    stored as 02 00.  */
+ enum sgn_alg {
+-    SGN_ALG_DES_MAC_MD5           = 0x0000,
+-    SGN_ALG_MD2_5                 = 0x0001,
+-    SGN_ALG_DES_MAC               = 0x0002,
+-    SGN_ALG_3                     = 0x0003, /* not published */
++    /* SGN_ALG_DES_MAC_MD5           = 0x0000, */
++    /* SGN_ALG_MD2_5                 = 0x0001, */
++    /* SGN_ALG_DES_MAC               = 0x0002, */
++    /* SGN_ALG_3                     = 0x0003, /\* not published *\/ */
+     SGN_ALG_HMAC_MD5              = 0x0011, /* microsoft w2k;  */
+     SGN_ALG_HMAC_SHA1_DES3_KD     = 0x0004
+ };
+ enum seal_alg {
+     SEAL_ALG_NONE            = 0xffff,
+-    SEAL_ALG_DES             = 0x0000,
+-    SEAL_ALG_1               = 0x0001, /* not published */
++    /* SEAL_ALG_DES             = 0x0000, */
++    /* SEAL_ALG_1               = 0x0001, /\* not published *\/ */
+     SEAL_ALG_MICROSOFT_RC4   = 0x0010, /* microsoft w2k;  */
+     SEAL_ALG_DES3KD          = 0x0002
+ };
+@@ -147,12 +147,12 @@ enum seal_alg {
+ #define KG_USAGE_INITIATOR_SIGN 25
+ 
+ enum qop {
+-    GSS_KRB5_INTEG_C_QOP_MD5       = 0x0001, /* *partial* MD5 = "MD2.5" */
+-    GSS_KRB5_INTEG_C_QOP_DES_MD5   = 0x0002,
+-    GSS_KRB5_INTEG_C_QOP_DES_MAC   = 0x0003,
++    /* GSS_KRB5_INTEG_C_QOP_MD5       = 0x0001, */
++    /* GSS_KRB5_INTEG_C_QOP_DES_MD5   = 0x0002, */
++    /* GSS_KRB5_INTEG_C_QOP_DES_MAC   = 0x0003, */
+     GSS_KRB5_INTEG_C_QOP_HMAC_SHA1 = 0x0004,
+     GSS_KRB5_INTEG_C_QOP_MASK      = 0x00ff,
+-    GSS_KRB5_CONF_C_QOP_DES        = 0x0100,
++    /* GSS_KRB5_CONF_C_QOP_DES        = 0x0100, */
+     GSS_KRB5_CONF_C_QOP_DES3_KD    = 0x0200,
+     GSS_KRB5_CONF_C_QOP_MASK       = 0xff00
+ };
+diff --git a/src/lib/gssapi/krb5/k5seal.c b/src/lib/gssapi/krb5/k5seal.c
+index 4da531b..d1cdce4 100644
+--- a/src/lib/gssapi/krb5/k5seal.c
++++ b/src/lib/gssapi/krb5/k5seal.c
+@@ -71,7 +71,6 @@ make_seal_token_v1 (krb5_context context,
+     char *data_ptr;
+     krb5_data plaind;
+     krb5_checksum md5cksum;
+-    krb5_checksum cksum;
+     /* msglen contains the message length
+      * we are signing/encrypting.  tmsglen
+      * contains the length of the message
+@@ -137,12 +136,8 @@ make_seal_token_v1 (krb5_context context,
+ 
+     /* pad the plaintext, encrypt if needed, and stick it in the token */
+ 
+-    /* initialize the the cksum */
++    /* initialize the the checksum */
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+-        md5cksum.checksum_type = CKSUMTYPE_RSA_MD5;
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         md5cksum.checksum_type = CKSUMTYPE_HMAC_SHA1_DES3;
+         break;
+@@ -152,7 +147,6 @@ make_seal_token_v1 (krb5_context context,
+             sign_usage = 15;
+         break;
+     default:
+-    case SGN_ALG_DES_MAC:
+         abort ();
+     }
+ 
+@@ -203,26 +197,6 @@ make_seal_token_v1 (krb5_context context,
+         return(code);
+     }
+     switch(signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case 3:
+-
+-        code = kg_encrypt_inplace(context, seq, KG_USAGE_SEAL,
+-                                  (g_OID_equal(oid, gss_mech_krb5_old) ?
+-                                   seq->keyblock.contents : NULL),
+-                                  md5cksum.contents, 16);
+-        if (code) {
+-            krb5_free_checksum_contents(context, &md5cksum);
+-            xfree (plain);
+-            gssalloc_free(t);
+-            return code;
+-        }
+-
+-        cksum.length = cksum_size;
+-        cksum.contents = md5cksum.contents + 16 - cksum.length;
+-
+-        memcpy(ptr+14, cksum.contents, cksum.length);
+-        break;
+-
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         /*
+          * Using key derivation, the call to krb5_c_make_checksum
+diff --git a/src/lib/gssapi/krb5/k5sealiov.c b/src/lib/gssapi/krb5/k5sealiov.c
+index 88caa85..9bb2ee1 100644
+--- a/src/lib/gssapi/krb5/k5sealiov.c
++++ b/src/lib/gssapi/krb5/k5sealiov.c
+@@ -145,10 +145,6 @@ make_seal_token_v1_iov(krb5_context context,
+ 
+     /* initialize the checksum */
+     switch (ctx->signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+-        md5cksum.checksum_type = CKSUMTYPE_RSA_MD5;
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         md5cksum.checksum_type = CKSUMTYPE_HMAC_SHA1_DES3;
+         break;
+@@ -158,7 +154,6 @@ make_seal_token_v1_iov(krb5_context context,
+             sign_usage = 15;
+         break;
+     default:
+-    case SGN_ALG_DES_MAC:
+         abort ();
+     }
+ 
+@@ -183,21 +178,6 @@ make_seal_token_v1_iov(krb5_context context,
+         goto cleanup;
+ 
+     switch (ctx->signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_3:
+-        code = kg_encrypt_inplace(context, ctx->seq, KG_USAGE_SEAL,
+-                                  (g_OID_equal(ctx->mech_used,
+-                                               gss_mech_krb5_old) ?
+-                                   ctx->seq->keyblock.contents : NULL),
+-                                  md5cksum.contents, 16);
+-        if (code != 0)
+-            goto cleanup;
+-
+-        cksum.length = ctx->cksum_size;
+-        cksum.contents = md5cksum.contents + 16 - cksum.length;
+-
+-        memcpy(ptr + 14, cksum.contents, cksum.length);
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         assert(md5cksum.length == ctx->cksum_size);
+         memcpy(ptr + 14, md5cksum.contents, md5cksum.length);
+diff --git a/src/lib/gssapi/krb5/k5unseal.c b/src/lib/gssapi/krb5/k5unseal.c
+index 57720c2..9b183bc 100644
+--- a/src/lib/gssapi/krb5/k5unseal.c
++++ b/src/lib/gssapi/krb5/k5unseal.c
+@@ -76,7 +76,6 @@ kg_unseal_v1(context, minor_status, ctx, ptr, bodysize, message_buffer,
+     int sealalg;
+     int bad_pad = 0;
+     gss_buffer_desc token;
+-    krb5_checksum cksum;
+     krb5_checksum md5cksum;
+     krb5_data plaind;
+     char *data_ptr;
+@@ -132,7 +131,6 @@ kg_unseal_v1(context, minor_status, ctx, ptr, bodysize, message_buffer,
+        but few enough that we can try them all. */
+ 
+     if ((ctx->sealalg == SEAL_ALG_NONE && signalg > 1) ||
+-        (ctx->sealalg == SEAL_ALG_1 && signalg != SGN_ALG_3) ||
+         (ctx->sealalg == SEAL_ALG_DES3KD &&
+          signalg != SGN_ALG_HMAC_SHA1_DES3_KD)||
+         (ctx->sealalg == SEAL_ALG_MICROSOFT_RC4 &&
+@@ -142,16 +140,11 @@ kg_unseal_v1(context, minor_status, ctx, ptr, bodysize, message_buffer,
+     }
+ 
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+     case SGN_ALG_HMAC_MD5:
+         cksum_len = 8;
+         if (toktype != KG_TOK_SEAL_MSG)
+             sign_usage = 15;
+         break;
+-    case SGN_ALG_3:
+-        cksum_len = 16;
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         cksum_len = 20;
+         break;
+@@ -260,12 +253,6 @@ kg_unseal_v1(context, minor_status, ctx, ptr, bodysize, message_buffer,
+ 
+     /* initialize the the cksum */
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+-    case SGN_ALG_DES_MAC:
+-    case SGN_ALG_3:
+-        md5cksum.checksum_type = CKSUMTYPE_RSA_MD5;
+-        break;
+     case SGN_ALG_HMAC_MD5:
+         md5cksum.checksum_type = CKSUMTYPE_HMAC_MD5_ARCFOUR;
+         break;
+@@ -282,105 +269,6 @@ kg_unseal_v1(context, minor_status, ctx, ptr, bodysize, message_buffer,
+     md5cksum.length = sumlen;
+ 
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_3:
+-        /* compute the checksum of the message */
+-
+-        /* 8 = bytes of token body to be checksummed according to spec */
+-
+-        if (! (data_ptr = xmalloc(8 + plainlen))) {
+-            if (sealalg != 0xffff)
+-                xfree(plain);
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = ENOMEM;
+-            return(GSS_S_FAILURE);
+-        }
+-
+-        (void) memcpy(data_ptr, ptr-2, 8);
+-
+-        (void) memcpy(data_ptr+8, plain, plainlen);
+-
+-        plaind.length = 8 + plainlen;
+-        plaind.data = data_ptr;
+-        code = krb5_k_make_checksum(context, md5cksum.checksum_type,
+-                                    ctx->seq, sign_usage,
+-                                    &plaind, &md5cksum);
+-        xfree(data_ptr);
+-
+-        if (code) {
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = code;
+-            return(GSS_S_FAILURE);
+-        }
+-
+-        code = kg_encrypt_inplace(context, ctx->seq, KG_USAGE_SEAL,
+-                                  (g_OID_equal(ctx->mech_used,
+-                                               gss_mech_krb5_old) ?
+-                                   ctx->seq->keyblock.contents : NULL),
+-                                  md5cksum.contents, 16);
+-        if (code) {
+-            krb5_free_checksum_contents(context, &md5cksum);
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = code;
+-            return GSS_S_FAILURE;
+-        }
+-
+-        if (signalg == 0)
+-            cksum.length = 8;
+-        else
+-            cksum.length = 16;
+-        cksum.contents = md5cksum.contents + 16 - cksum.length;
+-
+-        code = k5_bcmp(cksum.contents, ptr + 14, cksum.length);
+-        break;
+-
+-    case SGN_ALG_MD2_5:
+-        if (!ctx->seed_init &&
+-            (code = kg_make_seed(context, ctx->subkey, ctx->seed))) {
+-            krb5_free_checksum_contents(context, &md5cksum);
+-            if (sealalg != 0xffff)
+-                xfree(plain);
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = code;
+-            return GSS_S_FAILURE;
+-        }
+-
+-        if (! (data_ptr = xmalloc(sizeof(ctx->seed) + 8 + plainlen))) {
+-            krb5_free_checksum_contents(context, &md5cksum);
+-            if (sealalg == 0)
+-                xfree(plain);
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = ENOMEM;
+-            return(GSS_S_FAILURE);
+-        }
+-        (void) memcpy(data_ptr, ptr-2, 8);
+-        (void) memcpy(data_ptr+8, ctx->seed, sizeof(ctx->seed));
+-        (void) memcpy(data_ptr+8+sizeof(ctx->seed), plain, plainlen);
+-        plaind.length = 8 + sizeof(ctx->seed) + plainlen;
+-        plaind.data = data_ptr;
+-        krb5_free_checksum_contents(context, &md5cksum);
+-        code = krb5_k_make_checksum(context, md5cksum.checksum_type,
+-                                    ctx->seq, sign_usage,
+-                                    &plaind, &md5cksum);
+-        xfree(data_ptr);
+-
+-        if (code) {
+-            if (sealalg == 0)
+-                xfree(plain);
+-            if (toktype == KG_TOK_SEAL_MSG)
+-                gssalloc_free(token.value);
+-            *minor_status = code;
+-            return(GSS_S_FAILURE);
+-        }
+-
+-        code = k5_bcmp(md5cksum.contents, ptr + 14, 8);
+-        /* Falls through to defective-token??  */
+-
+     default:
+         *minor_status = 0;
+         return(GSS_S_DEFECTIVE_TOKEN);
+diff --git a/src/lib/gssapi/krb5/k5unsealiov.c b/src/lib/gssapi/krb5/k5unsealiov.c
+index 8b67042..84a2d96 100644
+--- a/src/lib/gssapi/krb5/k5unsealiov.c
++++ b/src/lib/gssapi/krb5/k5unsealiov.c
+@@ -44,7 +44,6 @@ kg_unseal_v1_iov(krb5_context context,
+     unsigned char *ptr;
+     int sealalg;
+     int signalg;
+-    krb5_checksum cksum;
+     krb5_checksum md5cksum;
+     size_t cksum_len = 0;
+     size_t conflen = 0;
+@@ -54,8 +53,8 @@ kg_unseal_v1_iov(krb5_context context,
+     size_t sumlen;
+     krb5_keyusage sign_usage = KG_USAGE_SIGN;
+ 
+-    md5cksum.length = cksum.length = 0;
+-    md5cksum.contents = cksum.contents = NULL;
++    md5cksum.length = 0;
++    md5cksum.contents = NULL;
+ 
+     header = kg_locate_header_iov(iov, iov_count, toktype);
+     assert(header != NULL);
+@@ -103,7 +102,6 @@ kg_unseal_v1_iov(krb5_context context,
+     }
+ 
+     if ((ctx->sealalg == SEAL_ALG_NONE && signalg > 1) ||
+-        (ctx->sealalg == SEAL_ALG_1 && signalg != SGN_ALG_3) ||
+         (ctx->sealalg == SEAL_ALG_DES3KD &&
+          signalg != SGN_ALG_HMAC_SHA1_DES3_KD)||
+         (ctx->sealalg == SEAL_ALG_MICROSOFT_RC4 &&
+@@ -113,16 +111,11 @@ kg_unseal_v1_iov(krb5_context context,
+     }
+ 
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+     case SGN_ALG_HMAC_MD5:
+         cksum_len = 8;
+         if (toktype != KG_TOK_WRAP_MSG)
+             sign_usage = 15;
+         break;
+-    case SGN_ALG_3:
+-        cksum_len = 16;
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+         cksum_len = 20;
+         break;
+@@ -189,12 +182,6 @@ kg_unseal_v1_iov(krb5_context context,
+     /* initialize the checksum */
+ 
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_MD2_5:
+-    case SGN_ALG_DES_MAC:
+-    case SGN_ALG_3:
+-        md5cksum.checksum_type = CKSUMTYPE_RSA_MD5;
+-        break;
+     case SGN_ALG_HMAC_MD5:
+         md5cksum.checksum_type = CKSUMTYPE_HMAC_MD5_ARCFOUR;
+         break;
+@@ -223,23 +210,6 @@ kg_unseal_v1_iov(krb5_context context,
+     }
+ 
+     switch (signalg) {
+-    case SGN_ALG_DES_MAC_MD5:
+-    case SGN_ALG_3:
+-        code = kg_encrypt_inplace(context, ctx->seq, KG_USAGE_SEAL,
+-                                  (g_OID_equal(ctx->mech_used,
+-                                               gss_mech_krb5_old) ?
+-                                   ctx->seq->keyblock.contents : NULL),
+-                                  md5cksum.contents, 16);
+-        if (code != 0) {
+-            retval = GSS_S_FAILURE;
+-            goto cleanup;
+-        }
+-
+-        cksum.length = cksum_len;
+-        cksum.contents = md5cksum.contents + 16 - cksum.length;
+-
+-        code = k5_bcmp(cksum.contents, ptr + 14, cksum.length);
+-        break;
+     case SGN_ALG_HMAC_SHA1_DES3_KD:
+     case SGN_ALG_HMAC_MD5:
+         code = k5_bcmp(md5cksum.contents, ptr + 14, cksum_len);
+diff --git a/src/lib/gssapi/krb5/util_crypt.c b/src/lib/gssapi/krb5/util_crypt.c
+index 0cebde1..80954af 100644
+--- a/src/lib/gssapi/krb5/util_crypt.c
++++ b/src/lib/gssapi/krb5/util_crypt.c
+@@ -74,27 +74,6 @@ kg_copy_keys(krb5_context context, krb5_gss_ctx_id_rec *ctx, krb5_key subkey)
+     return 0;
+ }
+ 
+-static krb5_error_code
+-kg_derive_des_enc_key(krb5_context context, krb5_key subkey, krb5_key *out)
+-{
+-    krb5_error_code code;
+-    krb5_keyblock *keyblock;
+-    unsigned int i;
+-
+-    *out = NULL;
+-
+-    code = krb5_k_key_keyblock(context, subkey, &keyblock);
+-    if (code != 0)
+-        return code;
+-
+-    for (i = 0; i < keyblock->length; i++)
+-        keyblock->contents[i] ^= 0xF0;
+-
+-    code = krb5_k_create_key(context, keyblock, out);
+-    krb5_free_keyblock(context, keyblock);
+-    return code;
+-}
+-
+ krb5_error_code
+ kg_setup_keys(krb5_context context, krb5_gss_ctx_id_rec *ctx, krb5_key subkey,
+               krb5_cksumtype *cksumtype)
+@@ -118,26 +97,6 @@ kg_setup_keys(krb5_context context, krb5_gss_ctx_id_rec *ctx, krb5_key subkey,
+         return code;
+ 
+     switch (subkey->keyblock.enctype) {
+-    case ENCTYPE_DES_CBC_MD5:
+-    case ENCTYPE_DES_CBC_MD4:
+-    case ENCTYPE_DES_CBC_CRC:
+-        krb5_k_free_key(context, ctx->seq);
+-        code = krb5_k_create_key(context, &subkey->keyblock, &ctx->seq);
+-        if (code != 0)
+-            return code;
+-
+-        krb5_k_free_key(context, ctx->enc);
+-        code = kg_derive_des_enc_key(context, subkey, &ctx->enc);
+-        if (code != 0)
+-            return code;
+-
+-        ctx->enc->keyblock.enctype = ENCTYPE_DES_CBC_RAW;
+-        ctx->seq->keyblock.enctype = ENCTYPE_DES_CBC_RAW;
+-        ctx->signalg = SGN_ALG_DES_MAC_MD5;
+-        ctx->cksum_size = 8;
+-        ctx->sealalg = SEAL_ALG_DES;
+-
+-        break;
+     case ENCTYPE_DES3_CBC_SHA1:
+         code = kg_copy_keys(context, ctx, subkey);
+         if (code != 0)
+diff --git a/src/lib/kadm5/kadm_rpc_xdr.c b/src/lib/kadm5/kadm_rpc_xdr.c
+index 2892d41..b8f451b 100644
+--- a/src/lib/kadm5/kadm_rpc_xdr.c
++++ b/src/lib/kadm5/kadm_rpc_xdr.c
+@@ -1128,16 +1128,6 @@ xdr_krb5_octet(XDR *xdrs, krb5_octet *objp)
+ bool_t
+ xdr_krb5_enctype(XDR *xdrs, krb5_enctype *objp)
+ {
+-   /*
+-    * This used to be xdr_krb5_keytype, but keytypes and enctypes have
+-    * been merged into only enctypes.  However, randkey_principal
+-    * already ensures that only a key of ENCTYPE_DES_CBC_CRC will be
+-    * returned to v1 clients, and ENCTYPE_DES_CBC_CRC has the same
+-    * value as KEYTYPE_DES used too, which is what all v1 clients
+-    * expect.  Therefore, IMHO, just encoding whatever enctype we get
+-    * is safe.
+-    */
+-
+    if (!xdr_int32(xdrs, (int32_t *) objp))
+ 	return (FALSE);
+    return (TRUE);
+diff --git a/src/lib/krb5/ccache/cc_mslsa.c b/src/lib/krb5/ccache/cc_mslsa.c
+index 0d00c86..4367322 100644
+--- a/src/lib/krb5/ccache/cc_mslsa.c
++++ b/src/lib/krb5/ccache/cc_mslsa.c
+@@ -1103,13 +1103,14 @@ GetMSTGT(krb5_context context, HANDLE LogonHandle, ULONG PackageId, KERB_EXTERNA
+     }
+ 
+     if (krb5_get_tgs_ktypes(context, NULL, &etype_list)) {
+-        ptr = etype_list = NULL;
+-        etype = ENCTYPE_DES_CBC_CRC;
+-    } else {
+-        ptr = etype_list + 1;
+-        etype = *etype_list;
++        /* No enctypes - nothing we can do. */
++        bIsLsaError = TRUE;
++        goto cleanup;
+     }
+ 
++    ptr = etype_list + 1;
++    etype = *etype_list;
++
+     while ( etype ) {
+         // Try once more but this time specify the Encryption Type
+         // (This will not store the retrieved tickets in the LSA cache unless
+diff --git a/src/lib/krb5/krb/auth_con.c b/src/lib/krb5/krb/auth_con.c
+index c86a4af..96e7823 100644
+--- a/src/lib/krb5/krb/auth_con.c
++++ b/src/lib/krb5/krb/auth_con.c
+@@ -315,28 +315,11 @@ krb5_auth_con_getremoteseqnumber(krb5_context context, krb5_auth_context auth_co
+ krb5_error_code KRB5_CALLCONV
+ krb5_auth_con_initivector(krb5_context context, krb5_auth_context auth_context)
+ {
+-    krb5_error_code ret;
+-    krb5_enctype enctype;
+-
+     if (auth_context->key == NULL)
+         return EINVAL;
+-    ret = krb5_c_init_state(context, &auth_context->key->keyblock,
+-                            KRB5_KEYUSAGE_KRB_PRIV_ENCPART,
+-                            &auth_context->cstate);
+-    if (ret)
+-        return ret;
+-
+-    /*
+-     * Historically we used a zero-filled buffer of the enctype block size.
+-     * This matches every existing enctype except RC4 (which has a block size
+-     * of 1) and des-cbc-crc (which uses the key instead of a zero-filled
+-     * buffer).  Special-case des-cbc-crc to remain interoperable.
+-     */
+-    enctype = krb5_k_key_enctype(context, auth_context->key);
+-    if (enctype == ENCTYPE_DES_CBC_CRC)
+-        zap(auth_context->cstate.data, auth_context->cstate.length);
+-
+-    return 0;
++    return krb5_c_init_state(context, &auth_context->key->keyblock,
++                             KRB5_KEYUSAGE_KRB_PRIV_ENCPART,
++                             &auth_context->cstate);
+ }
+ 
+ krb5_error_code
+diff --git a/src/lib/krb5/krb/gic_keytab.c b/src/lib/krb5/krb/gic_keytab.c
+index e82f425..1d70cf4 100644
+--- a/src/lib/krb5/krb/gic_keytab.c
++++ b/src/lib/krb5/krb/gic_keytab.c
+@@ -130,10 +130,6 @@ lookup_etypes_for_keytab(krb5_context context, krb5_keytab keytab,
+         }
+         etypes = p;
+         etypes[count++] = etype;
+-        /* All DES key types work with des-cbc-crc, which is more likely to be
+-         * accepted by the KDC (since MIT KDCs refuse des-cbc-md5). */
+-        if (etype == ENCTYPE_DES_CBC_MD5 || etype == ENCTYPE_DES_CBC_MD4)
+-            etypes[count++] = ENCTYPE_DES_CBC_CRC;
+         etypes[count] = 0;
+     }
+     if (ret != KRB5_KT_END)
+diff --git a/src/lib/krb5/krb/init_ctx.c b/src/lib/krb5/krb/init_ctx.c
+index 947e504..ceea07e 100644
+--- a/src/lib/krb5/krb/init_ctx.c
++++ b/src/lib/krb5/krb/init_ctx.c
+@@ -56,17 +56,12 @@
+ #include "brand.c"
+ #include "../krb5_libinit.h"
+ 
+-/* The des-mdX entries are last for now, because it's easy to
+-   configure KDCs to issue TGTs with des-mdX keys and then not accept
+-   them.  This'll be fixed, but for better compatibility, let's prefer
+-   des-crc for now.  */
+ static krb5_enctype default_enctype_list[] = {
+     ENCTYPE_AES256_CTS_HMAC_SHA1_96, ENCTYPE_AES128_CTS_HMAC_SHA1_96,
+     ENCTYPE_AES256_CTS_HMAC_SHA384_192, ENCTYPE_AES128_CTS_HMAC_SHA256_128,
+     ENCTYPE_DES3_CBC_SHA1,
+     ENCTYPE_ARCFOUR_HMAC,
+     ENCTYPE_CAMELLIA128_CTS_CMAC, ENCTYPE_CAMELLIA256_CTS_CMAC,
+-    ENCTYPE_DES_CBC_CRC, ENCTYPE_DES_CBC_MD5, ENCTYPE_DES_CBC_MD4,
+     0
+ };
+ 
+@@ -471,10 +466,6 @@ krb5int_parse_enctype_list(krb5_context context, const char *profkey,
+             /* Set all enctypes in the default list. */
+             for (i = 0; default_list[i]; i++)
+                 mod_list(default_list[i], sel, weak, &list);
+-        } else if (strcasecmp(token, "des") == 0) {
+-            mod_list(ENCTYPE_DES_CBC_CRC, sel, weak, &list);
+-            mod_list(ENCTYPE_DES_CBC_MD5, sel, weak, &list);
+-            mod_list(ENCTYPE_DES_CBC_MD4, sel, weak, &list);
+         } else if (strcasecmp(token, "des3") == 0) {
+             mod_list(ENCTYPE_DES3_CBC_SHA1, sel, weak, &list);
+         } else if (strcasecmp(token, "aes") == 0) {
+diff --git a/src/lib/krb5/krb/mk_req_ext.c b/src/lib/krb5/krb/mk_req_ext.c
+index dce0927..9fc6a0e 100644
+--- a/src/lib/krb5/krb/mk_req_ext.c
++++ b/src/lib/krb5/krb/mk_req_ext.c
+@@ -82,36 +82,6 @@ generate_authenticator(krb5_context,
+                        krb5_enctype *desired_etypes,
+                        krb5_enctype tkt_enctype);
+ 
+-/* Return the checksum type for the AP request, or 0 to use the enctype's
+- * mandatory checksum. */
+-static krb5_cksumtype
+-ap_req_cksum(krb5_context context, krb5_auth_context auth_context,
+-             krb5_enctype enctype)
+-{
+-    /* Use the configured checksum type if one was set. */
+-    if (auth_context->req_cksumtype)
+-        return auth_context->req_cksumtype;
+-
+-    /*
+-     * Otherwise choose based on the enctype.  For interoperability with very
+-     * old implementations, use unkeyed MD4 or MD5 checkums for DES enctypes.
+-     * (The authenticator checksum does not have to be keyed since it is
+-     * contained within an encrypted blob.)
+-     */
+-    switch (enctype) {
+-    case ENCTYPE_DES_CBC_CRC:
+-    case ENCTYPE_DES_CBC_MD5:
+-        return CKSUMTYPE_RSA_MD5;
+-        break;
+-    case ENCTYPE_DES_CBC_MD4:
+-        return CKSUMTYPE_RSA_MD4;
+-        break;
+-    default:
+-        /* Use the mandatory checksum type for the enctype. */
+-        return 0;
+-    }
+-}
+-
+ krb5_error_code KRB5_CALLCONV
+ krb5_mk_req_extended(krb5_context context, krb5_auth_context *auth_context,
+                      krb5_flags ap_req_options, krb5_data *in_data,
+@@ -198,15 +168,10 @@ krb5_mk_req_extended(krb5_context context, krb5_auth_context *auth_context,
+             checksum.length = in_data->length;
+             checksum.contents = (krb5_octet *) in_data->data;
+         } else {
+-            krb5_enctype enctype = krb5_k_key_enctype(context,
+-                                                      (*auth_context)->key);
+-            krb5_cksumtype cksumtype = ap_req_cksum(context, *auth_context,
+-                                                    enctype);
+-            if ((retval = krb5_k_make_checksum(context,
+-                                               cksumtype,
+-                                               (*auth_context)->key,
+-                                               KRB5_KEYUSAGE_AP_REQ_AUTH_CKSUM,
+-                                               in_data, &checksum)))
++            retval = krb5_k_make_checksum(context, 0, (*auth_context)->key,
++                                          KRB5_KEYUSAGE_AP_REQ_AUTH_CKSUM,
++                                          in_data, &checksum);
++            if (retval)
+                 goto cleanup_cksum;
+         }
+         checksump = &checksum;
+diff --git a/src/lib/krb5/krb/s4u_creds.c b/src/lib/krb5/krb/s4u_creds.c
+index 614ed41..d8015c6 100644
+--- a/src/lib/krb5/krb/s4u_creds.c
++++ b/src/lib/krb5/krb/s4u_creds.c
+@@ -341,9 +341,6 @@ verify_s4u2self_reply(krb5_context context,
+     assert(req_s4u_user != NULL);
+ 
+     switch (subkey->enctype) {
+-    case ENCTYPE_DES_CBC_CRC:
+-    case ENCTYPE_DES_CBC_MD4:
+-    case ENCTYPE_DES_CBC_MD5:
+     case ENCTYPE_DES3_CBC_SHA1:
+     case ENCTYPE_DES3_CBC_RAW:
+     case ENCTYPE_ARCFOUR_HMAC:
+diff --git a/src/lib/krb5/krb/ser_ctx.c b/src/lib/krb5/krb/ser_ctx.c
+index a9f50b2..3fc1c5e 100644
+--- a/src/lib/krb5/krb/ser_ctx.c
++++ b/src/lib/krb5/krb/ser_ctx.c
+@@ -421,7 +421,7 @@ krb5_context_internalize(krb5_context kcontext, krb5_pointer *argp, krb5_octet *
+     } else
+         context->tgs_etypes = NULL;
+ 
+-    /* Allowable checksum */
++    /* Allowable clockskew */
+     if ((kret = krb5_ser_unpack_int32(&ibuf, &bp, &remain)))
+         goto cleanup;
+     context->clockskew = (krb5_deltat) ibuf;
+diff --git a/src/man/kdc.conf.man b/src/man/kdc.conf.man
+index ab3ee02..cab5cae 100644
+--- a/src/man/kdc.conf.man
++++ b/src/man/kdc.conf.man
+@@ -441,13 +441,6 @@ marks the server principal as host\-based or the service is also
+ listed in \fBhost_based_services\fP\&.  \fBno_host_referral = *\fP will
+ disable referral processing altogether.
+ .TP
+-\fBdes_crc_session_supported\fP
+-(Boolean value).  If set to true, the KDC will assume that service
+-principals support des\-cbc\-crc for session key enctype negotiation
+-purposes.  If \fBallow_weak_crypto\fP in libdefaults is
+-false, or if des\-cbc\-crc is not a permitted enctype, then this
+-variable has no effect.  Defaults to true.  New in release 1.11.
+-.TP
+ \fBreject_bad_transit\fP
+ (Boolean value.)  If set to true, the KDC will check the list of
+ transited realms for cross\-realm tickets against the transit path
+@@ -969,30 +962,6 @@ center;
+ |l|l|.
+ _
+ T{
+-des\-cbc\-crc
+-T}	T{
+-DES cbc mode with CRC\-32 (weak)
+-T}
+-_
+-T{
+-des\-cbc\-md4
+-T}	T{
+-DES cbc mode with RSA\-MD4 (weak)
+-T}
+-_
+-T{
+-des\-cbc\-md5
+-T}	T{
+-DES cbc mode with RSA\-MD5 (weak)
+-T}
+-_
+-T{
+-des\-cbc\-raw
+-T}	T{
+-DES cbc mode raw (weak)
+-T}
+-_
+-T{
+ des3\-cbc\-raw
+ T}	T{
+ Triple DES cbc mode raw (weak)
+@@ -1005,12 +974,6 @@ Triple DES cbc mode with HMAC/sha1
+ T}
+ _
+ T{
+-des\-hmac\-sha1
+-T}	T{
+-DES with HMAC/sha1 (weak)
+-T}
+-_
+-T{
+ aes256\-cts\-hmac\-sha1\-96 aes256\-cts aes256\-sha1
+ T}	T{
+ AES\-256 CTS mode with 96\-bit SHA\-1 HMAC
+@@ -1059,12 +1022,6 @@ Camellia\-128 CTS mode with CMAC
+ T}
+ _
+ T{
+-des
+-T}	T{
+-The DES family: des\-cbc\-crc, des\-cbc\-md5, and des\-cbc\-md4 (weak)
+-T}
+-_
+-T{
+ des3
+ T}	T{
+ The triple DES family: des3\-cbc\-sha1
+@@ -1095,8 +1052,8 @@ types for the variable in question.  Types or families can be removed
+ from the current list by prefixing them with a minus sign ("\-").
+ Types or families can be prefixed with a plus sign ("+") for symmetry;
+ it has the same meaning as just listing the type or family.  For
+-example, "\fBDEFAULT \-des\fP" would be the default set of encryption
+-types with DES types removed, and "\fBdes3 DEFAULT\fP" would be the
++example, "\fBDEFAULT \-rc4\fP" would be the default set of encryption
++types with RC4 types removed, and "\fBdes3 DEFAULT\fP" would be the
+ default set of encryption types with triple DES types moved to the
+ front.
+ .sp
+diff --git a/src/man/krb5.conf.man b/src/man/krb5.conf.man
+index d431dce..a12e7c3 100644
+--- a/src/man/krb5.conf.man
++++ b/src/man/krb5.conf.man
+@@ -262,7 +262,7 @@ the client should request when making a TGS\-REQ, in order of
+ preference from highest to lowest.  The list may be delimited with
+ commas or whitespace.  See Encryption_types in
+ kdc.conf(5) for a list of the accepted values for this tag.
+-The default value is \fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types
++The default value is \fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP, but weak encryption types
+ will be implicitly removed from this list if the value of
+ \fBallow_weak_crypto\fP is false.
+ .sp
+@@ -276,7 +276,7 @@ Identifies the supported list of session key encryption types that
+ the client should request when making an AS\-REQ, in order of
+ preference from highest to lowest.  The format is the same as for
+ default_tgs_enctypes.  The default value for this tag is
+-\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types will be implicitly
++\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP, but weak encryption types will be implicitly
+ removed from this list if the value of \fBallow_weak_crypto\fP is
+ false.
+ .sp
+@@ -459,7 +459,7 @@ used across NATs.  The default value is true.
+ \fBpermitted_enctypes\fP
+ Identifies all encryption types that are permitted for use in
+ session key encryption.  The default value for this tag is
+-\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types will be implicitly
++\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP, but weak encryption types will be implicitly
+ removed from this list if the value of \fBallow_weak_crypto\fP is
+ false.
+ .TP
+diff --git a/src/windows/leash/htmlhelp/html/Encryption_Types.htm b/src/windows/leash/htmlhelp/html/Encryption_Types.htm
+index aad42a3..1aebdd0 100644
+--- a/src/windows/leash/htmlhelp/html/Encryption_Types.htm
++++ b/src/windows/leash/htmlhelp/html/Encryption_Types.htm
+@@ -79,18 +79,6 @@ will have an entry in the Encryption type column. <br>
+ <th>Description</th>
+ </tr>
+ <tr>
+-<th id="th2">  des-  </th>
+-  <td> The DES (Data Encryption Standard)
+-family is a symmetric block cipher. It was designed to handle only
+-56-bit keys which is not enough for modern computing power. It is now
+-considered to be weak encryption. <ul id="helpul">
+-<li> des-cbc-crc (<b>weak</b>) </li>
+-<li>des-cbc-md5 (<b>weak</b>)  </li>
+-<li> des-cbc-md4  (<b>weak</b>) </li>
+-
+-</ul>
+-</td>
+-</tr><tr>
+ <th id="th2"> des3- </th>
+    <td> The triple DES family improves on
+ the original DES (Data Encryption Standard) by using 3 separate 56-bit
+@@ -106,7 +94,7 @@ keys. Some modes of 3DES are considered weak while others are strong
+ <tr>
+ <th id="th2"> aes </th>
+      <td>The AES Advanced Encryption Standard
+-family, like DES and 3DES, is a symmetric block cipher and was designed
++family, like 3DES, is a symmetric block cipher and was designed
+ to replace them. It can use multiple key sizes. Kerberos specifies use
+ for 256-bit and 128-bit keys.
+ <ul id="helpul">
