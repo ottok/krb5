@@ -109,6 +109,5 @@ libk5crypto.so.3 libk5crypto3 #MINVER#
  krb5int_hash_sha384@k5crypto_3_MIT 1.15~beta1
  krb5int_hmac@k5crypto_3_MIT 1.8+dfsg
  krb5int_nfold@k5crypto_3_MIT 1.10+dfsg~alpha1
- mit_crc32@k5crypto_3_MIT 1.6.dfsg.2
  valid_cksumtype@k5crypto_3_MIT 1.6.dfsg.2
  valid_enctype@k5crypto_3_MIT 1.6.dfsg.2
