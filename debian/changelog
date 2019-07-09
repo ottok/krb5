@@ -1,3 +1,14 @@
+krb5 (1.17-4) unstable; urgency=low
+
+  * Remove single DES support entirely; it has been deprecated for a
+    number of years and is going away in 1.18.  We want to find out now
+    any debian problems.
+  * Migrate from git-dpm to git-debrebase; it truly is better.  Thanks Ian.
+  * Add a krb5-user.news for single DES going away
+  * Remove the old news file across all packages
+
+ -- Sam Hartman <hartmans@debian.org>  Mon, 08 Jul 2019 22:04:39 -0400
+
 krb5 (1.17-3) unstable; urgency=medium
 
   * Fix memory leak in replay cache type none
