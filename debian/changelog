@@ -1,3 +1,12 @@
+krb5 (1.17-5) unstable; urgency=high
+
+  * Upstream patch to filter invalid enctypes when nfs calls  to indicate
+    which enctypes it supports, Closes: #932000
+  * Do not error out if a keytab includes a single-des enctype, Closes:
+    #932132
+
+ -- Sam Hartman <hartmans@debian.org>  Wed, 17 Jul 2019 09:20:27 -0400
+
 krb5 (1.17-4) unstable; urgency=low
 
   * Remove single DES support entirely; it has been deprecated for a
