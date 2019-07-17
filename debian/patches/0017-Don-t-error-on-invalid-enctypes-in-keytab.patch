@@ -1,0 +1,65 @@
+From: Robbie Harwood <rharwood@redhat.com>
+Date: Wed, 10 Jul 2019 17:10:16 -0400
+Subject: Don't error on invalid enctypes in keytab
+
+krb5_ktfile_get_entry() used krb5_c_enctype_compare() to compare
+enctypes, in order to share keys between single-DES enctypes.  As
+key-sharing between enctypes is no longer done and single-DES support
+has been removed, use a simple equality test to match the enctype.
+This fixes a bug where krb5_kt_get_entry() would error out if the
+keytab contained any entries with invalid enctypes (include single-DES
+entries, after commit fb2dada5eb89c4cd4e39dedd6dbb7dbd5e94f8b8) even
+if a matching entry is found.
+
+[ghudson@mit.edu: rewrote commit message]
+
+ticket: 8808
+---
+ src/lib/krb5/keytab/kt_file.c | 27 +++++----------------------
+ 1 file changed, 5 insertions(+), 22 deletions(-)
+
+diff --git a/src/lib/krb5/keytab/kt_file.c b/src/lib/krb5/keytab/kt_file.c
+index 89cb686..458bb2c 100644
+--- a/src/lib/krb5/keytab/kt_file.c
++++ b/src/lib/krb5/keytab/kt_file.c
+@@ -289,7 +289,6 @@ krb5_ktfile_get_entry(krb5_context context, krb5_keytab id,
+     krb5_keytab_entry cur_entry, new_entry;
+     krb5_error_code kerror = 0;
+     int found_wrong_kvno = 0;
+-    krb5_boolean similar;
+     int was_open;
+     char *princname;
+ 
+@@ -336,27 +335,11 @@ krb5_ktfile_get_entry(krb5_context context, krb5_keytab id,
+             continue;
+         }
+ 
+-        /* if the enctype is not ignored and doesn't match, free new_entry
+-           and continue to the next */
+-
+-        if (enctype != IGNORE_ENCTYPE) {
+-            if ((kerror = krb5_c_enctype_compare(context, enctype,
+-                                                 new_entry.key.enctype,
+-                                                 &similar))) {
+-                krb5_kt_free_entry(context, &new_entry);
+-                break;
+-            }
+-
+-            if (!similar) {
+-                krb5_kt_free_entry(context, &new_entry);
+-                continue;
+-            }
+-            /*
+-             * Coerce the enctype of the output keyblock in case we
+-             * got an inexact match on the enctype.
+-             */
+-            new_entry.key.enctype = enctype;
+-
++        /* If the enctype is not ignored and doesn't match, free new_entry and
++           continue to the next. */
++        if (enctype != IGNORE_ENCTYPE && enctype != new_entry.key.enctype) {
++            krb5_kt_free_entry(context, &new_entry);
++            continue;
+         }
+ 
+         if (kvno == IGNORE_VNO || new_entry.vno == IGNORE_VNO) {

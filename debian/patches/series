@@ -13,3 +13,5 @@ upstream/0011-Document-the-double-colon-behavior-of-DIR-ccaches.patch
 upstream/0013-Update-test-suite-to-avoid-single-DES-enctypes.patch
 upstream/0014-Remove-support-for-single-DES-and-CRC.patch
 debian-local/0015-Some-more-des-test-failures.patch
+0016-Filter-enctypes-in-gss_set_allowable_enctypes.patch
+0017-Don-t-error-on-invalid-enctypes-in-keytab.patch
