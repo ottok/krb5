@@ -11,35 +11,9 @@ export DH_OPTIONS
 SHELL=/bin/bash
 export SHELL
 
-# Tell Autoconf the correct system types.  Needed for cross builds.
-DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
-    SYSTEM = --build $(DEB_HOST_GNU_TYPE)
-    CACHE  =
-else
-    SYSTEM = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
-    CACHE  = --cache-file=$(DEB_HOST_GNU_TYPE).cache
-endif
 
 export DEB_HOST_MULTIARCH
 
-CCOPTS=-g
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-    CCOPTS +=-O0
-else
-    CCOPTS +=-O2
-endif
-
-ifneq (,$(filter i486-linux-gnu x86_64-linux-gnu,$(DEB_HOST_GNU_TYPE)))
-    CCOPTS +=-D_FORTIFY_SOURCE=2 -fstack-protector
-    endif
-FLAGS=$(shell if res=`dpkg-buildflags --export=configure `; then echo $$res; else echo   CFLAGS="'$(CCOPTS)'"; fi)
-
-ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-    NUMJOBS = -j$(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-endif
 
 # The flags to pass to dh_install specifying the upstream files to exclude.
 # We use --fail-missing to be sure we catch any new upstream files, so be
@@ -60,28 +34,8 @@ CONFIGURE_LDAP=        --with-ldap
 else
 CONFIGURE_LDAP=        --without-ldap
 endif
+DH_BUILD_OPTS= -Dsrc -Bbuild
 
-# We touch each configure and Autoconf-related file so that we do not attempt
-# to use Autoconf.  The cache is used by the Embdebian project for cross
-# compiles.
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
-	mkdir -p build
-	find src -name configure -print | xargs touch
-	find src \( -name \*hin -o -name \*.h.in -o -name \*.stmp \) -print \
-		| xargs touch
-	[ ! -f $(DEB_HOST_GNU_TYPE).cache ] \
-		|| cp $(DEB_HOST_GNU_TYPE).cache build/
-	cd build && $(FLAGS) ../src/configure  \
-		--prefix=/usr --localstatedir=/etc --mandir=/usr/share/man \
-		--with-system-et --with-system-ss --disable-rpath  \
-		--enable-shared $(CONFIGURE_LDAP) --without-tcl \
-	--with-system-verto \
-		--libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
-		--sysconfdir=/etc \
-		$(SYSTEM) $(CACHE)
-	touch configure-stamp
 
 # Build the documentation in a separate directory, since otherwise we'll
 # overwrite the info pages provided upstream and then debian/rules clean won't
@@ -92,9 +46,14 @@ build-arch: build-stamp
 
 build-indep: build-indep-stamp
 
-build-stamp: configure-stamp
-	cd build && $(MAKE) $(NUMJOBS) all
-	touch build-stamp
+build-stamp:
+	dh_auto_configure $(DH_BUILD_OPTS) -- --with-system-et --with-system-ss --disable-rpath  \
+		--enable-shared $(CONFIGURE_LDAP) --without-tcl \
+	--with-system-verto \
+		--libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
+		--sysconfdir=/etc 
+	dh_auto_build $(DH_BUILD_OPTS)
+
 
 build-indep-stamp: build-stamp
 ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
@@ -108,7 +67,7 @@ endif
 
 clean:
 	dh_testdir
-	-rm -rf build doc/tools/*.pyc doc/version.py
+	-rm -rf  build doc/tools/*.pyc doc/version.py
 	dh_clean build-stamp configure-stamp build-indep-stamp
 
 install: DH_OPTIONS=
@@ -124,7 +83,7 @@ install: build-arch
 	done
 	dh_installdirs
 
-	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
+	dh_auto_install $(DH_BUILD_OPTS)
 	install -d $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/krb5 $(CURDIR)/debian/tmp/etc/insserv/overrides
 ifeq (,$(KRB5_SKIP_LDAP))
 	install -m644 debian/krb5-kdc-ldap.insserv-override debian/tmp/etc/insserv/overrides/krb5-kdc
@@ -142,7 +101,8 @@ endif
 	install -m644 src/util/ac_check_krb5.m4 \
 		debian/libkrb5-dev/usr/share/aclocal
 
-	dh_install --fail-missing $(EXCLUDE)
+	dh_install -- $(EXCLUDE)
+	dh_missing --fail-missing
 	set -e ; find debian/krb5-multidev/usr/lib/$(DEB_HOST_MULTIARCH)/mit-krb5 -type l -name \*.so -print |\
 		while read linkname; do \
 		ln -s -f ../`readlink $$linkname` \
