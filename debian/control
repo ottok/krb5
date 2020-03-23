@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 10), byacc | bison,
  libkeyutils-dev [linux-any], libldap2-dev <!stage1>, libsasl2-dev <!stage1>,
  libncurses5-dev, libssl-dev,  ss-dev,
  libverto-dev (>= 0.2.4), pkg-config
-Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen, doxygen-latex
+Build-Depends-Indep: python3, python3-cheetah, python3-lxml, python3-sphinx, doxygen, doxygen-latex
 Standards-Version: 4.1.1
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
