@@ -36,26 +36,23 @@ CONFIGURE_LDAP=        --without-ldap
 endif
 DH_BUILD_OPTS= -Dsrc -Bbuild
 
-
-# Build the documentation in a separate directory, since otherwise we'll
-# overwrite the info pages provided upstream and then debian/rules clean won't
-# get back to a virgin copy of the package.
 build: build-arch build-indep
 
-build-arch: build-stamp
 
-build-indep: build-indep-stamp
-
-build-stamp:
+override_dh_auto_configure:
 	dh_auto_configure $(DH_BUILD_OPTS) -- --with-system-et --with-system-ss --disable-rpath  \
 		--enable-shared $(CONFIGURE_LDAP) --without-tcl \
 	--with-system-verto \
 		--libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 		--sysconfdir=/etc 
+
+override_dh_auto_build:
 	dh_auto_build $(DH_BUILD_OPTS)
 
-
-build-indep-stamp: build-stamp
+# Build the documentation in a separate directory, since otherwise we'll
+# overwrite the info pages provided upstream and then debian/rules clean won't
+build-indep: build-indep-stamp
+build-indep-stamp: 
 ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
 	cd build/doc && make PYTHON=python3 substhtml substpdf
 	ln -sf /usr/share/javascript/jquery/jquery.js build/doc/html_subst/_static/jquery.js
@@ -68,14 +65,9 @@ endif
 clean:
 	dh_testdir
 	-rm -rf  build doc/tools/*.pyc doc/version.py
-	dh_clean build-stamp configure-stamp build-indep-stamp
+	dh_clean build-indep-stamp
 
-install: DH_OPTIONS=
-install: build-arch
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
+override_dh_auto_install:
 
 	dh_auto_install $(DH_BUILD_OPTS)
 	install -d $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/krb5 $(CURDIR)/debian/tmp/etc/insserv/overrides
@@ -95,8 +87,8 @@ endif
 	install -m644 src/util/ac_check_krb5.m4 \
 		debian/libkrb5-dev/usr/share/aclocal
 
+override_dh_install:
 	dh_install -- $(EXCLUDE)
-	dh_missing --fail-missing
 	set -e ; find debian/krb5-multidev/usr/lib/$(DEB_HOST_MULTIARCH)/mit-krb5 -type l -name \*.so -print |\
 		while read linkname; do \
 		ln -s -f ../`readlink $$linkname` \
@@ -146,4 +138,4 @@ override_dh_fixperms:
 %:
 	dh $@ $(DH_BUILD_OPTS)
 
-.PHONY: build clean configure binary-indep binary-arch binary install
+#.PHONY: build clean configure binary-indep binary-arch binary install
