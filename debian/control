@@ -235,6 +235,7 @@ Description: TLS plugin for MIT Kerberos
 
 Package: krb5-doc
 Architecture: all
+Multi-Arch: foreign
 Conflicts: heimdal-docs
 Section: doc
 Depends: ${misc:Depends}
