@@ -85,7 +85,7 @@ endif
 	    $(CURDIR)/debian/tmp/usr/share/man/man1/krb5-config.mit.1
 
 	install -m644 src/util/ac_check_krb5.m4 \
-		debian/libkrb5-dev/usr/share/aclocal
+		$(CURDIR)/debian/libkrb5-dev/usr/share/aclocal
 
 override_dh_install:
 	dh_install  $(EXCLUDE) --sourcedir=.
