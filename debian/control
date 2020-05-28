@@ -1,13 +1,13 @@
 Source: krb5
 Section: net
 Priority: optional
-Build-Depends: debhelper-compat (= 12), byacc | bison,
+Build-Depends: debhelper-compat (= 13), byacc | bison,
  comerr-dev, docbook-to-man,
  libkeyutils-dev [linux-any], libldap2-dev <!stage1>, libsasl2-dev <!stage1>,
  libncurses5-dev, libssl-dev,  ss-dev,
  libverto-dev (>= 0.2.4), pkg-config
 Build-Depends-Indep: python, python-cheetah, python-lxml, python-sphinx, doxygen, doxygen-latex
-Standards-Version: 4.1.1
+Standards-Version: 4.5.0
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
 Homepage: http://web.mit.edu/kerberos/
