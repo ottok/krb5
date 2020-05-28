@@ -34,7 +34,7 @@ CONFIGURE_LDAP=        --with-ldap
 else
 CONFIGURE_LDAP=        --without-ldap
 endif
-DH_BUILD_OPTS= -Dsrc -Bbuild
+DH_BUILD_OPTS= --sourcedir=src --builddir=build
 
 build: build-arch build-indep
 
