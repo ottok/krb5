@@ -88,7 +88,7 @@ endif
 		debian/libkrb5-dev/usr/share/aclocal
 
 override_dh_install:
-	dh_install -- $(EXCLUDE)
+	dh_install  $(EXCLUDE) --sourcedir=.
 	set -e ; find debian/krb5-multidev/usr/lib/$(DEB_HOST_MULTIARCH)/mit-krb5 -type l -name \*.so -print |\
 		while read linkname; do \
 		ln -s -f ../`readlink $$linkname` \
@@ -135,7 +135,10 @@ override_dh_fixperms:
 	chmod 700 debian/krb5-kdc/var/lib/krb5kdc
 	chmod 700 debian/krb5-kdc/etc/krb5kdc
 
+override_dh_auto_test: 
+
 %:
 	dh $@ $(DH_BUILD_OPTS)
+
 
 #.PHONY: build clean configure binary-indep binary-arch binary install
