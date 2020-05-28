@@ -1,0 +1,98 @@
+From: Greg Hudson <ghudson@mit.edu>
+Date: Thu, 17 Jan 2019 12:51:59 -0500
+Subject: Update doxygen-RST bridge to Python 3
+
+Also remove a debugging print from DocModel.__repr__.
+
+ticket: 8774 (new)
+tags: pullup
+target_version: 1.17-next
+
+(cherry picked from commit 95830231758de259abbbccedbac01613f578768a)
+---
+ doc/tools/docmodel.py          | 5 ++---
+ doc/tools/doxybuilder_funcs.py | 4 ++--
+ doc/tools/doxybuilder_types.py | 4 ++--
+ src/doc/Makefile.in            | 2 +-
+ 4 files changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/doc/tools/docmodel.py b/doc/tools/docmodel.py
+index ef4cd76..e5d4d11 100644
+--- a/doc/tools/docmodel.py
++++ b/doc/tools/docmodel.py
+@@ -201,7 +201,6 @@ class DocModel(object):
+ 
+     def __repr__(self):
+         obj = getattr(self,self.category)
+-        print type(obj)
+         return str(obj)
+ 
+     def signature(self):
+@@ -236,8 +235,8 @@ class DocModelTest(DocModel):
+         self.test_save()
+ 
+     def test_print(self):
+-        print 'testing'
+-        print self
++        print('testing')
++        print(self)
+ 
+ 
+     def test_save(self):
+diff --git a/doc/tools/doxybuilder_funcs.py b/doc/tools/doxybuilder_funcs.py
+index bfcadfd..9a11977 100644
+--- a/doc/tools/doxybuilder_funcs.py
++++ b/doc/tools/doxybuilder_funcs.py
+@@ -93,7 +93,7 @@ class DocNode(object):
+ 
+         return '\n'.join(result)
+ 
+-class DoxyContenHandler(object, ContentHandler):
++class DoxyContenHandler(ContentHandler):
+     def __init__(self, builder):
+         self.builder = builder
+         self.counters = defaultdict(int)
+@@ -242,7 +242,7 @@ class DoxyFuncs(XML2AST):
+                            'description': p_descr}
+             parameters.append(param_descr)
+         result = Function(**function_descr)
+-        print >> self.tmp, result
++        print(result, file=self.tmp)
+ 
+         return function_descr
+ 
+diff --git a/doc/tools/doxybuilder_types.py b/doc/tools/doxybuilder_types.py
+index 24e0a57..947971a 100644
+--- a/doc/tools/doxybuilder_types.py
++++ b/doc/tools/doxybuilder_types.py
+@@ -358,7 +358,7 @@ class DoxyBuilderTypes(DoxyTypes):
+         result = self.run(filename, include=['typedef'])
+         target_dir = '%s/types' % (self.target_dir)
+         if not os.path.exists(target_dir):
+-            os.makedirs(target_dir, 0755)
++            os.makedirs(target_dir, 0o755)
+         for t in result:
+             obj = DocModel(**t)
+             self.save(obj, self.templates, target_dir)
+@@ -369,7 +369,7 @@ class DoxyBuilderTypes(DoxyTypes):
+         result = self.run(filename, include=['define'])
+         target_dir = '%s/macros' % (self.target_dir)
+         if not os.path.exists(target_dir):
+-            os.makedirs(target_dir, 0755)
++            os.makedirs(target_dir, 0o755)
+         for t in result:
+             obj = DocModel(**t)
+             tmpl = {'composite': 'define_document.tmpl'}
+diff --git a/src/doc/Makefile.in b/src/doc/Makefile.in
+index 043de76..94a0e6d 100644
+--- a/src/doc/Makefile.in
++++ b/src/doc/Makefile.in
+@@ -48,7 +48,7 @@ html: composite
+ 
+ # Dummy target for use in an unconfigured source tree.
+ htmlsrc:
+-	$(MAKE) -f Makefile.in srcdir=. top_srcdir=.. PYTHON=python html clean
++	$(MAKE) -f Makefile.in srcdir=. top_srcdir=.. PYTHON=python3 html clean
+ 
+ # Create HTML documentation in html_subst suitable for
+ # installation by an OS package, with substitutions for configured
