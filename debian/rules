@@ -127,7 +127,7 @@ override_dh_strip:
 	done
 
 override_dh_makeshlibs:
-	dh_makeshlibs --  -c4
+	dh_makeshlibs -Xkrb5/plugins --  -c4
 
 override_dh_fixperms:
 	dh_fixperms
