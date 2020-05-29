@@ -1,6 +1,7 @@
 krb5 (1.17-8) UNRELEASED; urgency=medium
 
   * krb5-doc is multi-arch Foreign, Closes: #959984
+  * Convert to using dh sequencer, Closes: #930690
 
  -- Sam Hartman <hartmans@debian.org>  Thu, 28 May 2020 10:31:24 -0400
 
