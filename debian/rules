@@ -121,10 +121,12 @@ override_dh_installinit:
 	DH_OPTIONS= dh_installinit -pkrb5-kdc --error-handler=init_error -- defaults 18 18
 	DH_OPTIONS= dh_installinit -pkrb5-kpropd -- defaults 18 18
 		DH_OPTIONS= dh_installinit -pkrb5-admin-server -- defaults 18 18
+
 override_dh_strip:
 	set -e ; for pkg in $(LIB_PACKAGES) ; do \
 		DH_OPTIONS="" dh_strip -p$$pkg --dbg-package=libkrb5-dbg; \
 	done
+	dh_strip
 
 override_dh_makeshlibs:
 	dh_makeshlibs -Xkrb5/plugins --  -c4
