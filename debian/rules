@@ -52,7 +52,9 @@ override_dh_auto_build:
 # Build the documentation in a separate directory, since otherwise we'll
 # overwrite the info pages provided upstream and then debian/rules clean won't
 build-indep: build-indep-stamp
-build-indep-stamp: 
+# build-indep should not need to depend on build-arch, but currently it does at least to populate build/doc
+# Add the dependency until we get a chance to make it work properly
+build-indep-stamp:  build-arch
 ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
 	cd build/doc && make PYTHON=python3 substhtml substpdf
 	ln -sf /usr/share/javascript/jquery/jquery.js build/doc/html_subst/_static/jquery.js
@@ -66,6 +68,7 @@ clean:
 	dh_testdir
 	-rm -rf  build doc/tools/*.pyc doc/version.py
 	dh_clean build-indep-stamp
+
 
 override_dh_auto_install:
 
@@ -84,11 +87,13 @@ endif
 	mv $(CURDIR)/debian/tmp/usr/share/man/man1/krb5-config.1 \
 	    $(CURDIR)/debian/tmp/usr/share/man/man1/krb5-config.mit.1
 
+	install -d $(CURDIR)/debian/tmp/usr/share/aclocal
 	install -m644 src/util/ac_check_krb5.m4 \
-		$(CURDIR)/debian/libkrb5-dev/usr/share/aclocal
+		$(CURDIR)/debian/tmp/usr/share/aclocal
 
-override_dh_install:
-	dh_install  $(EXCLUDE) --sourcedir=.
+
+override_dh_install-arch:
+	dh_install   $(EXCLUDE) --sourcedir=.
 	set -e ; find debian/krb5-multidev/usr/lib/$(DEB_HOST_MULTIARCH)/mit-krb5 -type l -name \*.so -print |\
 		while read linkname; do \
 		ln -s -f ../`readlink $$linkname` \
@@ -131,7 +136,7 @@ override_dh_strip:
 override_dh_makeshlibs:
 	dh_makeshlibs -Xkrb5/plugins --  -c4
 
-override_dh_fixperms:
+override_dh_fixperms-arch:
 	dh_fixperms
 	chmod u+s debian/krb5-user/usr/bin/ksu
 	chmod 700 debian/krb5-kdc/var/lib/krb5kdc
