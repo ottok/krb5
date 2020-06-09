@@ -44,7 +44,8 @@ override_dh_auto_configure:
 		--enable-shared $(CONFIGURE_LDAP) --without-tcl \
 	--with-system-verto \
 		--libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
-		--sysconfdir=/etc 
+		--sysconfdir=/etc  \
+		--localstatedir=/etc
 
 override_dh_auto_build:
 	dh_auto_build $(DH_BUILD_OPTS)
