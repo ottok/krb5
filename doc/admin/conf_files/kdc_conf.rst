@@ -446,7 +446,6 @@ definitions of these relations.
 * **ldap_kadmind_sasl_mech**
 * **ldap_kadmind_sasl_realm**
 * **ldap_service_password_file**
-* **ldap_servers**
 * **ldap_conns_per_server**
 
 
@@ -642,16 +641,19 @@ Logging specifications may have the following forms:
     facility is specified, the default is **AUTH**.
 
 In the following example, the logging messages from the KDC will go to
-the console and to the system log under the facility LOG_DAEMON with
-default severity of LOG_INFO; and the logging messages from the
-administrative server will be appended to the file
-``/var/adm/kadmin.log`` and sent to the device ``/dev/tty04``. ::
+the console and to the system log under the facility LOG_DAEMON, and
+the logging messages from the administrative server will be appended
+to the file ``/var/adm/kadmin.log`` and sent to the device
+``/dev/tty04``. ::
 
     [logging]
         kdc = CONSOLE
         kdc = SYSLOG:INFO:DAEMON
         admin_server = FILE:/var/adm/kadmin.log
         admin_server = DEVICE=/dev/tty04
+
+If no logging specification is given, the default is to use syslog.
+To disable logging entirely, specify ``default = DEVICE=/dev/null``.
 
 
 .. _otp:
@@ -904,10 +906,8 @@ follows:
 
 ================= ============================================
 normal            default for Kerberos Version 5
-v4                the only type used by Kerberos Version 4 (no salt)
 norealm           same as the default, without using realm information
 onlyrealm         uses only realm information as the salt
-afs3              AFS version 3, only used for compatibility with Kerberos 4 in AFS
 special           generate a random salt
 ================= ============================================
 

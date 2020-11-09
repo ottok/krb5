@@ -114,7 +114,14 @@ struct krb5_keytypes {
     unsigned int ssf;
 };
 
-#define ETYPE_WEAK 1
+/*
+ * "Weak" means the enctype is believed to be vulnerable to practical attacks,
+ * and will be disabled unless allow_weak_crypto is set to true.  "Deprecated"
+ * means the enctype has been deprecated by the IETF, and affects display and
+ * logging.
+ */
+#define ETYPE_WEAK (1 << 0)
+#define ETYPE_DEPRECATED (1 << 1)
 
 extern const struct krb5_keytypes krb5int_enctypes_list[];
 extern const int krb5int_enctypes_length;
@@ -296,11 +303,6 @@ krb5_error_code krb5int_unkeyed_checksum(const struct krb5_cksumtypes *ctp,
                                          const krb5_crypto_iov *data,
                                          size_t num_data,
                                          krb5_data *output);
-krb5_error_code krb5int_cbc_checksum(const struct krb5_cksumtypes *ctp,
-                                     krb5_key key, krb5_keyusage usage,
-                                     const krb5_crypto_iov *data,
-                                     size_t num_data,
-                                     krb5_data *output);
 krb5_error_code krb5int_hmacmd5_checksum(const struct krb5_cksumtypes *ctp,
                                          krb5_key key, krb5_keyusage usage,
                                          const krb5_crypto_iov *data,
@@ -314,17 +316,6 @@ krb5_error_code krb5int_dk_cmac_checksum(const struct krb5_cksumtypes *ctp,
                                          krb5_key key, krb5_keyusage usage,
                                          const krb5_crypto_iov *data,
                                          size_t num_data, krb5_data *output);
-krb5_error_code krb5int_confounder_checksum(const struct krb5_cksumtypes *ctp,
-                                            krb5_key key, krb5_keyusage usage,
-                                            const krb5_crypto_iov *data,
-                                            size_t num_data,
-                                            krb5_data *output);
-krb5_error_code krb5int_confounder_verify(const struct krb5_cksumtypes *ctp,
-                                          krb5_key key, krb5_keyusage usage,
-                                          const krb5_crypto_iov *data,
-                                          size_t num_data,
-                                          const krb5_data *input,
-                                          krb5_boolean *valid);
 krb5_error_code krb5int_etm_checksum(const struct krb5_cksumtypes *ctp,
                                      krb5_key key, krb5_keyusage usage,
                                      const krb5_crypto_iov *data,

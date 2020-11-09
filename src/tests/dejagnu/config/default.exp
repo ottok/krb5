@@ -136,14 +136,6 @@ set passes {
 	{permitted_enctypes(replica)=aes256-sha2}
 	{permitted_enctypes(client)=aes256-sha2}
 	{permitted_enctypes(server)=aes256-sha2}
-	{default_tgs_enctypes(kdc)=aes256-sha2}
-	{default_tgs_enctypes(replica)=aes256-sha2}
-	{default_tgs_enctypes(client)=aes256-sha2}
-	{default_tgs_enctypes(server)=aes256-sha2}
-	{default_tkt_enctypes(kdc)=aes256-sha2}
-	{default_tkt_enctypes(replica)=aes256-sha2}
-	{default_tkt_enctypes(client)=aes256-sha2}
-	{default_tkt_enctypes(server)=aes256-sha2}
 	{allow_weak_crypto(kdc)=false}
 	{allow_weak_crypto(replica)=false}
 	{allow_weak_crypto(client)=false}
@@ -160,14 +152,6 @@ set passes {
 	{permitted_enctypes(replica)=camellia256-cts}
 	{permitted_enctypes(client)=camellia256-cts}
 	{permitted_enctypes(server)=camellia256-cts}
-	{default_tgs_enctypes(kdc)=camellia256-cts}
-	{default_tgs_enctypes(replica)=camellia256-cts}
-	{default_tgs_enctypes(client)=camellia256-cts}
-	{default_tgs_enctypes(server)=camellia256-cts}
-	{default_tkt_enctypes(kdc)=camellia256-cts}
-	{default_tkt_enctypes(replica)=camellia256-cts}
-	{default_tkt_enctypes(client)=camellia256-cts}
-	{default_tkt_enctypes(server)=camellia256-cts}
 	{allow_weak_crypto(kdc)=false}
 	{allow_weak_crypto(replica)=false}
 	{allow_weak_crypto(client)=false}
@@ -196,22 +180,6 @@ set passes {
 	{permitted_enctypes(server)=aes256-cts-hmac-sha1-96 des3-cbc-sha1}
 	{master_key_type=aes256-cts-hmac-sha1-96}
 	{dummy=[verbose -log "AES enctypes, DES3 TGT"]}
-    }
-    {
-	des-v4
-	mode=udp
-	des3_krbtgt=0
-	{supported_enctypes=des-cbc-crc:v4}
-	{default_tkt_enctypes(client)=des-cbc-crc}
-	{dummy=[verbose -log "DES TGT, DES-CRC enctype, V4 salt"]}
-    }
-    {
-	des-md5-v4
-	mode=udp
-	des3_krbtgt=0
-	{supported_enctypes=des-cbc-md5:v4 des-cbc-crc:v4}
-	{default_tkt_enctypes(client)=des-cbc-md5 des-cbc-crc}
-	{dummy=[verbose -log "DES TGT, DES-MD5 and -CRC enctypes, V4 salt"]}
     }
     {
 	all-enctypes
@@ -291,8 +259,8 @@ proc delete_db {} {
 	$tmppwd/kdc-db.ulog \
 	$tmppwd/replica-db $tmppwd/replica-db.ok $tmppwd/replica-db.kadm5 $tmppwd/replica-db.kadm5.lock \
 	$tmppwd/replica-db~ $tmppwd/replica-db~.ok $tmppwd/replica-db~.kadm5 $tmppwd/replica-db~.kadm5.lock
-    # Creating a new database means we need a new srvtab.
-    file delete $tmppwd/srvtab $tmppwd/cpw_srvtab
+    # Creating a new database invalidates the keytab and ccache.
+    file delete $tmppwd/keytab $tmppwd/tkt
 }
 
 delete_db
@@ -486,6 +454,7 @@ proc envstack_pop { } {
 #
 set envvars_tosave {
     KRB5_CONFIG KRB5CCNAME KRB5_CLIENT_KTNAME KRB5RCACHEDIR KRB5_KDC_PROFILE
+    GSS_MECH_CONFIG
 }
 set krb5_init_vars [list ]
 # XXX -- fix me later!
@@ -523,7 +492,7 @@ proc setup_runtime_env { } {
 }
 
 # get_hostname
-# This procedure sets the global variale hostname to the local
+# This procedure sets the global variable hostname to the local
 # hostname as seen by krb5_sname_to_principal.  Returns 1 on success,
 # 0 on failure.
 
@@ -869,6 +838,12 @@ if [ info exists env(KRB5RCACHEDIR)] {
     catch "unset orig_krb5rcachedir"
 }
 
+if [ info exists env(GSS_MECH_CONFIG)] {
+    set orig_gss_mech_config $env(GSS_MECH_CONFIG)
+} else {
+    catch "unset orig_gss_mech_config"
+}
+
 # setup_kerberos_env
 # Set the environment variables needed to run Kerberos programs.
 
@@ -899,6 +874,11 @@ proc setup_kerberos_env { {type client} } {
     set env(KRB5RCACHEDIR) $tmppwd
     verbose "KRB5RCACHEDIR=$env(KRB5RCACHEDIR)"
 
+    # Direct the GSS library at a nonexistent file in the temporary
+    # directory, to avoid interference from system configuration.
+    set env(GSS_MECH_CONFIG) $tmppwd/mech.conf
+    verbose "GSS_MECH_CONFIG=$env(GSS_MECH_CONFIG)"
+
     # Get the run time environment variables... (including LD_LIBRARY_PATH)
     setup_runtime_env
 
@@ -921,6 +901,7 @@ proc setup_kerberos_env { {type client} } {
 	puts $envfile "KRB5CCNAME=$env(KRB5CCNAME)"
 	puts $envfile "KRB5_CLIENT_KTNAME=$env(KRB5_CLIENT_KTNAME)"
 	puts $envfile "KRB5RCACHEDIR=$env(KRB5RCACHEDIR)"
+	puts $envfile "GSS_MECH_CONFIG=$env(GSS_MECH_CONFIG)"
 	if [info exists env(KRB5_KDC_PROFILE)] {
 	    puts $envfile "KRB5_KDC_PROFILE=$env(KRB5_KDC_PROFILE)"
 	} else {
@@ -928,6 +909,7 @@ proc setup_kerberos_env { {type client} } {
 	}
 	puts $envfile "export KRB5_CONFIG KRB5CCNAME KRB5RCACHEDIR"
 	puts $envfile "export KRB5_KDC_PROFILE KRB5_CLIENT_KTNAME"
+	puts $envfile "export GSS_MECH_CONFIG"
 	foreach i $krb5_init_vars {
 		regexp "^(\[^=\]*)=(.*)" $i foo evar evalue
 		puts $envfile "$evar=$env($evar)"
@@ -941,6 +923,7 @@ proc setup_kerberos_env { {type client} } {
 	puts $envfile "setenv KRB5CCNAME $env(KRB5CCNAME)"
 	puts $envfile "setenv KRB5_CLIENT_KTNAME $env(KRB5_CLIENT_KTNAME)"
 	puts $envfile "setenv KRB5RCACHEDIR $env(KRB5RCACHEDIR)"
+	puts $envfile "setenv GSS_MECH_CONFIG $env(GSS_MECH_CONFIG)"
 	if [info exists env(KRB5_KDC_PROFILE)] {
 	    puts $envfile "setenv KRB5_KDC_PROFILE $env(KRB5_KDC_PROFILE)"
 	} else {
@@ -1319,11 +1302,9 @@ proc start_kpropd {} {
 
     envstack_push
     setup_kerberos_env replica
-    spawn $KPROPD -S -d -t -P [expr 10 + $portbase] -s $tmppwd/srvtab -f $tmppwd/incoming-replica-datatrans -p $KDB5_UTIL -a $tmppwd/kpropd-acl
+    spawn $KPROPD -S -d -t -P [expr 10 + $portbase] -s $tmppwd/keytab -f $tmppwd/incoming-replica-datatrans -p $KDB5_UTIL -a $tmppwd/kpropd-acl
     set kpropd_pid [exp_pid]
     set kpropd_spawn_id $spawn_id
-#    send_user [list $KPROPD -S -d -P [expr 10 + $portbase] -s $tmppwd/srvtab -f $tmppwd/incoming-replica-datatrans -p $KDB5_UTIL -a $tmppwd/kpropd-acl]\n
-#    spawn_shell
     envstack_pop
 }
 
@@ -1336,7 +1317,6 @@ proc start_kpropd {} {
 # success, 0 on failure.
 
 proc start_kerberos_daemons { standalone } {
-    global BINSH
     global REALMNAME
     global KRB5KDC
     global KADMIND
@@ -1428,7 +1408,7 @@ proc start_kerberos_daemons { standalone } {
     envstack_push
     setup_kerberos_env kdc
     file delete $kadmind_pidfile
-    spawn $BINSH -c "exec $KADMIND -r $REALMNAME -W -nofork -P $kadmind_pidfile"
+    spawn $KADMIND -r $REALMNAME -W -nofork -P $kadmind_pidfile
     envstack_pop
     set kadmind_pid [exp_pid]
     set kadmind_spawn_id $spawn_id
@@ -1668,13 +1648,13 @@ proc add_random_key { kkey standalone } {
     }
 }
 
-# setup_srvtab
-# Set up a srvtab file.  start_kerberos_daemons and add_random_key
+# setup_keytab
+# Set up a keytab file.  start_kerberos_daemons and add_random_key
 # $id/$hostname must be called before this procedure.  If the
 # argument is non-zero, call pass at relevant points.  Returns 1 on
 # success, 0 on failure. If the id field is not provided, host is used.
 
-proc setup_srvtab { standalone {id host} } {
+proc setup_keytab { standalone {id host} } {
     global REALMNAME
     global KADMIN_LOCAL
     global KEY
@@ -1683,17 +1663,17 @@ proc setup_srvtab { standalone {id host} } {
     global spawn_id
     global last_service
 
-    if {!$standalone && [file exists $tmppwd/srvtab] && $last_service == $id} {
+    if {!$standalone && [file exists $tmppwd/keytab] && $last_service == $id} {
 	return 1
     }
 
-    file delete $tmppwd/srvtab $tmppwd/srvtab.old
+    file delete $tmppwd/keytab $tmppwd/keytab.old
 
     if ![get_hostname] {
 	return 0
     }
 
-    file delete $hostname-new-srvtab
+    file delete $hostname-new-keytab
 
     envstack_push
     setup_kerberos_env kdc
@@ -1701,40 +1681,40 @@ proc setup_srvtab { standalone {id host} } {
     envstack_pop
     expect_after {
 	-re "(.*)\r\nkadmin.local:  " {
-	    fail "kadmin.local srvtab (unmatched output: $expect_out(1,string))"
+	    fail "kadmin.local keytab (unmatched output: $expect_out(1,string))"
 	    if {!$standalone} {
-		file delete $tmppwd/srvtab
+		file delete $tmppwd/keytab
 	    }
 	    catch "expect_after"
 	    return 0
 	}
 	timeout {
-	    fail "kadmin.local srvtab"
+	    fail "kadmin.local keytab"
 	    if {!$standalone} {
-		file delete $tmppwd/srvtab
+		file delete $tmppwd/keytab
 	    }
 	    catch "expect_after"
 	    return 0
 	}
 	eof {
-	    fail "kadmin.local srvtab"
+	    fail "kadmin.local keytab"
 	    if {!$standalone} {
-		file delete $tmppwd/srvtab
+		file delete $tmppwd/keytab
 	    }
 	    catch "expect_after"
 	    return 0
 	}
     }
     expect "kadmin.local:  "
-    send "xst -k $hostname-new-srvtab $id/$hostname kiprop/$hostname\r"
-    expect "xst -k $hostname-new-srvtab $id/$hostname kiprop/$hostname\r\n"
+    send "xst -k $hostname-new-keytab $id/$hostname kiprop/$hostname\r"
+    expect "xst -k $hostname-new-keytab $id/$hostname kiprop/$hostname\r\n"
     expect {
-	-re ".*Entry for principal $id/$hostname.* added to keytab WRFILE:$hostname-new-srvtab." { }
+	-re ".*Entry for principal $id/$hostname.* added to keytab WRFILE:$hostname-new-keytab." { }
 	-re "\r\nkadmin.local:  " {
 	    if {$standalone} {
-		fail "kadmin.local srvtab"
+		fail "kadmin.local keytab"
 	    } else {
-		file delete $tmppwd/srvtab
+		file delete $tmppwd/keytab
 	    }
 	    catch expect_after
 	    return 0
@@ -1744,27 +1724,27 @@ proc setup_srvtab { standalone {id host} } {
     send "quit\r"
     expect eof
     catch expect_after
-    if ![check_exit_status "kadmin.local srvtab"] {
+    if ![check_exit_status "kadmin.local keytab"] {
 	if {!$standalone} {
-	    file delete $tmppwd/srvtab
+	    file delete $tmppwd/keytab
 	}
 	return 0
     }
 
-    catch "exec mv -f $hostname-new-srvtab $tmppwd/srvtab" exec_output
+    catch "exec mv -f $hostname-new-keytab $tmppwd/keytab" exec_output
     if ![string match "" $exec_output] {
 	verbose -log "$exec_output"
-	perror "can't mv new srvtab"
+	perror "can't mv new keytab"
 	return 0
     }
 
     if {$standalone} {
-	pass "kadmin.local srvtab"
+	pass "kadmin.local keytab"
     }
 
-    # Make the srvtab file globally readable in case we are using a
-    # root shell and the srvtab is NFS mounted.
-    catch "exec chmod a+r $tmppwd/srvtab"
+    # Make the keytab file globally readable in case we are using a
+    # root shell and the keytab is NFS mounted.
+    catch "exec chmod a+r $tmppwd/keytab"
 
     # Remember what we just extracted
     set last_service $id

@@ -49,7 +49,8 @@ realm.run([kadminl, 'cpw', '-randkey', '-keepold', '-e', 'aes256-cts',
            realm.krbtgt_princ])
 realm.run([kadminl, 'modprinc', '-kvno', '1', realm.krbtgt_princ])
 out = realm.run([kadminl, 'getprinc', realm.krbtgt_princ])
-if 'vno 1, aes256' not in out or 'vno 1, des3' not in out:
+if 'vno 1, aes256-cts' not in out or \
+   'vno 1, DEPRECATED:des3-cbc-sha1' not in out:
     fail('keyrollover: setup for TGS enctype test failed')
 # Now present the DES3 ticket to the KDC and make sure it's rejected.
 realm.run([kvno, realm.host_princ], expected_code=1)

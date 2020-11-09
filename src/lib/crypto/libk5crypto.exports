@@ -58,7 +58,6 @@ krb5_c_prf_length
 krb5int_c_mandatory_cksumtype
 krb5_c_fx_cf2_simple
 krb5int_c_weak_enctype
-krb5int_c_combine_keys
 krb5_encrypt_data
 krb5int_c_copy_keyblock
 krb5int_c_copy_keyblock_contents
@@ -108,3 +107,4 @@ k5_allow_weak_pbkdf2iter
 krb5_c_prfplus
 krb5_c_derive_prfplus
 k5_enctype_to_ssf
+krb5int_c_deprecated_enctype

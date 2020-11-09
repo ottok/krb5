@@ -40,8 +40,6 @@ krb5_auth_con_init(krb5_context context, krb5_auth_context *auth_context)
     (*auth_context)->auth_context_flags =
         KRB5_AUTH_CONTEXT_DO_TIME |  KRB5_AUTH_CONN_INITIALIZED;
 
-    (*auth_context)->req_cksumtype = context->default_ap_req_sumtype;
-    (*auth_context)->safe_cksumtype = context->default_safe_sumtype;
     (*auth_context)->checksum_func = NULL;
     (*auth_context)->checksum_func_data = NULL;
     (*auth_context)->negotiated_etype = ENCTYPE_NULL;
@@ -72,11 +70,12 @@ krb5_auth_con_free(krb5_context context, krb5_auth_context auth_context)
         krb5_k_free_key(context, auth_context->recv_subkey);
     zapfree(auth_context->cstate.data, auth_context->cstate.length);
     if (auth_context->rcache)
-        krb5_rc_close(context, auth_context->rcache);
+        k5_rc_close(context, auth_context->rcache);
     if (auth_context->permitted_etypes)
         free(auth_context->permitted_etypes);
     if (auth_context->ad_context)
         krb5_authdata_context_free(context, auth_context->ad_context);
+    k5_memrcache_free(context, auth_context->memrcache);
     free(auth_context);
     return 0;
 }

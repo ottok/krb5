@@ -33,6 +33,7 @@
    that the keytypes are all near each other.  I'd rather not make
    that assumption. */
 
+/* Deprecations come from RFC 6649 and RFC 8249. */
 const struct krb5_keytypes krb5int_enctypes_list[] = {
     { ENCTYPE_DES3_CBC_RAW,
       "des3-cbc-raw", { 0 }, "Triple DES cbc mode raw",
@@ -42,7 +43,7 @@ const struct krb5_keytypes krb5int_enctypes_list[] = {
       krb5int_dk_string_to_key, k5_rand2key_des3,
       NULL, /*PRF*/
       0,
-      ETYPE_WEAK, 112 },
+      ETYPE_WEAK | ETYPE_DEPRECATED, 112 },
 
     { ENCTYPE_DES3_CBC_SHA1,
       "des3-cbc-sha1", { "des3-hmac-sha1", "des3-cbc-sha1-kd" },
@@ -53,7 +54,7 @@ const struct krb5_keytypes krb5int_enctypes_list[] = {
       krb5int_dk_string_to_key, k5_rand2key_des3,
       krb5int_dk_prf,
       CKSUMTYPE_HMAC_SHA1_DES3,
-      0 /*flags*/, 112 },
+      ETYPE_DEPRECATED, 112 },
 
     /* rc4-hmac uses a 128-bit key, but due to weaknesses in the RC4 cipher, we
      * consider its strength degraded and assign it an SSF value of 64. */
@@ -67,7 +68,7 @@ const struct krb5_keytypes krb5int_enctypes_list[] = {
       krb5int_arcfour_decrypt, krb5int_arcfour_string_to_key,
       k5_rand2key_direct, krb5int_arcfour_prf,
       CKSUMTYPE_HMAC_MD5_ARCFOUR,
-      0 /*flags*/, 64 },
+      ETYPE_DEPRECATED, 64 },
     { ENCTYPE_ARCFOUR_HMAC_EXP,
       "arcfour-hmac-exp", { "rc4-hmac-exp", "arcfour-hmac-md5-exp" },
       "Exportable ArcFour with HMAC/md5",
@@ -78,7 +79,7 @@ const struct krb5_keytypes krb5int_enctypes_list[] = {
       krb5int_arcfour_decrypt, krb5int_arcfour_string_to_key,
       k5_rand2key_direct, krb5int_arcfour_prf,
       CKSUMTYPE_HMAC_MD5_ARCFOUR,
-      ETYPE_WEAK, 40
+      ETYPE_WEAK | ETYPE_DEPRECATED, 40
     },
 
     { ENCTYPE_AES128_CTS_HMAC_SHA1_96,

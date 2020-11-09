@@ -1065,7 +1065,7 @@ GetMSTGT(krb5_context context, HANDLE LogonHandle, ULONG PackageId, KERB_EXTERNA
     }
 
     //
-    // Intialize the request of the request.
+    // Initialize the request of the request.
     //
 
     pTicketRequest->MessageType = KerbRetrieveEncodedTicketMessage;
@@ -2204,7 +2204,6 @@ const krb5_cc_ops krb5_lcc_ops = {
     krb5_lcc_ptcursor_next,
     krb5_lcc_ptcursor_free,
     NULL, /* move */
-    NULL, /* lastchange */
     NULL, /* wasdefault */
     NULL, /* lock */
     NULL, /* unlock */
