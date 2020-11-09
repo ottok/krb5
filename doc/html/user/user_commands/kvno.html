@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.18.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -72,7 +72,9 @@
 [<strong>-h</strong>]
 [<strong>-P</strong>]
 [<strong>-S</strong> <em>sname</em>]
+[<strong>-I</strong> <em>for_user</em>]
 [<strong>-U</strong> <em>for_user</em>]
+[<strong>-F</strong> <em>cert_file</em>]
 [<strong>–u2u</strong> <em>ccache</em>]
 <em>service1 service2</em> …</p>
 </div>
@@ -108,11 +110,17 @@ interpreted as hostnames, and the service principals are to be
 constructed from those hostnames and the service name <em>sname</em>.
 The service hostnames will be canonicalized according to the usual
 rules for constructing service principals.</dd>
-<dt><strong>-U</strong> <em>for_user</em></dt>
+<dt><strong>-I</strong> <em>for_user</em></dt>
 <dd>Specifies that protocol transition (S4U2Self) is to be used to
 acquire a ticket on behalf of <em>for_user</em>.  If constrained
 delegation is not requested, the service name must match the
 credentials cache client principal.</dd>
+<dt><strong>-U</strong> <em>for_user</em></dt>
+<dd>Same as -I, but treats <em>for_user</em> as an enterprise name.</dd>
+<dt><strong>-F</strong> <em>cert_file</em></dt>
+<dd>Specifies that protocol transition is to be used, identifying the
+client principal with the X.509 certificate in <em>cert_file</em>.  The
+certificate file must be in PEM format.</dd>
 <dt><strong>–u2u</strong> <em>ccache</em></dt>
 <dd>Requests a user-to-user ticket.  <em>ccache</em> must contain a local
 krbtgt ticket for the server principal.  The reported version
@@ -206,8 +214,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.18.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2020, MIT.
             </div>
             <div class="left">
                 
