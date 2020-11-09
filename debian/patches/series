@@ -1,4 +1,3 @@
-debian-local/0001-Add-.gitignore.patch
 debian-local/0001-Debian-HURD-compatibility.patch
 debian-local/0002-debian-Handle-multi-arch-paths-in-krb5-config.patch
 debian-local/0003-debian-osconf.hin-path-changes.patch
@@ -7,12 +6,11 @@ debian-local/0005-gssapi-never-unload-mechanisms.patch
 debian-local/0006-Add-substpdf-target.patch
 debian-local/0007-Fix-pkg-config-library-include-paths.patch
 debian-local/0008-Use-isystem-for-include-paths.patch
-upstream/0009-Remove-erroneous-text-from-kinit-man-page.patch
-upstream/0010-Fix-memory-leak-in-none-replay-cache-type.patch
-upstream/0011-Document-the-double-colon-behavior-of-DIR-ccaches.patch
-upstream/0013-Update-test-suite-to-avoid-single-DES-enctypes.patch
-upstream/0014-Remove-support-for-single-DES-and-CRC.patch
-debian-local/0015-Some-more-des-test-failures.patch
-0016-Filter-enctypes-in-gss_set_allowable_enctypes.patch
-0017-Don-t-error-on-invalid-enctypes-in-keytab.patch
-0018-Update-doxygen-RST-bridge-to-Python-3.patch
+0009-Add-.gitignore.patch
+upstream/0010-Unregister-thread-key-in-SPNEGO-finalization.patch
+upstream/0011-Set-pw_expiration-during-LDAP-load.patch
+upstream/0012-Avoid-using-LMDB-environments-across-forks.patch
+upstream/0013-Allow-gss_unwrap_iov-of-unpadded-RC4-tokens.patch
+upstream/0014-Fix-input-length-checking-in-SPNEGO-DER-decoding.patch
+upstream/0015-Set-lockdown-attribute-when-creating-LDAP-KDB.patch
+upstream/0016-Add-recursion-limit-for-ASN.1-indefinite-lengths.patch

@@ -12,7 +12,7 @@ Patch-Category: debian-local
  1 file changed, 15 insertions(+)
 
 diff --git a/src/doc/Makefile.in b/src/doc/Makefile.in
-index 1fb5fea..043de76 100644
+index d635bff..94a0e6d 100644
 --- a/src/doc/Makefile.in
 +++ b/src/doc/Makefile.in
 @@ -87,6 +87,21 @@ pdf: $(PDFDIR)

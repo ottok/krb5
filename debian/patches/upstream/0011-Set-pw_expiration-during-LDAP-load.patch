@@ -1,0 +1,57 @@
+From: Greg Hudson <ghudson@mit.edu>
+Date: Thu, 4 Jun 2020 13:19:53 -0400
+Subject: Set pw_expiration during LDAP load
+
+When loading a principal entry in process_k5beta7_princ(), set the
+KADM5_PW_EXPIRATION mask bit so that the password expiration time is
+set on the principal entry.  Add a regression test.
+
+Reported (with fix) by Glenn Machin.
+
+(cherry picked from commit 778d3fd9de50ab0c87cf0031e1dd24a8ec4bd552)
+
+ticket: 8882
+version_fixed: 1.18.3
+---
+ src/kadmin/dbutil/dump.c | 2 +-
+ src/tests/t_kdb.py       | 8 +++++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/src/kadmin/dbutil/dump.c b/src/kadmin/dbutil/dump.c
+index 301e347..ff2f250 100644
+--- a/src/kadmin/dbutil/dump.c
++++ b/src/kadmin/dbutil/dump.c
+@@ -722,7 +722,7 @@ process_k5beta7_princ(krb5_context context, const char *fname, FILE *filep,
+     dbentry->fail_auth_count = u5;
+     dbentry->mask = KADM5_LOAD | KADM5_PRINCIPAL | KADM5_ATTRIBUTES |
+         KADM5_MAX_LIFE | KADM5_MAX_RLIFE |
+-        KADM5_PRINC_EXPIRE_TIME | KADM5_LAST_SUCCESS |
++        KADM5_PRINC_EXPIRE_TIME | KADM5_PW_EXPIRATION | KADM5_LAST_SUCCESS |
+         KADM5_LAST_FAILED | KADM5_FAIL_AUTH_COUNT;
+ 
+     /* Read tagged data. */
+diff --git a/src/tests/t_kdb.py b/src/tests/t_kdb.py
+index caa7e9d..de8ae9c 100755
+--- a/src/tests/t_kdb.py
++++ b/src/tests/t_kdb.py
+@@ -538,13 +538,19 @@ realm.run([kadminl, 'getprinc', 'pwuser'],
+ 
+ realm.stop()
+ 
+-# Briefly test dump and load.
++# Test dump and load.  Include a regression test for #8882
++# (pw_expiration not set during load operation).
+ mark('LDAP dump and load')
++realm.run([kadminl, 'modprinc', '-pwexpire', 'now', 'pwuser'])
+ dumpfile = os.path.join(realm.testdir, 'dump')
+ realm.run([kdb5_util, 'dump', dumpfile])
+ realm.run([kdb5_util, 'load', dumpfile], expected_code=1,
+           expected_msg='KDB module requires -update argument')
++realm.run([kadminl, 'delprinc', 'pwuser'])
+ realm.run([kdb5_util, 'load', '-update', dumpfile])
++out = realm.run([kadminl, 'getprinc', 'pwuser'])
++if 'Password expiration date: [never]' in out:
++    fail('pw_expiration not preserved across dump and load')
+ 
+ # Destroy the realm.
+ kldaputil(['destroy', '-f'])

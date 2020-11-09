@@ -19,10 +19,10 @@ Patch-Category: debian-local
  1 file changed, 2 deletions(-)
 
 diff --git a/src/lib/gssapi/mechglue/g_initialize.c b/src/lib/gssapi/mechglue/g_initialize.c
-index 0ad11c0..a3926e1 100644
+index 6d49700..0149ee10 100644
 --- a/src/lib/gssapi/mechglue/g_initialize.c
 +++ b/src/lib/gssapi/mechglue/g_initialize.c
-@@ -559,8 +559,6 @@ releaseMechInfo(gss_mech_info *pCf)
+@@ -577,8 +577,6 @@ releaseMechInfo(gss_mech_info *pCf)
  		generic_gss_release_oid(&minor_status, &cf->mech_type);
  	if (cf->freeMech)
  		zapfree(cf->mech, sizeof(*cf->mech));
