@@ -1,9 +1,24 @@
-krb5 (1.17-10) unstable; urgency=low
+krb5 (1.18.2-1) UNRELEASED; urgency=medium
+
+  * New Upstream version
+  * Include several pre-release patches from 1.18.3:
+    - Unregister thread key in SPNEGO finalization
+    - Set pw_expiration during LDAP load
+  -  Avoid using LMDB environments across forks
+    - Allow gss_unwrap_iov() of unpadded RC4 tokens
+    - Fix input length checking in SPNEGO DER decoding
+    - Set lockdown attribute when creating LDAP KDB
+    - Add recursion limit for ASN.1 indefinite lengths (CVE-2020-28196,
+    Closes: #973880) 
+
+ -- Sam Hartman <hartmans@debian.org>  Mon, 09 Nov 2020 16:28:52 -0500
+
+krb5 (1.17-10) unstable; urgency=medium
 
   * Also set localstatedir to be consistent with old builds, Closes: #962522
   * Include journalctl dump from krb5kdc tests so we can figure out why ppc tests are breaking.
 
- -- Sam Hartman <hartmans@debian.org>  Tue, 09 Jun 2020 09:52:34 -0400
+ -- Sam Hartman <hartmans@debian.org>  Mon, 09 Nov 2020 16:28:25 -0500
 
 krb5 (1.17-9) unstable; urgency=low
 
