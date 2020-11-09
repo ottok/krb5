@@ -36,9 +36,9 @@ Description: basic programs to authenticate using MIT Kerberos
 Package: krb5-kdc
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version}),
- libkadm5srv-mit11,
+ libkadm5srv-mit12,
  krb5-config, krb5-user, lsb-base (>= 3.0-6), libverto-libev1 | libverto-libevent1,
- libkdb5-9 (>= 1.13.1+dfsg-1)
+ libkdb5-10 (>= 1.13.1+dfsg-1)
 Pre-Depends: ${misc:Pre-Depends}
 Suggests: krb5-kpropd, krb5-admin-server,
  krb5-kdc-ldap (= ${binary:Version})
@@ -123,8 +123,8 @@ Architecture: any
 Depends: ${misc:Depends}, libkrb5-3 (= ${binary:Version}),
  libk5crypto3 (= ${binary:Version}), libgssapi-krb5-2 (= ${binary:Version}),
  libgssrpc4 (= ${binary:Version}),
- libkadm5srv-mit11  (= ${binary:Version}),
- libkadm5clnt-mit11 (= ${binary:Version}),
+ libkadm5srv-mit12  (= ${binary:Version}),
+ libkadm5clnt-mit12 (= ${binary:Version}),
  comerr-dev
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: same
@@ -312,7 +312,7 @@ Description: MIT Kerberos runtime libraries - GSS enabled ONCRPC
  This package contains an RPC library used by the Kerberos administrative
  programs and potentially other applications.
 
-Package: libkadm5srv-mit11
+Package: libkadm5srv-mit12
 Conflicts: libkdb5-8
 Section: libs
 Architecture: any
@@ -331,7 +331,7 @@ Description: MIT Kerberos runtime libraries - KDC and Admin Server
  This package contains the runtime library used by Kerberos administrative
  servers.
 
-Package: libkadm5clnt-mit11
+Package: libkadm5clnt-mit12
 Section: libs
 Architecture: any
 Conflicts: libkdb5-8
@@ -369,7 +369,7 @@ Description: MIT Kerberos runtime libraries - Crypto Library
  This package contains the runtime cryptography libraries used by
  applications and Kerberos clients.
 
-Package: libkdb5-9
+Package: libkdb5-10
 Section: libs
 Breaks:  libkadm5srv-mit8 (<< 1.11+dfsg~), krb5-kdc (= 1.13~alpha1+dfsg-1)
 Architecture: any

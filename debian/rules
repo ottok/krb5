@@ -22,7 +22,7 @@ EXCLUDE = -Xtmac.doc -Xexamples/krb5 -Xgnats/mit -Xkrb5-send-pr \
 	-Xsserver -Xsim_server -Xuuserver \
 	-Xsclient -Xsim_client -Xuuclient -Xpreauth/test.so
 
-LIB_PACKAGES = libkrb5-3 libgssapi-krb5-2 libkadm5clnt-mit11 libkadm5srv-mit11 libkdb5-9 libgssrpc4  \
+LIB_PACKAGES = libkrb5-3 libgssapi-krb5-2 libkadm5clnt-mit12 libkadm5srv-mit12 libkdb5-10 libgssrpc4  \
 	libkrb5support0  libk5crypto3 libkrad0
 
 ifneq (,$(filter stage1,$(DEB_BUILD_PROFILES)))
