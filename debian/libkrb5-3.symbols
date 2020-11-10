@@ -124,7 +124,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_add_empty_pa_data@krb5_3_MIT 1.18.2
  k5_add_pa_data_element@krb5_3_MIT 1.18.2
  k5_add_pa_data_from_data@krb5_3_MIT 1.18.2
- k5_alloc_pa_data@krb5_3_MIT 1.18.2-1
+ k5_alloc_pa_data@krb5_3_MIT 1.18.2
  k5_authind_decode@krb5_3_MIT 1.15~beta1
  k5_build_conf_principals@krb5_3_MIT 1.12~alpha1+dfsg
  k5_ccselect_free_context@krb5_3_MIT 1.10+dfsg~alpha1
@@ -133,9 +133,9 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_expand_path_tokens@krb5_3_MIT 1.11+dfsg
  k5_expand_path_tokens_extra@krb5_3_MIT 1.11+dfsg
  k5_externalize_auth_context@krb5_3_MIT 1.18.2
- k5_externalize_authdata@krb5_3_MIT 1.18.2-1
+ k5_externalize_authdata@krb5_3_MIT 1.18.2
  k5_externalize_authdata_context@krb5_3_MIT 1.18.2
- k5_externalize_context@krb5_3_MIT 1.18.2-1
+ k5_externalize_context@krb5_3_MIT 1.18.2
  k5_externalize_keyblock@krb5_3_MIT 1.18.2
  k5_externalize_principal@krb5_3_MIT 1.18.2
  k5_free_algorithm_identifier@krb5_3_MIT 1.11+dfsg
