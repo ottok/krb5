@@ -7,10 +7,3 @@ debian-local/0006-Add-substpdf-target.patch
 debian-local/0007-Fix-pkg-config-library-include-paths.patch
 debian-local/0008-Use-isystem-for-include-paths.patch
 0009-Add-.gitignore.patch
-upstream/0010-Unregister-thread-key-in-SPNEGO-finalization.patch
-upstream/0011-Set-pw_expiration-during-LDAP-load.patch
-upstream/0012-Avoid-using-LMDB-environments-across-forks.patch
-upstream/0013-Allow-gss_unwrap_iov-of-unpadded-RC4-tokens.patch
-upstream/0014-Fix-input-length-checking-in-SPNEGO-DER-decoding.patch
-upstream/0015-Set-lockdown-attribute-when-creating-LDAP-KDB.patch
-upstream/0016-Add-recursion-limit-for-ASN.1-indefinite-lengths.patch

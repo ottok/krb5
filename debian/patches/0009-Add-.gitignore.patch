@@ -3,16 +3,16 @@ Date: Mon, 8 Jul 2019 22:07:52 -0400
 Subject: Add .gitignore
 
 ---
- .gitignore | 591 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 591 insertions(+)
+ .gitignore | 592 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 592 insertions(+)
  create mode 100644 .gitignore
 
 diff --git a/.gitignore b/.gitignore
 new file mode 100644
-index 0000000..975ef54
+index 0000000..9b68ce5
 --- /dev/null
 +++ b/.gitignore
-@@ -0,0 +1,591 @@
+@@ -0,0 +1,592 @@
 +*~
 +*.a
 +*.dll
@@ -484,6 +484,7 @@ index 0000000..975ef54
 +
 +/src/tests/gssapi/ccinit
 +/src/tests/gssapi/ccrefresh
++/src/tests/gssapi/reload
 +/src/tests/gssapi/t_accname
 +/src/tests/gssapi/t_add_cred
 +/src/tests/gssapi/t_ccselect
