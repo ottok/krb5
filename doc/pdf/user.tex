@@ -55,7 +55,7 @@
 
 \title{Kerberos User Guide}
 \date{ }
-\release{1.18.2}
+\release{1.18.3}
 \author{MIT}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -1995,13 +1995,9 @@ Default location of Kerberos 5 credentials cache
 {[}\sphinxstylestrong{-c} \sphinxstyleemphasis{ccache}{]}
 {[}\sphinxstylestrong{-e} \sphinxstyleemphasis{etype}{]}
 {[}\sphinxstylestrong{-q}{]}
-{[}\sphinxstylestrong{-h}{]}
+{[}\sphinxstylestrong{-u} \textbar{} \sphinxstylestrong{-S} \sphinxstyleemphasis{sname}{]}
 {[}\sphinxstylestrong{-P}{]}
-{[}\sphinxstylestrong{-S} \sphinxstyleemphasis{sname}{]}
-{[}\sphinxstylestrong{-I} \sphinxstyleemphasis{for\_user}{]}
-{[}\sphinxstylestrong{-U} \sphinxstyleemphasis{for\_user}{]}
-{[}\sphinxstylestrong{-F} \sphinxstyleemphasis{cert\_file}{]}
-{[}\sphinxstylestrong{\textendash{}u2u} \sphinxstyleemphasis{ccache}{]}
+{[}{[}\{\sphinxstylestrong{-F} \sphinxstyleemphasis{cert\_file} \textbar{} \{\sphinxstylestrong{-I} \textbar{} \sphinxstylestrong{-U}\} \sphinxstyleemphasis{for\_user}\} {[}\sphinxstylestrong{-P}{]}{]} \textbar{} \sphinxstylestrong{\textendash{}u2u} \sphinxstyleemphasis{ccache}{]}
 \sphinxstyleemphasis{service1 service2} …
 
 
@@ -2022,13 +2018,18 @@ Specifies the enctype which will be requested for the session key
 of all the services named on the command line.  This is useful in
 certain backward compatibility situations.
 
+\item[{\sphinxstylestrong{-k} \sphinxstyleemphasis{keytab}}] \leavevmode
+Decrypt the acquired tickets using \sphinxstyleemphasis{keytab} to confirm their
+validity.
+
 \item[{\sphinxstylestrong{-q}}] \leavevmode
 Suppress printing output when successful.  If a service ticket
 cannot be obtained, an error message will still be printed and
 kvno will exit with nonzero status.
 
-\item[{\sphinxstylestrong{-h}}] \leavevmode
-Prints a usage statement and exits.
+\item[{\sphinxstylestrong{-u}}] \leavevmode
+Use the unknown name type in requested service principal names.
+This option Cannot be used with \sphinxstyleemphasis{-S}.
 
 \item[{\sphinxstylestrong{-P}}] \leavevmode
 Specifies that the \sphinxstyleemphasis{service1 service2} …  arguments are to be
