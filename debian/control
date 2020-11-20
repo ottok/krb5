@@ -256,7 +256,7 @@ Description: documentation for MIT Kerberos
 
 Package: libkrb5-3
 Section: libs
-Breaks:  sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2)
+Breaks:  sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2), libapache2-mod-auth-kerb
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
  libkrb5support0 (= ${binary:Version})

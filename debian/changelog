@@ -1,3 +1,9 @@
+krb5 (1.18.3-2) unstable; urgency=medium
+
+  * Break libapache2-mod-auth-kerb; see #975344 .  Obviously this is not a stable situation, but I want to at least let users know that by installing this krb5 libapache2-mod-auth-kerb will not work until we fix it.
+
+ -- Sam Hartman <hartmans@debian.org>  Fri, 20 Nov 2020 14:46:00 -0500
+
 krb5 (1.18.3-1) unstable; urgency=medium
 
   * New upstream version
