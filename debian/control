@@ -256,7 +256,7 @@ Description: documentation for MIT Kerberos
 
 Package: libkrb5-3
 Section: libs
-Breaks:  sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2), libapache2-mod-auth-kerb
+Breaks:  sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2), libapache2-mod-auth-kerb (<= 5.4-2.5)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
  libkrb5support0 (= ${binary:Version})
@@ -461,6 +461,8 @@ Section: libdevel
 Architecture: any
 Depends: ${misc:Depends},  libkrad0 (= ${binary:Version}),
  comerr-dev, libverto-dev (>= 0.2.4)
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
 Suggests: libkrb5-dev
 Replaces: libkrb5-dev (<< 1.12+dfsg-2)
 Breaks: krb5-multidev (<<1.12+dfsg-2), libkrb5-dev (<<1.12+dfsg-2)
