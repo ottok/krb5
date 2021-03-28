@@ -352,7 +352,7 @@ Description: MIT Kerberos runtime libraries - Administration Clients
 
 Package: libk5crypto3
 Section: libs
-Breaks: libkrb5-3 (<= 1.8~aa), libgssapi-krb5-2 (<= 1.10+dfsg~alpha1)
+Breaks: libkrb5-3 (<= 1.18~), libgssapi-krb5-2 (<= 1.18~)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: krb5-doc, krb5-user
