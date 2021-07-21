@@ -1,3 +1,10 @@
+krb5 (1.18.3-6) unstable; urgency=high
+
+  * Pull in upstream patch to fix CVE-2021-36222 (KDC NULL dereference),
+    Closes: #991365
+
+ -- Benjamin Kaduk <kaduk@mit.edu>  Wed, 21 Jul 2021 11:07:07 -0700
+
 krb5 (1.18.3-5) unstable; urgency=medium
 
   * Update breaks on libk5crypto3 toward other internal libraries because
