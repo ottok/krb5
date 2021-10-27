@@ -27,10 +27,10 @@ target_version: 1.18-next
  1 file changed, 5 insertions(+)
 
 diff --git a/src/kdc/do_tgs_req.c b/src/kdc/do_tgs_req.c
-index 241f34e..386ed5f 100644
+index 6d244ff..39a504c 100644
 --- a/src/kdc/do_tgs_req.c
 +++ b/src/kdc/do_tgs_req.c
-@@ -208,6 +208,11 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
+@@ -207,6 +207,11 @@ process_tgs_req(krb5_kdc_req *request, krb5_data *pkt,
          status = "FIND_FAST";
          goto cleanup;
      }
