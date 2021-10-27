@@ -127,6 +127,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_alloc_pa_data@krb5_3_MIT 1.18.2
  k5_authind_decode@krb5_3_MIT 1.15~beta1
  k5_build_conf_principals@krb5_3_MIT 1.12~alpha1+dfsg
+ k5_cc_store_primary_cred@krb5_3_MIT 1.19.2
  k5_ccselect_free_context@krb5_3_MIT 1.10+dfsg~alpha1
  k5_change_error_message_code@krb5_3_MIT 1.13~alpha1+dfsg
  k5_etypes_contains@krb5_3_MIT 1.11+dfsg
@@ -160,6 +161,7 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  k5_internalize_principal@krb5_3_MIT 1.18.2
  k5_is_string_numeric@krb5_3_MIT 1.15~beta1
  k5_kt_get_principal@krb5_3_MIT 1.10+dfsg~alpha1
+ k5_kt_have_match@krb5_3_MIT 1.19.2
  k5_localauth_free_context@krb5_3_MIT 1.12~alpha1+dfsg
  k5_locate_kdc@krb5_3_MIT 1.10+dfsg~alpha1
  k5_marshal_cred@krb5_3_MIT 1.13~alpha1+dfsg
@@ -564,7 +566,6 @@ libkrb5.so.3 libkrb5-3 #MINVER#
  krb5_server_decrypt_ticket_keytab@krb5_3_MIT 1.6.dfsg.2
  krb5_set_config_files@krb5_3_MIT 1.6.dfsg.2
  krb5_set_debugging_time@krb5_3_MIT 1.6.dfsg.2
- krb5_set_default_in_tkt_ktypes@krb5_3_MIT 1.6.dfsg.2
  krb5_set_default_realm@krb5_3_MIT 1.6.dfsg.2
  krb5_set_default_tgs_enctypes@krb5_3_MIT 1.6.dfsg.2
  krb5_set_default_tgs_ktypes@krb5_3_MIT 1.6.dfsg.2
