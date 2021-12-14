@@ -1,7 +1,7 @@
 krb5 (1.19.2-1) experimental; urgency=medium
 
   * New Upstream version
-    - Works with OpenSSL 3.0, Closes: #995152
+  * Include patch to work with OpenSSL 3.0, Closes: #995152
   * Depend on tex-gyre, Closes: #997407
     
  -- Sam Hartman <hartmans@debian.org>  Wed, 27 Oct 2021 14:04:42 -0600
