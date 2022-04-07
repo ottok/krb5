@@ -32,7 +32,7 @@ Return a pointer to the default credential cache name for *context* , as determi
 
 
 
-The default credential cache name is cached in *context* between calls to this function, so if the value of KRB5CCNAME changes in the process environment after the first call to this function on, that change will not be reflected in later calls with the same context. The caller can invoke :c:func:`krb5_cc_set_default_name()` with a NULL value of *name* to clear the cached value and force the default name to be recomputed.
+The default credential cache name is cached in *context* between calls to this function, so if the value of KRB5CCNAME changes in the process environment after the first call to this function on, that change will not be reflected in later calls with the same context. The caller can invoke :c:func:`krb5_cc_set_default_name()` with a NULL valueof *name* to clear the cached value and force the default name to be recomputed.
 
 
 
