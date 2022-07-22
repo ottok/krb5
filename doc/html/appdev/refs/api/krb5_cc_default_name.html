@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.20-beta1',
+        VERSION:     '1.20',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -88,7 +88,7 @@ const char * <code class="descname">krb5_cc_default_name</code><span class="sig-
 </tbody>
 </table>
 <p>Return a pointer to the default credential cache name for <em>context</em> , as determined by a prior call to <a class="reference internal" href="krb5_cc_set_default_name.html#c.krb5_cc_set_default_name" title="krb5_cc_set_default_name"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_set_default_name()</span></code></a> , by the KRB5CCNAME environment variable, by the default_ccache_name profile variable, or by the operating system or build-time default value. The returned value must not be modified or freed by the caller. The returned value becomes invalid when <em>context</em> is destroyed <a class="reference internal" href="krb5_free_context.html#c.krb5_free_context" title="krb5_free_context"><code class="xref c c-func docutils literal"><span class="pre">krb5_free_context()</span></code></a> or if a subsequent call to <a class="reference internal" href="krb5_cc_set_default_name.html#c.krb5_cc_set_default_name" title="krb5_cc_set_default_name"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_set_default_name()</span></code></a> is made on <em>context</em> .</p>
-<p>The default credential cache name is cached in <em>context</em> between calls to this function, so if the value of KRB5CCNAME changes in the process environment after the first call to this function on, that change will not be reflected in later calls with the same context. The caller can invoke <a class="reference internal" href="krb5_cc_set_default_name.html#c.krb5_cc_set_default_name" title="krb5_cc_set_default_name"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_set_default_name()</span></code></a> with a NULL valueof <em>name</em> to clear the cached value and force the default name to be recomputed.</p>
+<p>The default credential cache name is cached in <em>context</em> between calls to this function, so if the value of KRB5CCNAME changes in the process environment after the first call to this function on, that change will not be reflected in later calls with the same context. The caller can invoke <a class="reference internal" href="krb5_cc_set_default_name.html#c.krb5_cc_set_default_name" title="krb5_cc_set_default_name"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_set_default_name()</span></code></a> with a NULL value of <em>name</em> to clear the cached value and force the default name to be recomputed.</p>
 </div>
 
 
@@ -147,7 +147,7 @@ const char * <code class="descname">krb5_cc_default_name</code><span class="sig-
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.20-beta1</i><br />
+            <div class="right" ><i>Release: 1.20</i><br />
                 &copy; <a href="../../../copyright.html">Copyright</a> 1985-2022, MIT.
             </div>
             <div class="left">
