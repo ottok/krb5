@@ -1,3 +1,10 @@
+krb5 (1.20-1) unstable; urgency=medium
+
+  * New Upstream Version
+  * Do not specify master key type to avoid weak crypto, Closes: #1009927
+
+ -- Sam Hartman <hartmans@debian.org>  Fri, 22 Jul 2022 16:32:38 -0600
+
 krb5 (1.20~beta1-1) experimental; urgency=medium
 
   * New Upstream version
