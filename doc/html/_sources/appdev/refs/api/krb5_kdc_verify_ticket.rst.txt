@@ -38,7 +38,7 @@ krb5_kdc_verify_ticket -  Verify a PAC, possibly including ticket signature.
 
 
 
-If a PAC is present in *enc_tkt* , verify its signatures. If *privsvr* is not NULL and *server_princ* is not a krbtgt or kadmin/changepw service, require a ticket signature over *enc_tkt* in addition to the KDC signature. Place the verified PAC in *pac_out* . If an invalid PAC signature is found, return an error matching the Windows KDC protocol code for thatcondition as closely as possible.
+If a PAC is present in *enc_tkt* , verify its signatures. If *privsvr* is not NULL and *server_princ* is not a krbtgt or kadmin/changepw service, require a ticket signature over *enc_tkt* in addition to the KDC signature. Place the verified PAC in *pac_out* . If an invalid PAC signature is found, return an error matching the Windows KDC protocol code for that condition as closely as possible.
 
 
 

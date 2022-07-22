@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.20-beta1',
+        VERSION:     '1.20',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -93,7 +93,7 @@
 </tr>
 </tbody>
 </table>
-<p>If a PAC is present in <em>enc_tkt</em> , verify its signatures. If <em>privsvr</em> is not NULL and <em>server_princ</em> is not a krbtgt or kadmin/changepw service, require a ticket signature over <em>enc_tkt</em> in addition to the KDC signature. Place the verified PAC in <em>pac_out</em> . If an invalid PAC signature is found, return an error matching the Windows KDC protocol code for thatcondition as closely as possible.</p>
+<p>If a PAC is present in <em>enc_tkt</em> , verify its signatures. If <em>privsvr</em> is not NULL and <em>server_princ</em> is not a krbtgt or kadmin/changepw service, require a ticket signature over <em>enc_tkt</em> in addition to the KDC signature. Place the verified PAC in <em>pac_out</em> . If an invalid PAC signature is found, return an error matching the Windows KDC protocol code for that condition as closely as possible.</p>
 <p>If no PAC is present in <em>enc_tkt</em> , set <em>pac_out</em> to NULL and return successfully.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -161,7 +161,7 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.20-beta1</i><br />
+            <div class="right" ><i>Release: 1.20</i><br />
                 &copy; <a href="../../../copyright.html">Copyright</a> 1985-2022, MIT.
             </div>
             <div class="left">
