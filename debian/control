@@ -10,7 +10,7 @@ Build-Depends-Indep: python3, python3-cheetah, python3-lxml, python3-sphinx, dox
 Standards-Version: 4.6.0
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
-Homepage: http://web.mit.edu/kerberos/
+Homepage: https://web.mit.edu/kerberos/
 VCS-Git: https://salsa.debian.org/debian/krb5
 VCS-Browser: https://salsa.debian.org/debian/krb5
 
