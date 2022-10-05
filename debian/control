@@ -425,7 +425,6 @@ Description: MIT Kerberos runtime libraries - RADIUS library
  This package contains the internal support library for RADIUS functionality.
 
 Package: krb5-gss-samples
-Section: net
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: MIT Kerberos GSS Sample applications
