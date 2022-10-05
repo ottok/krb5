@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (= 13), byacc | bison,
  libssl-dev,  ss-dev,
  libverto-dev (>= 0.2.4), pkg-config
 Build-Depends-Indep: python3, python3-cheetah, python3-lxml, python3-sphinx, doxygen, doxygen-latex, tex-gyre
-Standards-Version: 4.6.0
+Standards-Version: 4.6.1
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
 Homepage: https://web.mit.edu/kerberos/
