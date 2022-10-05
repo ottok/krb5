@@ -11,8 +11,8 @@ Standards-Version: 4.6.1
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
 Homepage: https://web.mit.edu/kerberos/
-VCS-Git: https://salsa.debian.org/debian/krb5
-VCS-Browser: https://salsa.debian.org/debian/krb5
+Vcs-Git: https://salsa.debian.org/debian/krb5
+Vcs-Browser: https://salsa.debian.org/debian/krb5
 
 Package: krb5-user
 Architecture: any
