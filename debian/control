@@ -257,7 +257,7 @@ Description: documentation for MIT Kerberos
 
 Package: libkrb5-3
 Section: libs
-Breaks:  sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2), libapache2-mod-auth-kerb (<= 5.4-2.4)
+Breaks: sssd (<= 1.2.1-4.3), libsmbclient (<= 2:3.6.1-2), libapache2-mod-auth-kerb (<= 5.4-2.4)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
  libkrb5support0 (= ${binary:Version})
@@ -372,7 +372,7 @@ Description: MIT Kerberos runtime libraries - Crypto Library
 
 Package: libkdb5-10
 Section: libs
-Breaks:  libkadm5srv-mit8 (<< 1.11+dfsg~), krb5-kdc (= 1.13~alpha1+dfsg-1)
+Breaks: libkadm5srv-mit8 (<< 1.11+dfsg~), krb5-kdc (= 1.13~alpha1+dfsg-1)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: krb5-doc, krb5-user
