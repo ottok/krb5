@@ -21,6 +21,9 @@ krb5 (1.20.1-1) unstable; urgency=high
     KDCs or when cross-realm acts maliciously; DOS in other conditions;
     CVE-2022-42898, Closes: #1024267
   * Tighten version dependencies around crypto library, Closes: 1020424
+  * krb5-user reccomends rather than Depends on krb5-config.  This avoids
+    a hard dependency on bind9-host, but also supports cases where
+    krb5-config is externally managed, Closes: #1005821
 
  -- Sam Hartman <hartmans@debian.org>  Thu, 17 Nov 2022 10:34:28 -0700
 

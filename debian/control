@@ -16,8 +16,8 @@ Vcs-Browser: https://salsa.debian.org/debian/krb5
 
 Package: krb5-user
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version}),
-  krb5-config
+Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version})
+Recommends: krb5-config
 Multi-Arch: foreign
 Conflicts: heimdal-clients
 Suggests: krb5-k5tls
