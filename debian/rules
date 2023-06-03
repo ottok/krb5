@@ -38,6 +38,13 @@ DH_BUILD_OPTS= --sourcedir=src --builddir=build
 
 build: build-arch build-indep
 
+execute_before_dh_auto_build:
+	# It's fine for a test program not to get some of the hardening flags because
+	# it is never installed
+	@echo 'blhc: ignore-line-regexp: .* -o t_trval .*'
+	# It's not a problem that fortify flags are absent when preprosessor creates
+	# version identifier in docs
+	@echo 'blhc: ignore-line-regexp: .*doc/version.py'
 
 override_dh_auto_configure:
 	dh_auto_configure $(DH_BUILD_OPTS) -- --with-system-et --with-system-ss --disable-rpath  \
