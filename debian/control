@@ -392,11 +392,11 @@ Package: libkrb5support0
 Section: libs
 Breaks: libgssapi-krb5-2 (<< 1.20),
  libkadm5srv-mit9 (<< 1.13~alpha1-1), libkadm5clnt-mit9 (<< 1.13~alpha1-1),
- libk5crypto3 (<< 1.20.1-3ubuntu1~),  libkdb5-8 (<< 1.16),
- krb5-pkinit (<< 1.20.1-3ubuntu1~), libkrb5-3 (<< 1.20.1-3ubuntu1~),
- libkadm5srv-mit12 (<< 1.20.1-3ubuntu1~), libkdb5-10 (<< 1.20.1-3ubuntu1~),
- krb5-admin-server (<< 1.20.1-3ubuntu1~), krb5-kdc (<< 1.20.1-3ubuntu1~),
- krb5-user (<< 1.20.1-3ubuntu1~)
+ libk5crypto3 (<< 1.20.1-4~),  libkdb5-8 (<< 1.16),
+ krb5-pkinit (<< 1.20.1-4~), libkrb5-3 (<< 1.20.1-4~),
+ libkadm5srv-mit12 (<< 1.20.1-4~), libkdb5-10 (<< 1.20.1-4~),
+ krb5-admin-server (<< 1.20.1-4~), krb5-kdc (<< 1.20.1-4~),
+ krb5-user (<< 1.20.1-4~)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Multi-Arch: same
