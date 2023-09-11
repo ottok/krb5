@@ -1,4 +1,4 @@
-krb5 (1.20.1-4) UNRELEASED; urgency=medium
+krb5 (1.20.1-4) unstable; urgency=low
 
   [ Steve Langasek ]
   * libkrb5support0: require strict binary dependency to deal with glibc 2.38, Closes: #1043184
