@@ -19,8 +19,8 @@ Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libkrb5-3 (= ${binary:Version})
 Recommends: krb5-config
 Multi-Arch: foreign
-Conflicts: heimdal-clients
 Suggests: krb5-k5tls
+Conflicts: heimdal-clients (<< 1.6~rc2+dfsg-7)
 Description: basic programs to authenticate using MIT Kerberos
  Kerberos is a system for authenticating users and services on a network.
  Kerberos is a trusted third-party service.  That means that there is a
