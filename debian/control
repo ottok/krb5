@@ -20,7 +20,7 @@ Build-Depends-Indep: doxygen,
                      python3-sphinx,
                      tex-gyre
 Build-Depends-Arch: keyutils, libcmocka-dev, python3-kdcproxy, python3-pyrad
-Standards-Version: 4.6.1
+Standards-Version: 4.6.2
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
 Homepage: https://web.mit.edu/kerberos/
