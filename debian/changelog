@@ -8,9 +8,10 @@ krb5 (1.20.1-4) unstable; urgency=low
     kdestroy, kadmin and ktutil. This allows installation
     together with heimdal-clients. Closes: #213316, #751203
 
-
   [ Sam Hartman ]
   * Enable build-time tests, Thanks Andreas Hasenack, Closes: #1017763
+  * Work around doxygen change that breaks doc build, Thanks Greg
+    Hudson, Closes: #1051523
 
  -- Sam Hartman <hartmans@debian.org>  Mon, 11 Sep 2023 11:06:57 -0600
 
