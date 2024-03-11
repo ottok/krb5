@@ -53,7 +53,7 @@ Depends: krb5-config,
          libkadm5srv-mit12,
          libkdb5-10t64 (>= 1.13.1+dfsg-1),
          libkrb5-3 (= ${binary:Version}),
-         libverto-libev1 | libverto-libevent1,
+         libverto-libev1t64 | libverto-libevent1t64,
          lsb-base (>= 3.0-6),
          ${misc:Depends},
          ${shlibs:Depends}
