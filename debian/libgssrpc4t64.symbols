@@ -1,4 +1,4 @@
-libgssrpc.so.4 libgssrpc4 #MINVER#
+libgssrpc.so.4 libgssrpc4t64 #MINVER#
  HIDDEN@HIDDEN 1.6.dfsg.2
  gssrpc_4_MIT@gssrpc_4_MIT 1.6.dfsg.2
  gssrpc_auth_debug_gss@gssrpc_4_MIT 1.6.dfsg.2

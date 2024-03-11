@@ -1,7 +1,7 @@
 Source: krb5
 Section: net
 Priority: optional
-Build-Depends: byacc | bison,
+Build-Depends: dpkg-dev (>= 1.22.5), byacc | bison,
                comerr-dev,
                debhelper-compat (= 13),
                docbook-to-man,
@@ -19,7 +19,7 @@ Build-Depends-Indep: doxygen,
                      python3-lxml,
                      python3-sphinx,
                      tex-gyre
-Build-Depends-Arch: keyutils [linux-any] <!nocheck>, libcmocka-dev <!nocheck>, python3-kdcproxy <!nocheck>, python3-pyrad <!nocheck>
+Build-Depends-Arch: dpkg-dev (>= 1.22.5), keyutils [linux-any] <!nocheck>, libcmocka-dev <!nocheck>, python3-kdcproxy <!nocheck>, python3-pyrad <!nocheck>
 Standards-Version: 4.6.2
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
@@ -51,7 +51,7 @@ Architecture: any
 Depends: krb5-config,
          krb5-user,
          libkadm5srv-mit12,
-         libkdb5-10 (>= 1.13.1+dfsg-1),
+         libkdb5-10t64 (>= 1.13.1+dfsg-1),
          libkrb5-3 (= ${binary:Version}),
          libverto-libev1 | libverto-libevent1,
          lsb-base (>= 3.0-6),
@@ -143,7 +143,7 @@ Section: libdevel
 Architecture: any
 Depends: comerr-dev,
          libgssapi-krb5-2 (= ${binary:Version}),
-         libgssrpc4 (= ${binary:Version}),
+         libgssrpc4t64 (= ${binary:Version}),
          libk5crypto3 (= ${binary:Version}),
          libkadm5clnt-mit12 (= ${binary:Version}),
          libkadm5srv-mit12  (= ${binary:Version}),
@@ -322,7 +322,10 @@ Description: MIT Kerberos runtime libraries - krb5 GSS-API Mechanism
  This package contains the runtime library for the MIT Kerberos
  implementation of GSS-API used by applications and Kerberos clients.
 
-Package: libgssrpc4
+Package: libgssrpc4t64
+Provides: ${t64:Provides}
+Replaces: libgssrpc4
+Breaks: libgssrpc4 (<< ${source:Version})
 Section: libs
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
@@ -397,9 +400,11 @@ Description: MIT Kerberos runtime libraries - Crypto Library
  This package contains the runtime cryptography libraries used by
  applications and Kerberos clients.
 
-Package: libkdb5-10
+Package: libkdb5-10t64
+Provides: ${t64:Provides}
+Replaces: libkdb5-10
 Section: libs
-Breaks: krb5-kdc (= 1.13~alpha1+dfsg-1), libkadm5srv-mit8 (<< 1.11+dfsg~)
+Breaks: libkdb5-10 (<< ${source:Version}), krb5-kdc (= 1.13~alpha1+dfsg-1), libkadm5srv-mit8 (<< 1.11+dfsg~)
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: krb5-doc, krb5-user
@@ -426,7 +431,7 @@ Breaks: krb5-admin-server (<< 1.20.1-4~),
         libkadm5clnt-mit9 (<< 1.13~alpha1-1),
         libkadm5srv-mit12 (<< 1.20.1-4~),
         libkadm5srv-mit9 (<< 1.13~alpha1-1),
-        libkdb5-10 (<< 1.20.1-4~),
+        libkdb5-10t64 (<< 1.20.1-4~),
         libkdb5-8 (<< 1.16),
         libkrb5-3 (<< 1.20.1-4~)
 Architecture: any
