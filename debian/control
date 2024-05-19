@@ -1,10 +1,11 @@
 Source: krb5
 Section: net
 Priority: optional
-Build-Depends: dpkg-dev (>= 1.22.5), byacc | bison,
+Build-Depends: byacc | bison,
                comerr-dev,
                debhelper-compat (= 13),
                docbook-to-man,
+               dpkg-dev (>= 1.22.5),
                libkeyutils-dev [linux-any],
                libldap2-dev <!stage1>,
                libsasl2-dev <!stage1>,
@@ -19,7 +20,11 @@ Build-Depends-Indep: doxygen,
                      python3-lxml,
                      python3-sphinx,
                      tex-gyre
-Build-Depends-Arch: dpkg-dev (>= 1.22.5), keyutils [linux-any] <!nocheck>, libcmocka-dev <!nocheck>, python3-kdcproxy <!nocheck>, python3-pyrad <!nocheck>
+Build-Depends-Arch: dpkg-dev (>= 1.22.5),
+                    keyutils [linux-any] <!nocheck>,
+                    libcmocka-dev <!nocheck>,
+                    python3-kdcproxy <!nocheck>,
+                    python3-pyrad <!nocheck>
 Standards-Version: 4.6.2
 Maintainer: Sam Hartman <hartmans@debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Benjamin Kaduk <kaduk@mit.edu>
@@ -404,7 +409,9 @@ Package: libkdb5-10t64
 Provides: ${t64:Provides}
 Replaces: libkdb5-10
 Section: libs
-Breaks: libkdb5-10 (<< ${source:Version}), krb5-kdc (= 1.13~alpha1+dfsg-1), libkadm5srv-mit8 (<< 1.11+dfsg~)
+Breaks: krb5-kdc (= 1.13~alpha1+dfsg-1),
+        libkadm5srv-mit8 (<< 1.11+dfsg~),
+        libkdb5-10 (<< ${source:Version})
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Suggests: krb5-doc, krb5-user
