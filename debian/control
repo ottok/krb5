@@ -59,7 +59,6 @@ Depends: krb5-config,
          libkdb5-10t64 (>= 1.13.1+dfsg-1),
          libkrb5-3 (= ${binary:Version}),
          libverto-libev1t64 | libverto-libevent1t64,
-         lsb-base (>= 3.0-6),
          ${misc:Depends},
          ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
@@ -100,7 +99,6 @@ Package: krb5-admin-server
 Architecture: any
 Depends: krb5-kdc (>= 1.10+dfsg~),
          libkrb5-3 (= ${binary:Version}),
-         lsb-base (>= 3.0-6),
          ${misc:Depends},
          ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
@@ -125,7 +123,6 @@ Architecture: any
 Multi-Arch: foreign
 Pre-Depends: ${misc:Pre-Depends}
 Depends: krb5-kdc (= ${binary:Version}),
-         lsb-base,
          ${misc:Depends},
          ${shlibs:Depends}
 Replaces: krb5-kdc (<< 1.15.1-3~)
